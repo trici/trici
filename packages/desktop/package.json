@@ -1,0 +1,37 @@
+{
+  "name": "@trici/desktop",
+  "version": "0.0.1",
+  "description": "The Desktop application for Trici ",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://gettrici.com",
+  "license": "ISC",
+  "main": "src/main.js",
+  "directories": {
+    "src": "src",
+    "lib": "lib",
+    "test": "__tests__"
+		"bin": "bin"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "npx playwright test"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.31.2",
+    "electron": "^23.1.4",
+    "playwright": "^1.31.2"
+  }
+}
