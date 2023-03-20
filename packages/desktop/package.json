@@ -9,7 +9,7 @@
   "directories": {
     "src": "src",
     "lib": "lib",
-    "test": "__tests__"
+    "test": "__tests__",
 		"bin": "bin"
   },
   "files": [
