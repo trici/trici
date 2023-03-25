@@ -1,0 +1,3 @@
+__tests__/logs
+.DS_STORE
+*.log

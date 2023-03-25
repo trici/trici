@@ -1,0 +1,30 @@
+{
+  "name": "@trici/logger",
+  "version": "0.0.1",
+  "description": "Logging service for Trici",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://github.com/trici/trici#readme",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "src": "src",
+    "test": "__tests__"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "build-dev": "cross-env NODE_ENV=development node esbuild.js",
+    "build": "node esbuild.js",
+    "build-types": "tsc --emitDeclarationOnly --declaration --declarationDir dist",
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "dependencies": {
+    "winston-daily-rotate-file": "^4.7.1"
+  }
+}

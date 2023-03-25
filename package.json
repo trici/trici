@@ -1,11 +1,14 @@
 {
   "name": "@trici/trici",
   "private": true,
-	"version": "0.0.0",
+  "version": "0.0.0",
   "workspaces": [
     "packages/*"
   ],
   "devDependencies": {
-    "lerna": "^6.5.1"
+    "esbuild": "^0.17.12",
+    "lerna": "^6.5.1",
+    "typescript": "^4.9.5",
+    "prettier": "^2.8.6"
   }
 }

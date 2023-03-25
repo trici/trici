@@ -1,0 +1,92 @@
+/* import { LoggingService } from '../src/logger.service';
+import winston from 'winston';
+
+describe('LoggingService', () => {
+  let logger: LoggingService ;
+
+  beforeEach(() => {
+    logger = new LoggingService();
+  });
+
+  afterEach(() => {
+    // logger = null;
+  });
+
+  describe('init', () => {
+    it('should initialize logger with correct transports and defaultMeta', () => {
+      const mockLogger = { info: jest.fn() } as unknown as winston.Logger;
+      const mockConsoleTransport = { level: 'info' };
+      const mockFileTransport = { filename: 'test.log' };
+      const mockHttpTransport = { host: 'api.gettrici.com' };
+      const mockTransports = {
+        console: mockConsoleTransport,
+        file: mockFileTransport,
+        remote: mockHttpTransport,
+      };
+      const mockDefaultMeta = { app: 'test-app' };
+
+      jest.spyOn(logger, '_getDailyRotateFileTransport').mockReturnValue(mockFileTransport as any);
+      jest.spyOn(logger, '_getHttpTransport').mockReturnValue(mockHttpTransport as any);
+      jest.spyOn(winston, 'createLogger').mockReturnValue(mockLogger);
+      jest.spyOn(mockLogger, 'info');
+
+      const result = logger.init('logsDirectoryPath', 'trici-%DATE%.log', mockDefaultMeta);
+
+      expect(logger['_getDailyRotateFileTransport']).toHaveBeenCalledWith('trici-%DATE%.log');
+      expect(logger['_getHttpTransport']).toHaveBeenCalled();
+      expect(winston.createLogger).toHaveBeenCalledWith({
+        level: 'info',
+        transports: [mockFileTransport, mockConsoleTransport, mockHttpTransport],
+        exceptionHandlers: [mockHttpTransport],
+        exitOnError: false,
+        defaultMeta: mockDefaultMeta,
+      });
+      expect(mockLogger.info).toHaveBeenCalledWith('Logger initialized');
+      expect(result).toBe(mockLogger);
+    });
+
+    it('should throw error if logger already initialized', () => {
+      const mockLogger = { info: jest.fn() } as unknown as winston.Logger;
+      jest.spyOn(winston, 'createLogger').mockReturnValue(mockLogger);
+      logger.init('logsDirectoryPath', 'trici-%DATE%.log', {});
+
+      expect(() => logger.init('logsDirectoryPath', 'trici-%DATE%.log', {})).toThrowError('Logger already initialized');
+    });
+  });
+
+  describe('getLogger', () => {
+    it('should return logger if initialized', () => {
+      const mockLogger = { info: jest.fn() } as unknown as winston.Logger;
+      jest.spyOn(winston, 'createLogger').mockReturnValue(mockLogger);
+      logger.init('logsDirectoryPath', 'trici-%DATE%.log', {});
+
+      const result = logger.getLogger();
+
+      expect(result).toBe(mockLogger);
+    });
+
+    it('should throw error if logger not initialized', () => {
+      expect(() => logger.getLogger()).toThrowError('Logger not initialized');
+    });
+  });
+
+  describe('updateLogLevel', () => {
+    it('should update logger level if initialized', () => {
+      const mockLogger = { level: 'info' } as unknown as winston.Logger;
+      jest.spyOn(winston, 'createLogger').mockReturnValue(mockLogger);
+      logger.init('logsDirectoryPath', 'trici-%DATE%.log', {});
+
+      logger.updateLogLevel('debug');
+
+      expect(mockLogger.level).toBe('debug');
+    });
+
+    it('should throw error if logger not initialized', () => {
+      expect(() => logger.updateLogLevel('debug')).toThrowError('Logger not initialized');
+    });
+  });
+
+  // describe('changeLoggerDefaultMeta', () => {
+
+});
+*/
