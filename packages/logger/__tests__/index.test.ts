@@ -2,7 +2,7 @@
  * Test for logger.
  */
 
-import { init, getLogger } from "../dist/index";
+import LoggingService from "../dist/index";
 import fs from "fs";
 import path from "path";
 import { config as Config } from "@trici/config";
@@ -23,7 +23,7 @@ describe("Logging library", () => {
         }
         console.log("Deleted logs directory");
         // Initialize the logging library with a test logs directory and log file name format
-        init(path.join(__dirname, "logs"), "test-%DATE%.log", {
+        LoggingService.init(path.join(__dirname, "logs"), "test-%DATE%.log", {
           installationId: Config.defaultInstallationId,
           appDetails: "darwin-dev-2.1.1",
         });
@@ -37,7 +37,7 @@ describe("Logging library", () => {
 
   it("should create a log file", (done) => {
     // Get the logger
-    const logger = getLogger();
+    const logger = LoggingService.getLogger();
 
     // Log a message
     logger.info("Test log message");

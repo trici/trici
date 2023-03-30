@@ -18,6 +18,8 @@ export class LoggingService extends EventEmitter implements ILoggingService {
   private transports: { console: transport; file: transport; remote: transport } | undefined;
   private logsDirectoryPath: string;
   private logFileFormat: any;
+  private logFileNameFormat: string;
+  private defaultMeta: any;
   private httpLogFormat: any;
   private remoteApiEndPoint: string = "api.gettrici.com";
 
@@ -25,6 +27,8 @@ export class LoggingService extends EventEmitter implements ILoggingService {
     super();
     this.logger = null;
     this.logsDirectoryPath = "";
+    this.logFileNameFormat = "";
+    this.defaultMeta = {};
     this.logFileFormat = printf(({ level, message, label, timestamp, installationId, appDetails }) => {
       return `${timestamp} [${label}] [${installationId}] [${appDetails}] ${level}: ${message} `;
     });
@@ -78,8 +82,6 @@ export class LoggingService extends EventEmitter implements ILoggingService {
    * @param logFileNameFormat The format of the log file name. E.g. for 'trici-%DATE%.log' the log file name will be 'trici-2019-01-01.log'
    * @param defaultMeta The default meta data to be added to each log entry (e.g. installationId, appDetails)
    * @returns The logger
-   * @throws Error if the logger is already initialized
-   *
    * @example
    * const logger = init('/var/log/trici', 'trici-%DATE%.log', { installationId: '1234', appDetails: 'darwin-dev-2.1.1' });
    * logger.info('Hello world');
@@ -88,9 +90,12 @@ export class LoggingService extends EventEmitter implements ILoggingService {
   public init(logsDirectoryPath: string, logFileNameFormat: string, defaultMeta: any): winston.Logger {
     console.log("Initializing logger with Config.builtFor: ", config.builtFor);
     if (this.logger) {
-      throw new Error("Logger already initialized");
+      this.logger.info(`Logger already initialized for logsDirectoryPath: ${logsDirectoryPath} and defaultMeta: ${defaultMeta}`);
+      return this.logger;
     }
     this.logsDirectoryPath = logsDirectoryPath;
+    this.logFileNameFormat = logFileNameFormat;
+    this.defaultMeta = defaultMeta;
 
     this.transports = {
       console: new winston.transports.Console({ level: "info" }),

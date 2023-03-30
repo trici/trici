@@ -16,7 +16,8 @@
     "url": "git+https://github.com/trici/trici.git"
   },
   "scripts": {
-    "build-dev": "cross-env NODE_ENV=development node esbuild.js",
+    "build-esbuild": "cross-env NODE_ENV=development node esbuild.js",
+    "build-dev": "npm run build-types && npm run build-esbuild",
     "build": "node esbuild.js",
     "build-types": "tsc --emitDeclarationOnly --declaration --declarationDir dist",
     "test": "cross-env NODE_ENV=test jest --detectOpenHandles"
