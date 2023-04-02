@@ -9,7 +9,11 @@ import { config as Config } from "@trici/config";
 
 function getLogFileName() {
   const now = new Date();
-  return `test-${now.toISOString().slice(0, 10)}-${now.getHours()}.log`;
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  const hour = now.getHours().toString().padStart(2, '0');
+  return `test-${year}-${month}-${day}-${hour}.log`;
 }
 
 describe("Logging library", () => {
