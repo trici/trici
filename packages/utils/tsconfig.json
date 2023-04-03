@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"declaration": true,
+		"declarationMap": true,
+		"emitDeclarationOnly": true,
+		"esModuleInterop": true
+	},
+	"include": [
+		"src/**/*.ts"
+	]
+}
