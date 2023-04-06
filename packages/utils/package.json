@@ -7,10 +7,8 @@
   "license": "ISC",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "directories": {
-  },
-  "files": [
-  ],
+  "directories": {},
+  "files": [],
   "publishConfig": {
     "access": "public"
   },
@@ -27,5 +25,9 @@
   },
   "bugs": {
     "url": "https://github.com/trici/trici/issues"
+  },
+  "dependencies": {
+    "@trici/config": "^1.0.1",
+    "node-ipc": "^10.1.0"
   }
 }

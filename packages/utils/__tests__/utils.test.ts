@@ -1,4 +1,4 @@
-import { getVersion } from '../dist/index.js';
+import { getVersion, createIpcClient } from '../dist/index.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -18,5 +18,16 @@ describe('getVersion', () => {
 
   test('returns NaN when VERSION file does not exist', () => {
     expect(getVersion()).toBe('NaN');
+  });
+});
+
+describe('createIpcClient', () => {
+  test('connects to ipc server', () => {
+    const client = createIpcClient();
+
+    // client has a connect method
+    expect(client.connectAndPing).toBeDefined();
+    expect(typeof client.connectAndPing).toBe('function');
+
   });
 });
