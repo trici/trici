@@ -7,6 +7,10 @@ const Config = {
   pacHttpPort: 3003,
   defaultInstallationId: '22d860cd-07e1-4d7f-bd9a-ca5ed5c242f9',
   macAutoUpdateFeedUrl: '',
+  ipcConfigAppSpace: 'trici-dev.',
+  ipcConfigSocketRoot: '/tmp/',
+  ipcConfigId: 'trici-pm',
+  ipcConfigDelimiter: '\u{000C}'
 };
 
 module.exports = Config;

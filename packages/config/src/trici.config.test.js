@@ -8,6 +8,10 @@ const Config = {
   macAutoUpdateFeedUrl: 'https://download.gettrici.com/darwin-x64/releases.json',
   macAutoUpdateFeedUrlArm64: 'https://download.gettrici.com/darwin-x64/releases-arm64.json',
   winAutoUpdateFeedUrl: 'https://download.gettrici.com/win-x64/',
+  ipcConfigAppSpace: 'trici-dev.',
+  ipcConfigSocketRoot: '/tmp/',
+  ipcConfigId: 'trici-pm',
+  ipcConfigDelimiter: '\u{000C}'
 };
 
 module.exports = Config;
