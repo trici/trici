@@ -1,6 +1,6 @@
 {
   "name": "@trici/cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The CLI for trici ",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",
@@ -28,7 +28,7 @@
     "url": "https://github.com/trici/trici/issues"
   },
   "dependencies": {
-    "@trici/utils": "^1.0.0",
+    "@trici/utils": "^1.1.0",
     "commander": "^10.0.0"
   },
   "devDependencies": {

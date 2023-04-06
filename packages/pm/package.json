@@ -1,6 +1,6 @@
 {
   "name": "@trici/pm",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Manages the communication between the primary and secondary main processes",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",
@@ -29,13 +29,13 @@
     "url": "https://github.com/trici/trici/issues"
   },
   "devDependencies": {
-    "@trici/utils": "^1.0.0",
+    "@trici/utils": "^1.1.0",
     "@types/jest": "^29.5.0",
     "jest": "^29.5.0",
     "ts-jest": "^29.0.5"
   },
   "dependencies": {
-    "@trici/config": "^1.0.1",
+    "@trici/config": "^1.1.0",
     "@trici/logger": "^1.0.2",
     "@types/node-ipc": "^9.2.0",
     "node-ipc": "10.1.0"
