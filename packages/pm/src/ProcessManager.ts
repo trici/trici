@@ -26,14 +26,14 @@ export class ProcessManager implements IProcessManager {
 
     private _getIpcConfig(): any {
         // ...
-        const appspace = config.builtFor === "dev" ? "trici-dev." : "trici.";
         return {
-            id: "trici-pm",
+            id: config.ipcConfigId,
             retry: 500,
             maxRetries: 10,
-            appspace: appspace,
-            socketRoot: "/tmp/",
+            appspace: config.ipcConfigAppSpace,
+            socketRoot: config.ipcConfigSocketRoot,
             logger: this._logger.info.bind(this._logger),
+            delimiter: config.ipcConfigDelimiter,
         };
     }
 
@@ -56,12 +56,16 @@ export class ProcessManager implements IProcessManager {
         ipc.config = this._getIpcConfig();
         try {
             ipc.serve(() => {
-                ipc.server.on("connect", () => {
-                    ipc.server.emit(ipc.config.id, "Primary process connected");
+                ipc.server.on("connect", (socket) => {
+                    ipc.server.emit(socket, "Primary process connected");
                 });
-                ipc.server.on("message", (data: any, socket: any) => {
+                ipc.server.on("ping", (data: any, socket: any) => {
+                  console.log("server got a ping");
                     ipc.log("got a message from ".concat(data.id));
-                    ipc.server.emit(socket, "message", "hello");
+                    ipc.server.emit(socket, "ping", {type: "pong", id: ipc.config.id});
+                });
+                ipc.server.on("disconnect", (socket) => {
+                    ipc.log("client ".concat(String(socket)).concat(" has disconnected!"));
                 });
             });
             ipc.server.start();
