@@ -1,0 +1,38 @@
+{
+  "name": "@trici/cli",
+  "version": "1.0.0",
+  "description": "The CLI for trici ",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://github.com/trici/trici#readme",
+  "license": "ISC",
+  "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
+  "directories": {},
+  "files": [],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
+    "build-types": "tsc --emitDeclarationOnly --declaration --declarationDir dist",
+    "build-dev": "npm run esbuild-dev && npm run build-types",
+    "build": "node esbuild.js",
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles",
+    "start": "node dist/cli.js"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "dependencies": {
+    "@trici/utils": "^1.0.0",
+    "commander": "^10.0.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "mock-stdin": "^1.0.0"
+  }
+}
