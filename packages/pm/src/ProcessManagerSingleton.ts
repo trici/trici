@@ -1,15 +1,19 @@
 import { ProcessManager } from "./ProcessManager";
+import type { Logger } from "winston";
 
-class ProcessManagerSingleton {
+export interface IProcessManagerSingleton {
+  getInstance(logger: Logger): ProcessManager;
+}
+export class ProcessManagerSingleton {
   private static instance: ProcessManager;
 
   private constructor() {
   }
 
-  public static getInstance(): ProcessManager {
+  public static getInstance(logger: Logger): ProcessManager {
     if (!ProcessManagerSingleton.instance) {
       console.log("Starting Process Manager ");
-      ProcessManagerSingleton.instance = new ProcessManager();
+      ProcessManagerSingleton.instance = new ProcessManager(logger);
     }
 
     return ProcessManagerSingleton.instance;
@@ -17,5 +21,3 @@ class ProcessManagerSingleton {
 
 }
 
-const instance = ProcessManagerSingleton.getInstance();
-export default instance;

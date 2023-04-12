@@ -4,11 +4,13 @@
 
 import { ProcessManager } from "../src/ProcessManager";
 import LoggingService from "@trici/logger";
+import type { Logger } from "winston";
 import { createIpcClient, cleanDirectory } from "@trici/utils";
 import * as path from "path";
 
 describe("ProcessManager", () => {
   let processManager: ProcessManager;
+  let logger: Logger;
 
   // beforeAll(async () => {
   //   processManager = new ProcessManager();
@@ -43,13 +45,12 @@ describe("ProcessManager", () => {
 
         // Initialize the logger with the logs directory path to be the current directory
         console.log("dirPath: ", dirPath);
-        LoggingService.init(dirPath, "test-%DATE%.log", {
+        logger = LoggingService.init(dirPath, "test-%DATE%.log", {
           installationId: "test-installation-id",
           appDetails: "darwin-dev-2.1.1",
         });
         console.log("Initialized logger");
-
-        processManager = new ProcessManager();
+        processManager = new ProcessManager(logger);
         resolve(true);
     });
   });

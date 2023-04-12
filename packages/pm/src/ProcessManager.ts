@@ -1,6 +1,7 @@
 import ipc from "node-ipc"
 import { config } from "@trici/config"
 import LoggingService from "@trici/logger"
+import type { Logger } from "@trici/logger"
 
 export interface IProcessManager {
   registerPrimaryProcess(processID: number): void;
@@ -18,10 +19,10 @@ export class ProcessManager implements IProcessManager {
     private _registeredPrimaryProcessId: number;
     private _logger: any;
 
-    constructor() {
+    constructor(logger: Logger) {
         // ...
         this._registeredPrimaryProcessId = 0;
-        this._logger = LoggingService.getLogger();
+        this._logger = logger;
     }
 
     private _getIpcConfig(): any {
