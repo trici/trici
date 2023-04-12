@@ -15,9 +15,9 @@ function _getIpcConfig(): any {
     delimiter: config.ipcConfigDelimiter,
   };
 }
-ipc.config = _getIpcConfig();
 
 export function createIpcClient() {
+  ipc.config = _getIpcConfig();
   const client = {
     connectAndPing: (): Promise<{ type: string; id: string }> => {
       return new Promise((resolve, reject) => {
@@ -26,7 +26,7 @@ export function createIpcClient() {
           ipc.of[ipcConfigId].on("connect", () => {
             console.log("Client connected to node-ipc server");
             console.log("sending ping");
-            ipc.of[ipcConfigId].emit("ping", {msg: "ping"});
+            ipc.of[ipcConfigId].emit("ping", { msg: "ping" });
           });
           ipc.of[ipcConfigId].on("disconnect", () => {
             // console.log("Client disconnected from node-ipc server");
@@ -39,14 +39,13 @@ export function createIpcClient() {
               resolve(message);
             }
           });
-
         });
       });
     },
     disconnect: () => {
       // ipc.of[config.ipcConfigId].removeAllListeners();
       ipc.disconnect(config.ipcConfigId);
-    }
+    },
   };
   return client;
 }
@@ -63,11 +62,11 @@ export function cleanDirectory(dirPath) {
         console.log("Deleted logs directory");
         resolve(true);
       });
-      } catch (err) {
-        console.error(err);
-        reject(err);
-      }
-    });
+    } catch (err) {
+      console.error(err);
+      reject(err);
+    }
+  });
 }
 
 export function getVersion(): string {
