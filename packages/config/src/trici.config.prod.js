@@ -11,7 +11,8 @@ const Config = {
   ipcConfigAppSpace: 'trici.',
   ipcConfigSocketRoot: '/tmp/',
   ipcConfigId: 'trici-pm',
-  ipcConfigDelimiter: '\u{000C}'
+  ipcConfigDelimiter: '\u{000C}',
+  mainProcessBuiltModuleReferencePath: './dist/desktopServices.js'
 };
 
 module.exports = Config;

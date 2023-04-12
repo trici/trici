@@ -14,4 +14,4 @@ if (process.env.NODE_ENV === 'production') {
   config =  devConfig;
 }
 
-module.exports = { config };
+module.exports = config;
