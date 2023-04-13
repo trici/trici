@@ -1,7 +1,7 @@
 import EventEmitter from "events";
 import winston, { transport } from "winston";
 import winstonDailyRotateFile from "winston-daily-rotate-file";
-const { config } = require("@trici/config");
+const  config = require("@trici/config");
 const { format } = winston;
 const { combine, timestamp, label, printf, errors } = format;
 
