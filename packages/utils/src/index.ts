@@ -1,43 +1,79 @@
 import * as fs from "fs";
 import * as path from "path";
-import { config } from "@trici/config";
+import config from "@trici/config";
+import type { Logger } from "@trici/logger";
 
 import ipc from "node-ipc";
 
-function _getIpcConfig(): any {
+function _getIpcConfig(showLogs: boolean = true, logger?: Logger): any {
+  let ipcLogger = logger ?  logger.info.bind(logger) : console.log.bind(console);
   return {
     id: config.ipcConfigId,
     retry: 500,
     maxRetries: 0,
     appspace: config.ipcConfigAppSpace,
     socketRoot: config.ipcConfigSocketRoot,
-    logger: console.log,
+    silent: !showLogs,
+    logger: ipcLogger,
     delimiter: config.ipcConfigDelimiter,
+    stopRetrying: true,
   };
 }
 
-export function createIpcClient() {
-  ipc.config = _getIpcConfig();
+export function createIpcClient(showLogs: boolean, logger?: Logger) {
+  ipc.config = _getIpcConfig(showLogs,logger);
   const client = {
     connectAndPing: (): Promise<{ type: string; id: string }> => {
       return new Promise((resolve, reject) => {
         const ipcConfigId = config.ipcConfigId;
         ipc.connectTo(ipcConfigId, () => {
           ipc.of[ipcConfigId].on("connect", () => {
-            console.log("Client connected to node-ipc server");
-            console.log("sending ping");
             ipc.of[ipcConfigId].emit("ping", { msg: "ping" });
           });
           ipc.of[ipcConfigId].on("disconnect", () => {
             // console.log("Client disconnected from node-ipc server");
           });
           ipc.of[ipcConfigId].on("ping", (message) => {
-            console.log("got ping: " + JSON.stringify(message));
             // const message = JSON.parse(data);
 
             if (message.type === "pong") {
               resolve(message);
             }
+          });
+        });
+      });
+    },
+    connectAndSendMessage: (msg: any): Promise<{ type: string; id: string }> => {
+      return new Promise((resolve, reject) => {
+        const ipcConfigId = config.ipcConfigId;
+        let connectionTimeout;
+
+        // Set a timeout to handle connection failures or unresponsive servers
+        connectionTimeout = setTimeout(() => {
+          if (ipc.of[ipcConfigId]) {
+            ipc.disconnect(ipcConfigId);
+          }
+          reject(new Error('Connection timed out.'));
+        }, 1500); // Adjust the timeout duration (in milliseconds) as needed
+
+        ipc.connectTo(ipcConfigId, () => {
+          ipc.of[ipcConfigId].on('connect', () => {
+            clearTimeout(connectionTimeout);
+            ipc.of[ipcConfigId].emit('cli.message', msg);
+          });
+
+          ipc.of[ipcConfigId].on('disconnect', () => {
+            // console.log('Client disconnected from node-ipc server');
+          });
+
+          ipc.of[ipcConfigId].on('error', (err) => {
+            clearTimeout(connectionTimeout);
+            reject(new Error(`IPC connection error: ${err.message}`));
+          });
+
+          ipc.of[ipcConfigId].on('cli.message', (response) => {
+            console.log('got resp: ' + JSON.stringify(response));
+            resolve(response);
           });
         });
       });

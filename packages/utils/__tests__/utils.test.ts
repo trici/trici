@@ -23,11 +23,15 @@ describe('getVersion', () => {
 
 describe('createIpcClient', () => {
   test('connects to ipc server', () => {
-    const client = createIpcClient();
+    const client = createIpcClient(true);
 
     // client has a connect method
     expect(client.connectAndPing).toBeDefined();
     expect(typeof client.connectAndPing).toBe('function');
+    expect(client.connectAndSendMessage).toBeDefined();
+    expect(typeof client.connectAndSendMessage).toBe('function');
+    expect(client.disconnect).toBeDefined();
+    expect(typeof client.disconnect).toBe('function');
 
   });
 });
