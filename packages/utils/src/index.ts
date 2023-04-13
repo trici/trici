@@ -68,7 +68,9 @@ export function createIpcClient(showLogs: boolean, logger?: Logger) {
 
           ipc.of[ipcConfigId].on('error', (err) => {
             clearTimeout(connectionTimeout);
-            reject(new Error(`IPC connection error: ${err.message}`));
+            const connectError = new Error(`${err.message}`);
+            connectError.name = "ConnectError";
+            reject(connectError);
           });
 
           ipc.of[ipcConfigId].on('cli.message', (response) => {
