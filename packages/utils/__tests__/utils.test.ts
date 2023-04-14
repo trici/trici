@@ -1,4 +1,4 @@
-import { getVersion, createIpcClient } from '../dist/index.js';
+import { getVersion, createIpcClient, generateUUIDv5 } from '../dist/index.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -33,5 +33,19 @@ describe('createIpcClient', () => {
     expect(client.disconnect).toBeDefined();
     expect(typeof client.disconnect).toBe('function');
 
+  });
+});
+
+describe('generateUUIDv5', () => {
+  test('generates a UUIDv5', async () => {
+    let uuid;
+    try{
+      uuid = await generateUUIDv5('test');
+      console.log('uuid:', uuid)
+    } catch (error) {
+      console.error('Error generating UUIDv5:', error);
+    }
+    expect(uuid).toBeDefined();
+    // expect(uuid).toBe('d6b9f7e4-0a8d-5d6a-8c7b-6a8e6a8e6a8e');
   });
 });

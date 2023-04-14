@@ -2,7 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 import config from "@trici/config";
 import type { Logger } from "@trici/logger";
-
+import { v5 as uuidv5 } from "uuid";
+import { generateSystemFingerprint } from "./fingerprint";
 import ipc from "node-ipc";
 
 function _getIpcConfig(showLogs: boolean = true, logger?: Logger): any {
@@ -115,5 +116,16 @@ export function getVersion(): string {
     return version.trim();
   } else {
     return "NaN";
+  }
+}
+
+export async function generateUUIDv5(name) {
+  try {
+    const fingerprint = await generateSystemFingerprint();
+    const uuidNamespace = uuidv5(fingerprint, uuidv5.DNS);
+    const uuid = uuidv5(name, uuidNamespace);
+    return uuid;
+  } catch (error) {
+    throw new Error(`Error generating UUIDv5: ${error}`);
   }
 }
