@@ -6,6 +6,7 @@
   "homepage": "https://github.com/trici/trici#readme",
   "license": "ISC",
   "main": "src/index.js",
+  "types": "src/index.d.ts",
   "directories": {},
   "files": [],
   "repository": {
