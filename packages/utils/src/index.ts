@@ -47,7 +47,7 @@ export function createIpcClient(showLogs: boolean, logger?: Logger) {
     connectAndSendMessage: (msg: any): Promise<{ type: string; id: string }> => {
       return new Promise((resolve, reject) => {
         const ipcConfigId = config.ipcConfigId;
-        let connectionTimeout;
+        let connectionTimeout: NodeJS.Timeout;
 
         // Set a timeout to handle connection failures or unresponsive servers
         connectionTimeout = setTimeout(() => {
@@ -89,7 +89,7 @@ export function createIpcClient(showLogs: boolean, logger?: Logger) {
   return client;
 }
 
-export function cleanDirectory(dirPath) {
+export function cleanDirectory(dirPath:string) {
   return new Promise((resolve, reject) => {
     // delete the logs directory
     try {
@@ -119,9 +119,12 @@ export function getVersion(): string {
   }
 }
 
-export async function generateUUIDv5(name) {
+export async function generateUUIDv5(name: string) {
   try {
-    const fingerprint = await generateSystemFingerprint();
+    let fingerprint = await generateSystemFingerprint();
+    if(fingerprint === null) {
+      throw new Error('Could not generate system fingerprint');
+    }
     const uuidNamespace = uuidv5(fingerprint, uuidv5.DNS);
     const uuid = uuidv5(name, uuidNamespace);
     return uuid;
