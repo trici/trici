@@ -2,4 +2,5 @@ bin
 node_modules
 *.log
 data
-
+dist
+logs

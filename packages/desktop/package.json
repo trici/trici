@@ -1,5 +1,6 @@
 {
   "name": "@trici/desktop",
+  "productName": "TriciDev",
   "version": "0.0.1",
   "description": "The Desktop application for Trici ",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
@@ -7,6 +8,7 @@
   "license": "ISC",
   "main": "src/main.js",
   "directories": {
+    "dist": "dist",
     "src": "src",
     "lib": "lib",
     "test": "__tests__",
@@ -23,15 +25,31 @@
     "url": "git+https://github.com/trici/trici.git"
   },
   "scripts": {
-    "start": "electron .",
-    "test": "npx playwright test"
+    "start": "cross-env NODE_ENV=development electron .",
+    "esbuild-main": "node esbuild.main.js",
+    "esbuild-renderer": "node esbuild.renderer.js",
+    "build-dev": "npm run esbuild-main && npm run esbuild-renderer",
+    "test": "cross-env NODE_ENV=test npx playwright test"
   },
   "bugs": {
     "url": "https://github.com/trici/trici/issues"
   },
   "devDependencies": {
     "@playwright/test": "^1.31.2",
+    "@types/electron-json-storage": "^4.5.0",
+    "@types/uuid": "^9.0.1",
+    "cross-env": "^7.0.3",
     "electron": "^23.1.4",
     "playwright": "^1.31.2"
+  },
+  "dependencies": {
+    "@trici/config": "^1.1.0",
+    "@trici/dal": "^1.0.0",
+    "@trici/logger": "^1.0.2",
+    "@trici/models": "^1.0.0",
+    "@trici/pm": "^0.2.0",
+    "@trici/utils": "^1.1.0",
+    "electron-json-storage": "^4.6.0",
+    "electron-unhandled": "^4.0.1"
   }
 }

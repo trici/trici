@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#
+
+
+PROJECT_ROOT="/Users/shashi/projects/trici"
+echo $PROJECT_ROOT
+#CONTENTS="$APP_PATH/Contents"
+ELECTRON="$PROJECT_ROOT/node_modules/.bin/electron"
+CLI="$PROJECT_ROOT/packages/cli/dist/cli.js"
+ELECTRON_RUN_AS_NODE=1 "$ELECTRON" "$CLI" "$@"
+exit $?

@@ -1,0 +1,172 @@
+import { app } from "electron";
+import LoggingService from "@trici/logger";
+import config from "@trici/config";
+import { Constants } from "@trici/models";
+import type { ITrayService } from "./TrayService";
+import type { IAppJsonStorageService } from "./AppJsonStorageService";
+import type { IProcessManager } from "@trici/pm";
+import { checkUserDataDirectory } from "@trici/utils";
+import EventEmitter from "events";
+
+
+export interface IAppService {
+  start(): void;
+}
+
+export class AppService implements IAppService {
+  #cleanupInitiated: boolean = false;
+  #trayService: ITrayService;
+  #appJsonStorageService: IAppJsonStorageService;
+  #processManager: IProcessManager;
+  #eventEmitter: EventEmitter;
+
+  constructor(
+    pm: IProcessManager,
+    trayService: ITrayService,
+    appJsonStorageService: IAppJsonStorageService
+  ) {
+    this.#processManager = pm;
+    this.#trayService = trayService;
+    this.#appJsonStorageService = appJsonStorageService;
+    this.#eventEmitter = new EventEmitter();
+  }
+
+  /**
+   * Register App Lifecycle Event Handlers
+   */
+  #registerAppLifecycleEventHandlersOnStartup = () => {
+    // Latest: We do nopt quit the app when all the windows are closed unless
+    // the user specifically closes the application from the tray. So commenting all the below.
+    // Also see https://www.electronjs.org/docs/api/app#event-window-all-closed
+    // Hence we are using the will-quit
+    // Quit when all windows are closed.
+    app.on("window-all-closed", () => {
+      // On OS X it is common for applications and their menu bar
+      // to stay active until the user quits explicitly with Cmd + Q
+      // in case it is still recording. see https://trello.com/c/wQyv5cdv
+      logger.debug("app.on.window-all-closed");
+    });
+
+    app.on("activate", (event, hasVisibleWindows) => {
+      // if (mainWindow && !mainWindow.isFocused()) {
+      //   showMainWindow();
+      // }
+    });
+    // app.on('before-quit', () => (willQuitApp = true));
+
+    app.on("browser-window-blur", (evt, browserWindow) => {
+      // if (browserWindow.getTitle().toLowerCase() === 'trici') {
+      //   if (
+      //     process.platform === 'darwin'
+      //             && !browserWindow.webContents.isDevToolsOpened()
+      //   ) {
+      //     app.hide();
+      //     if (mainWindow) {
+      //       mainWindow.hide();
+      //     }
+      //   }
+      // }
+    });
+
+    app.on("did-become-active", (event) => {
+      // if (mainWindow && !mainWindow.isFocused()) {
+      //   showMainWindow();
+      // }
+    });
+
+    app.on("before-quit", async (evt) => {
+      if (!this.#cleanupInitiated) {
+        evt.preventDefault();
+        console.log("app.on.before-quit");
+        try {
+          this.#processManager.killPrimaryProcess();
+          // kill any running child processes
+          // TriciShell.stopRecordingKaalSession();
+          // TriciShell.stopProxyServer();
+          triciApp = triciApp.setCleanShutdownValues();
+          await this.#appJsonStorageService.setTriciAppObject(triciApp);
+          this.#cleanupInitiated = true;
+          app.quit();
+        } catch (e) {
+          console.log("Error while setting the shut down values", e);
+        }
+      }
+    });
+
+    app.on("will-quit", (evt) => {
+      console.log("app.on.will-quit");
+      // TriciShell.stopRecordingKaalSession();
+      // TriciShell.stopProxyServer();
+      // globalShortcut.unregisterAll();
+    });
+
+    app.on("quit", (evt, exitCode) => {
+      console.log("app.on.quit");
+    });
+
+    // screen.on('display-added', (evt, newDisplay) => {
+    //   if (mainWindow) {
+    //     mainWindow.webContents.send('receiveMessageRenderer', { success: true, handler: 'numberOfDisplaysChanged', data: {} });
+    //   }
+    // });
+    // screen.on('display-removed', () => {
+    //   if (mainWindow) {
+    //     mainWindow.webContents.send('receiveMessageRenderer', { success: true, handler: 'numberOfDisplaysChanged', data: {} });
+    //   }
+    // });
+
+    process.on("SIGINT", () => {
+      logger.debug("Received SIGINT");
+      app.quit();
+    });
+  };
+
+  async start(): Promise<void>{
+    try {
+      // Check user data directory for required subdirectories. Ex of userDataDirectory: /Users/username/Library/Application Support/Trici
+      let userDataDirectoryCheckResult = await checkUserDataDirectory(app.getPath("userData"), "default");
+      global.userDataDirectoryCheckResult = userDataDirectoryCheckResult;
+
+      this.#registerAppLifecycleEventHandlersOnStartup();
+
+      logger.debug("AppService.startApp");
+      if (process.platform === "darwin") {
+        app.commandLine.appendSwitch("--disable-acclereated-video-decode");
+      }
+
+      logger.info("Load the TriciApp object as a global");
+      try {
+        // Load the TriciApp object as a global
+        let triciApp = await this.#appJsonStorageService.getTriciAppObject();
+        if (triciApp.installationId === Constants.UNINITIALIZED_ID) {
+          triciApp = await triciApp.generateInstallationId();
+          this.#appJsonStorageService.setTriciAppObject(triciApp);
+          console.log("installationIdAfterGenerate: ", triciApp.installationId);
+        }
+        triciApp = triciApp.setLastLaunchTime();
+        global.triciApp = triciApp;
+        global.installationId = triciApp.installationId;
+        // Change the logging configuration
+        LoggingService.changeLoggerDefaultMeta({
+          installationId: triciApp.installationId,
+          appDetails: global.appDetails,
+        });
+      } catch (e) {
+        logger.error("Error while loading the TriciApp object", e);
+      }
+
+      logger.debug("Registering primary process: " + process.pid);
+
+      this.#processManager.registerPrimaryProcess(process.pid);
+
+      // Initialize the tray
+      this.#trayService.createTrayInstance(logger);
+    } catch (e) {
+      console.log("Error while starting the app", e);
+      logger.error("Error while starting the app", e);
+      app.quit();
+    }
+  }
+
+
+};
