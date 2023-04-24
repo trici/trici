@@ -5,7 +5,7 @@
 import LoggingService from "../dist/index";
 import fs from "fs";
 import path from "path";
-import { config as Config } from "@trici/config";
+import config from "@trici/config";
 
 function getLogFileName() {
   const now = new Date();
@@ -28,7 +28,7 @@ describe("Logging library", () => {
         console.log("Deleted logs directory");
         // Initialize the logging library with a test logs directory and log file name format
         LoggingService.init(path.join(__dirname, "logs"), "test-%DATE%.log", {
-          installationId: Config.defaultInstallationId,
+          installationId: config.defaultInstallationId,
           appDetails: "darwin-dev-2.1.1",
         });
         done();
