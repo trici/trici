@@ -71,7 +71,7 @@ describe("ProcessManager", () => {
   });
 
   it("should accept connections and messages from ipc clients", async () => {
-    const client = createIpcClient();
+    const client = createIpcClient(false);
     try {
       const resp = await client.connectAndPing();
       expect(resp.type).toBe("pong");
