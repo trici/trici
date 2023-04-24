@@ -22,7 +22,7 @@
     "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
     "build-dev": "npm run build-types && npm run esbuild-dev",
     "build": "node esbuild.js",
-    "build-types": "tsc --emitDeclarationOnly --declaration --declarationDir dist",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
     "test": "cross-env NODE_ENV=test jest --detectOpenHandles"
   },
   "bugs": {
