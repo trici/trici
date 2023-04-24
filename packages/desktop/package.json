@@ -1,7 +1,7 @@
 {
   "name": "@trici/desktop",
   "productName": "TriciDev",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "The Desktop application for Trici ",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://gettrici.com",
@@ -43,12 +43,12 @@
     "playwright": "^1.31.2"
   },
   "dependencies": {
-    "@trici/config": "^1.1.0",
-    "@trici/dal": "^1.0.0",
-    "@trici/logger": "^1.0.2",
-    "@trici/models": "^1.0.0",
-    "@trici/pm": "^0.2.0",
-    "@trici/utils": "^1.1.0",
+    "@trici/config": "^1.1.1",
+    "@trici/dal": "^1.0.1",
+    "@trici/logger": "^1.0.3",
+    "@trici/models": "^1.0.1",
+    "@trici/pm": "^0.3.0",
+    "@trici/utils": "^1.2.0",
     "electron-json-storage": "^4.6.0",
     "electron-unhandled": "^4.0.1"
   }

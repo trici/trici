@@ -1,6 +1,6 @@
 {
   "name": "@trici/dal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "> TODO: description",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",
@@ -31,12 +31,12 @@
     "url": "https://github.com/trici/trici/issues"
   },
   "devDependencies": {
-    "@trici/logger": "^1.0.2",
-    "@trici/utils": "^1.1.0",
+    "@trici/logger": "^1.0.3",
+    "@trici/utils": "^1.2.0",
     "@types/pouchdb": "^6.4.0"
   },
   "dependencies": {
-    "@trici/models": "^1.0.0",
+    "@trici/models": "^1.0.1",
     "fast-json-patch": "^3.1.1",
     "pouchdb": "^8.0.1"
   }
