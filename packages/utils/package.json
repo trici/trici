@@ -18,7 +18,7 @@
   },
   "scripts": {
     "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
-    "build-types": "tsc --emitDeclarationOnly --declaration --declarationDir dist",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
     "build-dev": "npm run esbuild-dev && npm run build-types",
     "build": "node esbuild.js",
     "test": "cross-env NODE_ENV=test jest"
@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@trici/config": "^1.1.0",
+    "@trici/models": "^1.0.0",
     "node-ipc": "^10.1.0",
     "systeminformation": "^5.17.12",
     "uuid": "^9.0.0"
