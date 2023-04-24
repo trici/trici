@@ -189,7 +189,7 @@ export class LoggingService extends EventEmitter implements ILoggingService {
     if (!this.loggerDefaultMetaUsesInstallationId) {
       // update logger config based on installationId
       this.logger.info(`Changing logger default meta to: ${JSON.stringify(defaultMeta)}`);
-      this.logger.configure({
+      this.logger = winston.createLogger({
         level: "info",
         transports: this._getTransportsConfig(),
         exceptionHandlers: this._getExceptionHandlersTransportsConfig(),
@@ -197,6 +197,7 @@ export class LoggingService extends EventEmitter implements ILoggingService {
         defaultMeta: defaultMeta,
       });
       this.loggerDefaultMetaUsesInstallationId = true;
+      this.emit('defaultMetaChanged', this.loggerDefaultMetaUsesInstallationId);
     }
   }
 
