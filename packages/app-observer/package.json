@@ -31,7 +31,7 @@
     "build:darwin": "npm run buildBinary:darwin && npm run esbuild",
     "build-dev:darwin": "npm run buildBinary-dev:darwin && npm run esbuild-dev && npm run build-types",
     "buildBinary:darwin": "if [ -f 'bin/MacFrontmostObserver' ]; then rm bin/MacFrontmostObserver; fi && swift build -c release --package-path src/swift/MacFrontmostObserver && cp src/swift/MacFrontmostObserver/.build/release/MacFrontmostObserver bin/MacFrontmostObserver",
-    "buildBinary-dev:darwin": "if [ -f 'bin/MacFrontmostObserver' ]; then rm bin/MacFrontmostObserver; fi && swift build -c debug --package-path src/swift/MacFrontmostObserver && cp src/swift/MacFrontmostObserver/.build/debug/MacFrontmostObserver bin/dev/MacFrontmostObserver",
+    "buildBinary-dev:darwin": "if [ -f 'bin/MacFrontmostObserver' ]; then rm bin/MacFrontmostObserver; fi && swift build -c debug --package-path src/swift/MacFrontmostObserver && cp src/swift/MacFrontmostObserver/.build/debug/MacFrontmostObserver bin/dev/MacFrontmostObserver"
   },
   "bugs": {
     "url": "https://github.com/trici/trici/issues"
