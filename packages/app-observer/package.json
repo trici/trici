@@ -1,6 +1,6 @@
 {
   "name": "@trici/app-observer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "> TODO: description",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",
@@ -41,6 +41,6 @@
   },
   "dependencies": {
     "@trici/config": "^1.1.1",
-    "@trici/logger": "^1.0.3"
+    "@trici/logger": "^1.1.0"
   }
 }
