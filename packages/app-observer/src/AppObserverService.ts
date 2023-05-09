@@ -9,18 +9,21 @@ import { Buffer } from 'buffer';
 export interface IAppObserverService {
   start(): void;
   stop(): void;
+  getCurrentApp(): string;
 }
 
 export class AppObserverService extends EventEmitter implements IAppObserverService {
   child: any;
   logger: Logger | IConsoleLogger;
   appRoot: string;
+  currentApp: string;
 
   constructor(logger: Logger, appRoot: string) {
     super();
     this.child = null;
     this.logger = logger ? logger : getConsoleLogger();
     this.appRoot = appRoot;
+    this.currentApp = '';
   }
 
   start(): void {
@@ -35,7 +38,9 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
         this.logger.info("AppObserverService started:", this.child.pid);
         this.child.stdout.on('data', function (data: Buffer) {
           // console.log(data.toString('utf8'));
-          self.emit('frontmostAppChanged', data.toString('utf8'));
+          const appChangeData = JSON.parse(data.toString('utf8'));
+          self.currentApp = appChangeData.frontmostApp;
+          self.emit('frontmostAppChanged', appChangeData);
       });
       this.child.stderr.on('data', function (data: Buffer) {
           self.logger.error('Error: ' + data.toString('utf8'));
@@ -52,7 +57,14 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
   stop(): void {
     this.logger.info("AppObserverService stopping:", this.child.pid);
     // kill the child process
+    // TOOD: Write code to close the AppObserverService gracefully.
     this.child.kill();
 
   }
+
+  getCurrentApp(): string {
+    return this.currentApp;
+  }
 }
+
+export type AppObserverServiceInstance = InstanceType<typeof AppObserverService>;

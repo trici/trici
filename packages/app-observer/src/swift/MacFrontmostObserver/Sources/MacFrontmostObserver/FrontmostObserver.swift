@@ -10,9 +10,21 @@ import Foundation
 
 public struct FrontmostObserver {
 
+  private let workspace = NSWorkspace.shared
+
     public func startObserver() {
-        let workspace = NSWorkspace.shared
         let notificationCenter = workspace.notificationCenter
+
+        if let frontmostApplication = workspace.frontmostApplication {
+          let message: [String: Any] = [
+                "frontmostApp": frontmostApplication.localizedName ?? "unknown",
+                "timestamp": Date().timeIntervalSince1970
+            ]
+            if let data = try? JSONSerialization.data(withJSONObject: message),
+               let jsonString = String(data: data, encoding: .utf8) {
+                FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
+            }
+        }
 
         notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification,
@@ -25,20 +37,20 @@ public struct FrontmostObserver {
                 return
             }
             // print the app name and unixtimestamp
-            let message = "{ frontmostApp: \(app.localizedName ?? "unknown"), timestamp: \(Date().timeIntervalSince1970)}"
-//            print("\(message)")
-            FileHandle.standardOutput.write("\(message)".data(using: .utf8)!)
+            let message: [ String: Any] = [
+                "frontmostApp": app.localizedName ?? "unknown",
+                "timestamp": Date().timeIntervalSince1970
+            ]
+            if let data = try? JSONSerialization.data(withJSONObject: message),
+               let jsonString = String(data: data, encoding: .utf8) {
+                FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
+            }
         }
 
-//        var shouldKeepRunning = true
-//        let runLoop = RunLoop.current
-//        while shouldKeepRunning {
-//            runLoop.run(mode: .default, before: .distantFuture)
-//        }
     }
-    
+
     public func stopObserver() {
-        
+        workspace.notificationCenter.removeObserver(self)
     }
 }
 
