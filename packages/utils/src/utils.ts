@@ -108,11 +108,11 @@ export function createIpcClient(showLogs: boolean = true, logger?: Logger): ITri
 }
 
 /**
- * Clean a directory
- * @param dirPath Path to the directory to be cleaned
+ * Deletes aa directory and the content inside it
+ * @param dirPath Path to the directory to be deleted
  * @returns void
  */
-export function cleanDirectory(dirPath: string) {
+export function deleteDirectoryWithContents(dirPath: string) {
   return new Promise((resolve, reject) => {
     // delete the logs directory
     try {
