@@ -4,7 +4,7 @@ import PouchDB from "pouchdb";
 import { v4 as uuidv4 } from "uuid";
 import type { Logger } from "@trici/logger";
 import LoggingService from "@trici/logger";
-import { cleanDirectory } from "@trici/utils";
+import { deleteDirectoryWithContents } from "@trici/utils";
 import path from "path";
 
 // Mock the logger to silence the output during tests
@@ -22,7 +22,7 @@ describe("TriciRepository", () => {
     return new Promise(async (resolve, reject) => {
       try {
         console.log("Cleaning test logs directory");
-        await cleanDirectory(dirPath);
+        await deleteDirectoryWithContents(dirPath);
         console.log("Cleaned test logs directory");
       } catch (err) {
         console.log("Error initializing logger: ", err);
