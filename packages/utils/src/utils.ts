@@ -168,33 +168,52 @@ export async function generateUUIDv5(name: string) {
 
 /**
  * Generate a new trici id for the given uuid and type
- * @description A trici is is a string of the form uuid-type-createdAtDate-muton-mutatedAtDate
+ * @description A trici is is a string of the form uuid_type_createdAtDate_muton_mutatedAtDate
  * @param uuid The uuid of the trici id
  * @param type The type of the trici id
- * @returns a trici id like 22d860cd-07e1-4d7f-bd9a-ca5ed5c242f-fss-1681757187-muton-1681757187
+ * @returns a trici id like 22d860cd-07e1-4d7f-bd9a-ca5ed5c242f_fss_1681757187_muton_1681757187
  *
  */
 export function generateNewTriciId(uuid: string, type: string) {
   let createdAt = Date.now();
-  let triciId = `${uuid}-${type}-${createdAt}-muton-${createdAt}`;
+  let triciId = `${uuid}_${type}_${createdAt}_muton_${createdAt}`;
   return triciId;
 }
 
 /**
  *  Generate an updated trici id for the given trici id
- * @description A trici is is a string of the form uuid-type-createdAtDate-muton-mutatedAtDate
+ * @description A trici is is a string of the form uuid_type_createdAtDate_muton_mutatedAtDate
  * @param triciId The trici id to be updated
- * @returns an updated trici id like 22d860cd-07e1-4d7f-bd9a-ca5ed5c242f-fss-1681757187-muton-1681758000
+ * @returns an updated trici id like 22d860cd-07e1-4d7f-bd9a-ca5ed5c242f_fss_1681757187_muton_1681757187
  */
 export function generateUpdatedTriciId(triciId: string) {
   let mutatedAt = Date.now();
-  let triciIdParts = triciId.split("-");
+  let triciIdParts = triciId.split("_");
   triciIdParts[triciIdParts.length - 1] = mutatedAt.toString();
-  let updatedTriciId = triciIdParts.join("-");
+  let updatedTriciId = triciIdParts.join("_");
   return updatedTriciId;
 }
 
 
+/**
+ * Check whether the given trici id is valid for today. A trici id is valid for today if the createdAt date is today
+ * @param triciId The trici id to be checked
+ * @returns true if the trici id is valid for today, false otherwise
+ */
+export function isTriciIdValidForToday(triciId: string) {
+  let triciIdParts = triciId.split("_");
+  let createdAt = parseInt(triciIdParts[2]);
+  console.log(`createdAt: ${createdAt}`);
+  let createdAtDate = new Date(createdAt);
+  console.log(`createdAtDate: ${createdAtDate}`);
+  let today = new Date();
+  console.log(`today: ${today}`);
+  if (createdAtDate.getDate() === today.getDate() && createdAtDate.getMonth() === today.getMonth() && createdAtDate.getFullYear() === today.getFullYear()) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 
 
