@@ -35,10 +35,10 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
         const pathToExecutable = config.builtFor === 'dev' ? path.join(this.appRoot, 'bin', 'dev', 'MacFrontmostObserver') : path.join(this.appRoot, 'bin', 'MacFrontmostObserver');
         this.logger.debug("AppObserverService starting:", pathToExecutable);
         this.child = child_process.spawn(pathToExecutable);
-        this.logger.info("AppObserverService started:", this.child.pid);
+        this.logger.info(`AppObserverService started:${this.child.pid}`);
         this.child.stdout.on('data', function (data: Buffer) {
-          // console.log(data.toString('utf8'));
           const appChangeData = JSON.parse(data.toString('utf8'));
+          self.logger.info(`appChangeData:${JSON.stringify(appChangeData)}`);
           self.currentApp = appChangeData.frontmostApp;
           self.emit('frontmostAppChanged', appChangeData);
       });
