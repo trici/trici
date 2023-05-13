@@ -10,6 +10,8 @@ import { CliMessageHandlerService } from "./CliMessageHandlerService";
 import { FocusSessionService } from "./FocusSessionService";
 import { TriciRepository } from "@trici/dal";
 import IdleTimeService from "./IdleTimeService";
+import { AppObserverService } from "@trici/app-observer";
+import { UserActivityMonitorService } from "./UserActivityMonitorService";
 
 let logger: Logger;
 let appJsonStorageService: IAppJsonStorageService;
@@ -67,7 +69,15 @@ export const InitializationService = {
       focusSessionService = new FocusSessionService(repo);
       cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
       cliMessageHandlerService.registerCliMessageHandlers();
-      IdleTimeService.start();
+
+      // Start the AppObserver service
+      const appRoot = app.getAppPath();
+      console.log("appRoot: ", appRoot);
+      const appObserverService = new AppObserverService(logger, app.getAppPath());
+
+      // Start the UserActivityMonitor service
+      const userActivityMonitorService = new UserActivityMonitorService(logger, IdleTimeService, appObserverService);
+      userActivityMonitorService.start();
 
       // Start the Idletime service
     } catch (error) {

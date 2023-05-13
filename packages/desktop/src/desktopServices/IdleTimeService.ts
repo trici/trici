@@ -2,6 +2,7 @@ import { powerMonitor } from 'electron';
 import EventEmitter from 'events';
 
 // This service simply emits triciping events at given interval.
+
 class IdleTimeServiceClass extends EventEmitter {
 timerIntervalId: NodeJS.Timer | null;
 
@@ -32,6 +33,7 @@ constructor() {
   };
 }
 
+export type IdleTimeServiceInstance = InstanceType<typeof IdleTimeServiceClass>;
 class IdleTimeServiceSingleton {
   private static instance: IdleTimeServiceClass;
 
