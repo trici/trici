@@ -29,7 +29,8 @@
     "esbuild-main": "node esbuild.main.js",
     "esbuild-renderer": "node esbuild.renderer.js",
     "build-dev": "npm run esbuild-main && npm run esbuild-renderer",
-    "test": "cross-env NODE_ENV=test npx playwright test"
+    "test": "cross-env NODE_ENV=test npx playwright test",
+    "updbin": "node updbin.js"
   },
   "bugs": {
     "url": "https://github.com/trici/trici/issues"
@@ -43,6 +44,7 @@
     "playwright": "^1.31.2"
   },
   "dependencies": {
+    "@trici/app-observer": "^1.1.0",
     "@trici/config": "^1.1.1",
     "@trici/dal": "^1.0.2",
     "@trici/logger": "^1.1.0",
