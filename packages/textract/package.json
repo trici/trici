@@ -1,0 +1,35 @@
+{
+  "name": "@trici/textract",
+  "version": "1.0.0",
+  "description": "> TODO: description",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://github.com/trici/trici#readme",
+  "license": "ISC",
+  "main": "lib/textract.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "start": "node dist/index.js",
+    "build-dev": "tsc",
+    "build": "tsc",
+    "build-types": "tsc && node ../../scripts/flatten-types.js ."
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "dependencies": {
+    "tesseract.js": "^4.0.4"
+  }
+}
