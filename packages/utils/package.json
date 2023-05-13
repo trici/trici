@@ -1,6 +1,6 @@
 {
   "name": "@trici/utils",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Utils",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",
@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@trici/config": "^1.1.1",
-    "@trici/models": "^1.0.1",
+    "@trici/models": "^1.1.0",
     "node-ipc": "^10.1.0",
     "systeminformation": "^5.17.12",
     "uuid": "^9.0.0"
