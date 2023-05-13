@@ -5,7 +5,7 @@
 import { ProcessManager } from "../src/ProcessManager";
 import LoggingService from "@trici/logger";
 import type { Logger } from "winston";
-import { createIpcClient, cleanDirectory } from "@trici/utils";
+import { createIpcClient, deleteDirectoryWithContents } from "@trici/utils";
 import * as path from "path";
 
 describe("ProcessManager", () => {
@@ -36,7 +36,7 @@ describe("ProcessManager", () => {
     return new Promise(async (resolve, reject) => {
       try {
         console.log("Cleaning test logs directory");
-        await cleanDirectory(dirPath);
+        await deleteDirectoryWithContents(dirPath);
         console.log("Cleaned test logs directory");
       } catch (err) {
         console.log("Error initializing logger: ", err);
