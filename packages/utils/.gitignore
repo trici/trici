@@ -1,4 +1,5 @@
 __tests__/logs
+__tests__/sampledata
 .DS_STORE
 *.log
 *.map

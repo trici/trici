@@ -13,6 +13,9 @@ async function build(args) {
         sourcemap: true,
         target: 'node16',
         tsconfig: '../../tsconfig.json',
+        external: [
+            'sharp',
+        ],
     });
 }
 
