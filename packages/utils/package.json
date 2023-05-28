@@ -30,8 +30,10 @@
     "@trici/config": "^1.1.1",
     "@trici/models": "^1.1.0",
     "node-ipc": "^10.1.0",
-    "sharp": "^0.32.1",
     "systeminformation": "^5.17.12",
     "uuid": "^9.0.0"
+  },
+  "peerDependencies": {
+    "sharp": "^0.32.1"
   }
 }
