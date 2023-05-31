@@ -1,5 +1,5 @@
 import storage from 'electron-json-storage';
-import { TriciApp } from '@trici/models';
+import { TriciApp, LastSavedEntityIds } from '@trici/models';
 import { Constants } from '@trici/models';
 import { app } from 'electron';
 
@@ -7,6 +7,8 @@ export interface IAppJsonStorageService {
   init(): void;
   getTriciAppObject(): Promise<TriciApp>;
   setTriciAppObject(triciApp: TriciApp): Promise<void>;
+  getLastSavedEntityIds(): Promise<LastSavedEntityIds>;
+  setLastSavedEntityIds(lastSavedEntityIds: LastSavedEntityIds): Promise<void>;
 }
 
 class AppJsonStorageService implements IAppJsonStorageService {
@@ -45,7 +47,37 @@ class AppJsonStorageService implements IAppJsonStorageService {
    */
   public async setTriciAppObject(triciApp: TriciApp): Promise<void> {
     return new Promise((resolve, reject) => {
-      storage.set('triciApp', triciApp, (error) => {
+      storage.set('triciApp', triciApp.toJS(), (error) => {
+        if (error) {
+          reject(error);
+        }
+        resolve();
+      });
+    });
+  }
+
+  public async getLastSavedEntityIds(): Promise<LastSavedEntityIds> {
+    return new Promise((resolve, reject) => {
+      storage.get('lastSavedEntityIds', (error, data) => {
+        if (error) {
+          reject(error);
+        } else {
+          let lastSavedEntityIds;
+          if (Object.keys(data).length === 0) {
+            lastSavedEntityIds = new LastSavedEntityIds();
+          } else {
+            lastSavedEntityIds = new LastSavedEntityIds(data);
+          }
+          resolve(lastSavedEntityIds);
+        }
+      });
+    });
+  }
+
+  public async setLastSavedEntityIds(lastSavedEntityIds: LastSavedEntityIds): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log(" saving lastSavedEntityIds: ", lastSavedEntityIds.toJS());
+      storage.set('lastSavedEntityIds', lastSavedEntityIds.toJS(), (error) => {
         if (error) {
           reject(error);
         }

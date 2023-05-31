@@ -12,6 +12,11 @@ import { TriciRepository } from "@trici/dal";
 import IdleTimeService from "./IdleTimeService";
 import { AppObserverService } from "@trici/app-observer";
 import { UserActivityMonitorService } from "./UserActivityMonitorService";
+import { TriciRecorder } from "@trici/recorder";
+import { PluginManager } from "./PluginManager";
+import { AppEventEmitter } from "./AppEventEmitter";
+import { ScreenRecordingPlugin } from "../plugins/ScreenRecordingPlugin";
+import { TRICI_APP_EVENT } from "@trici/models";
 
 let logger: Logger;
 let appJsonStorageService: IAppJsonStorageService;
@@ -44,6 +49,15 @@ function initializeLogger() {
   });
 }
 
+/**
+ * Load Core Plugins
+ */
+function regiserCorePlugins(pluginManager: PluginManager, recorder: TriciRecorder) {
+  const screenRecordingPlugin = new ScreenRecordingPlugin(recorder);
+  pluginManager.register(screenRecordingPlugin);
+}
+
+
 export const InitializationService = {
   // This is the main entry point for the desktop app.
   // It is called from main.ts
@@ -66,17 +80,25 @@ export const InitializationService = {
       // Initialize the CLI message handler
       repo = new TriciRepository(logger);
       repo.init(global.userDataDirectoryCheckResult.dataDir.path);
-      focusSessionService = new FocusSessionService(repo);
+      const ffmpegPath = app.getAppPath() + "/bin/ffmpeg";
+      const triciRecorder = new TriciRecorder(ffmpegPath, logger);
+      const appEventEmitter = AppEventEmitter.getInstance();
+
+      focusSessionService = new FocusSessionService(repo, appEventEmitter);
       cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
       cliMessageHandlerService.registerCliMessageHandlers();
 
-      // Start the AppObserver service
+      const pluginManager = PluginManager.getInstance(logger, appEventEmitter);
+      pluginManager.initialize();
+      regiserCorePlugins(pluginManager, triciRecorder);
+
+      // Instantiate the AppObserver service. It is started inside UserActivityMonitorService
       const appRoot = app.getAppPath();
       console.log("appRoot: ", appRoot);
       const appObserverService = new AppObserverService(logger, app.getAppPath());
 
       // Start the UserActivityMonitor service
-      const userActivityMonitorService = new UserActivityMonitorService(logger, IdleTimeService, appObserverService);
+      const userActivityMonitorService = new UserActivityMonitorService(logger, IdleTimeService, appObserverService, repo, appJsonStorageService, appEventEmitter);
       userActivityMonitorService.start();
 
       // Start the Idletime service
