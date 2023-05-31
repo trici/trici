@@ -24,8 +24,22 @@ export enum IPC_SERVER_EVENTS {
   DISCONNECT = 'disconnect',
   ERROR = 'error',
 }
-
-
 export enum KEY_PARTS {
   FOCUS_SESSION = 'fcs',
+  DAILY_USER_ACTIVITY = 'dua',
 }
+
+export enum TRICI_APP_EVENT {
+  FOCUS_SESSION_STARTED = 'focus-session-started',
+  FOCUS_SESSION_ENDED = 'focus-session-ended',
+  USER_CAME_BACK = 'user-came-back',
+  USER_WENT_AWAY = 'user-went-away',
+  USER_ACTIVE = 'user-active',
+  USER_INACTIVE = 'user-inactive',
+  USER_GOING_INACTIVE = 'user-going-inactive',
+  USER_HYPER_ACTIVE = 'user-hyper-active',
+  USER_BECOMING_HYPER_ACTIVE = 'user-becoming-hyper-active',
+
+}
+
+

@@ -17,6 +17,11 @@ const TriciAppRecord = Immutable.Record({
   lastQuitTime: -1,
 });
 
+/**
+ * The TriciApp model.
+ * @description The TriciApp model is used to track the installation of the app. It is saved not in the database, but in a JSON file.
+ * It is saved using AppJsonStorageService.
+ */
 export class TriciApp extends TriciAppRecord implements ITriciApp{
   constructor(triciApp?: TriciApp) {
     if (typeof triciApp === 'undefined' || triciApp === null) {

@@ -1,5 +1,11 @@
 export const Constants = {
-  UNINITIALIZED_ID: '-1',
-  EMPTY_STRING: '',
-  JSON_STORAGE_PATH: './data/common/',
+  UNINITIALIZED_ID: "-1",
+  EMPTY_STRING: "",
+  JSON_STORAGE_PATH: "./data/common/",
+  USER_WENT_AWAY_THRESHOLD: 600, // 60 seconds
+  INACTIVE_ACTIVE_THRESHOLD: 200, // 5 minutes
+  GOING_INACTIVE_THRESHOLD: 105, // 2 minutes
+  HYPER_ACTIVE_THRESHOLD: 6, // 6 seconds seconds
+  HYPER_ACTIVE_ZONE_TIME_IN_SECONDS: 50, // 60 seconds
+  HYPER_ACTIVE_ZONE_BEGIN_TIME_IN_SECONDS: 15, // 20 seconds
 };
