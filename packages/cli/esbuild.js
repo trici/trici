@@ -14,7 +14,7 @@ async function build(args) {
         target: 'node16',
         tsconfig: '../../tsconfig.json',
         'external': [
-          'shelljs',
+          'shelljs','sharp'
         ],
     });
 }
