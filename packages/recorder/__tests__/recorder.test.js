@@ -18,7 +18,7 @@ function runTest() {
   triciRecorder.startLiveRecording(
     recordingFileName,
     recordingStorageLocation,
-    4,
+    3,
     includeWatermark,
     waterMarkImagePath
   );

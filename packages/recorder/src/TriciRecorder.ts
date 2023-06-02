@@ -44,7 +44,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       "-i",
       waterMarkImagePathParam,
       "-filter_complex",
-      "scale=-2:1080,setsar=1,overlay=W-w-5:H-h-5",
+      "scale=-2:2160,setsar=1,overlay=W-w-5:H-h-5",
       "-c:v",
       "h264_videotoolbox",
       "-b:v",
