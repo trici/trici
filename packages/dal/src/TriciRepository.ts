@@ -65,7 +65,7 @@ export class TriciRepository implements ITriciRepository {
     });
   }
 
-  public save(obj: any, idOfDocToDelete: string | null): Promise<any> {
+  public save(obj: any, idOfDocToDelete: string | null): Promise<PouchDB.Core.Response> {
     this.#logger.debug(`Saving Obj in pouchDb:${JSON.stringify(obj)}`);
     return new Promise((fulfill, reject) => {
       this.#db
