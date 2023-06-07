@@ -136,12 +136,9 @@ export class UserActivityMonitorService implements IUserActivityMonitorService {
 
   async start(): Promise<void> {
     //Register event handlers to handle events from the services.
-    console.log("UserActivityMonitorService start");
-    console.log(TRICI_APP_EVENT)
     this.idleTimeServiceInstance.on("triciping", (idleTime) =>  this.handleTriciPing(idleTime));
 
     this.appObserverServiceInstance.on("frontmostAppChanged", (frontmostAppChangeData: any) => {
-      console.log("UserActivityMonitorService frontmostAppChanged:", frontmostAppChangeData);
       this.logger.info(`UserActivityMonitorService frontmostAppChanged:${frontmostAppChangeData}`);
       // TODO: Save the data to the db. I am wondering whether there should be a BLL.
       if (this.todaysUserActitivity !== null) {
@@ -150,7 +147,11 @@ export class UserActivityMonitorService implements IUserActivityMonitorService {
           // const frontmostAppChangeDataObject = JSON.parse(frontmostAppChangeData);
           frontmostAppChanges.push(frontmostAppChangeData);
           const idOfDocToDelete = this.todaysUserActitivity.get("_id");
-          const updatedId = generateUpdatedTriciId(idOfDocToDelete);
+
+          const updatedId = idOfDocToDelete === Constants.UNINITIALIZED_ID
+          ? generateNewTriciId(installationId, KEY_PARTS.USER_PREFERENCES)
+          : generateUpdatedTriciId(idOfDocToDelete);
+
           this.todaysUserActitivity = this.todaysUserActitivity.withMutations((obj) => {
             obj.set("_id", updatedId).set("frontmostAppChanges", frontmostAppChanges);
           });
@@ -166,7 +167,6 @@ export class UserActivityMonitorService implements IUserActivityMonitorService {
       // Fetch the current user activity from the db.
       // If there is no user activity for today, create one.
       let lastSavedEntityIds = await this.appJsonStorageService.getLastSavedEntityIds();
-      console.log("lastSavedEntityIds:", lastSavedEntityIds.toJS());
       let todayUserActivityId = lastSavedEntityIds.get("todayUserActivityId");
       if (
         todayUserActivityId === undefined ||
@@ -184,7 +184,6 @@ export class UserActivityMonitorService implements IUserActivityMonitorService {
         this.updateLastSavedTodayUserActivityId(todayUserActivityId);
       }
       this.todaysUserActitivity = new DailyUserActivity(result);
-      console.log("this.todaysUserActitivity:", this.todaysUserActitivity.toJS());
     } catch (err) {
       this.logger.error(`UserActivityMonitorService: Error while fetching today's user activity: ${err}`);
     }

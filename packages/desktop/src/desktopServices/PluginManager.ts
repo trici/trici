@@ -46,14 +46,6 @@ export class PluginManager implements IPluginManager {
     // plugin.initialize(this);
   }
 
-  public on<E extends TRICI_APP_EVENT>(event: E, listener: (data: any) => void): void {
-    this.eventBus.on(event, listener);
-  }
-
-  public off<E extends TRICI_APP_EVENT>(event: E, listener: (data: any) => void): void {
-    this.eventBus.off(event, listener);
-  }
-
   public emit<E extends TRICI_APP_EVENT>(event: E, ...args: any[]): void {
     console.log("PluginManager.emit", event, args);
     this.plugins.forEach(plugin => {

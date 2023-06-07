@@ -52,6 +52,7 @@
     "@trici/pm": "^0.3.2",
     "@trici/recorder": "^1.1.0",
     "@trici/utils": "^1.2.1",
+    "electron-context-menu": "^3.6.1",
     "electron-json-storage": "^4.6.0",
     "electron-unhandled": "^4.0.1"
   }

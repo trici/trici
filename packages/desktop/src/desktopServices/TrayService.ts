@@ -9,6 +9,7 @@
 import { app, Menu, Tray } from "electron";
 import { TrayState } from "@trici/models";
 import type { Logger } from "@trici/logger";
+import { dispatch } from "./ActionDispatcher";
 
 export interface ITrayService {
   createTrayInstance(logger: Logger): void;
@@ -30,6 +31,10 @@ class TrayService implements ITrayService {
         {
           label: 'Show/Hide Trici',
           click: () => { console.log('Show/Hide Trici'); },
+        },
+        {
+          label: 'Settings',
+          click: () => { console.log('Settings'); dispatch({ type: 'OPEN_SETTINGS_WINDOW' }); },
         },
         {
           label: 'Quit',

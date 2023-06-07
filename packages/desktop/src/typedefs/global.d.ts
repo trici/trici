@@ -6,6 +6,7 @@ declare global {
   var triciApp: TriciApp;
   var userDataDirectoryCheckResult: userDataDirectoryCheckResult;
   var logger : Logger;
+  var userPreferences: UserPreferences;
 }
 
 export {};

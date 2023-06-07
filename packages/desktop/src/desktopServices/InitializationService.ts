@@ -6,6 +6,7 @@ import LoggingService from "@trici/logger";
 import AppJsonStorageService, { IAppJsonStorageService } from "./AppJsonStorageService";
 import type { Logger } from "@trici/logger";
 import { AppService, IAppService } from "./AppService";
+import { WindowManager } from "./WindowManager";
 import { CliMessageHandlerService } from "./CliMessageHandlerService";
 import { FocusSessionService } from "./FocusSessionService";
 import { TriciRepository } from "@trici/dal";
@@ -16,7 +17,11 @@ import { TriciRecorder } from "@trici/recorder";
 import { PluginManager } from "./PluginManager";
 import { AppEventEmitter } from "./AppEventEmitter";
 import { ScreenRecordingPlugin } from "../plugins/ScreenRecordingPlugin";
+import actionDispatcher from "./ActionDispatcher";
 import { TRICI_APP_EVENT } from "@trici/models";
+import { UserPreferences } from "@trici/models";
+import { AskWhichScreenToRecordPlugin } from "../plugins/AskWhichScreenToRecordPlugin";
+import { IWindowManager } from "./WindowManager";
 
 let logger: Logger;
 let appJsonStorageService: IAppJsonStorageService;
@@ -52,9 +57,11 @@ function initializeLogger() {
 /**
  * Load Core Plugins
  */
-function regiserCorePlugins(pluginManager: PluginManager, recorder: TriciRecorder) {
+function regiserCorePlugins(pluginManager: PluginManager, recorder: TriciRecorder, windowManager: IWindowManager) {
   const screenRecordingPlugin = new ScreenRecordingPlugin(recorder);
   pluginManager.register(screenRecordingPlugin);
+  const askWhichScreenToRecordPlugin = new AskWhichScreenToRecordPlugin(windowManager);
+  pluginManager.register(askWhichScreenToRecordPlugin);
 }
 
 
@@ -73,10 +80,16 @@ export const InitializationService = {
       appJsonStorageService = AppJsonStorageService;
       trayService = TrayService;
       processManager = ProcessManagerSingleton.getInstance(logger);
+      const windowManager = new WindowManager(logger, actionDispatcher);
+      windowManager.registerActionHandlers();
+
       triciApp = new AppService(processManager, trayService, appJsonStorageService);
       await triciApp.start();
+
       console.log("global.userDataDirectoryCheckResult: ", global.userDataDirectoryCheckResult);
       console.log(global.userDataDirectoryCheckResult.dataDir.path);
+
+
       // Initialize the CLI message handler
       repo = new TriciRepository(logger);
       repo.init(global.userDataDirectoryCheckResult.dataDir.path);
@@ -84,13 +97,20 @@ export const InitializationService = {
       const triciRecorder = new TriciRecorder(ffmpegPath, logger);
       const appEventEmitter = AppEventEmitter.getInstance();
 
+      // Get the UserPreferences and set it in the global object
+      const lastSavedEntityIds = await appJsonStorageService.getLastSavedEntityIds();
+      const userPreferencesId = lastSavedEntityIds.userPreferencesId;
+      const userPreferencesResult = await repo.get(userPreferencesId);
+      const userPreferences = new UserPreferences(userPreferencesResult);
+      global.userPreferences = userPreferences;
+
       focusSessionService = new FocusSessionService(repo, appEventEmitter);
       cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
       cliMessageHandlerService.registerCliMessageHandlers();
 
       const pluginManager = PluginManager.getInstance(logger, appEventEmitter);
       pluginManager.initialize();
-      regiserCorePlugins(pluginManager, triciRecorder);
+      regiserCorePlugins(pluginManager, triciRecorder, windowManager);
 
       // Instantiate the AppObserver service. It is started inside UserActivityMonitorService
       const appRoot = app.getAppPath();

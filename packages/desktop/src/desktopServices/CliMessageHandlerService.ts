@@ -1,6 +1,7 @@
 import { CLI_MESSAGE_TYPE, FocusSession, SESSION_STARTED_BY } from "@trici/models";
 import { IProcessManager } from "@trici/pm";
 import { IFocusSessionService } from "./FocusSessionService";
+import { ErrorMessages } from "packages/models/src/Constants";
 
 
 export interface ICliMessageHandlerService {
@@ -23,9 +24,13 @@ export class CliMessageHandlerService implements ICliMessageHandlerService{
       const data = {success: true, message: "Focus session started" };
       this.processManager.sendCliMessageResponse(data, socket);
     } catch (error: any) {
-      const focusSessionStartError = new Error("Error starting focus session: " + error.message);
-      console.log(focusSessionStartError.message);
-      this.processManager.sendCliMessageResponse({success: false, message: focusSessionStartError.message}, socket);
+      let response;
+      if (error.message === ErrorMessages.DEFAULT_SCREEN_TO_RECORD_NOT_SET) {
+        response = {success: false, message: "Error starting focus session: Multiple monitors detected. Please set the default screen to record in the settings."};
+      } else {
+        response = {success: false, message: `Error starting focus session: ${error.message}`};
+      }
+      this.processManager.sendCliMessageResponse(response, socket);
     }
   }
 
