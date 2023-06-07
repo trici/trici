@@ -102,14 +102,16 @@ describe('generateUpdatedTriciId', () => {
   it('should generate an updated trici id with the current timestamp', () => {
     const triciId = '22d860cd-07e1-4d7f-bd9a-ca5ed5c242f_fss_1681757187_muton_1681757187';
 
+    const beforeMuton = Date.now();
     const updatedTriciId = generateUpdatedTriciId(triciId);
-    const expectedMuton = Date.now().toString();
+    console.log("updatedTriciId:", updatedTriciId);
+    // const expectedMuton = Date.now().toString();
 
     const triciIdParts = updatedTriciId.split('_');
     const mutatedAt = triciIdParts[triciIdParts.length - 1];
 
     expect(updatedTriciId).toMatch(/^[\w-]+_fss_\d+_muton_\d+$/);
-    expect(mutatedAt).toEqual(expectedMuton);
+    expect(parseInt(mutatedAt)).toBeGreaterThanOrEqual(beforeMuton);
   });
 });
 

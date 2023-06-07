@@ -181,6 +181,18 @@ export function generateNewTriciId(uuid: string, type: string) {
 }
 
 /**
+ * Generaet an uninitalized trici id for the given type
+ * @description An unitialized trici id contains the keypart as well as the uninitialized part. By doing this we
+ * know that this uninitialized trici id is of which type and for which keypart.
+ * @param type The type of the trici id
+ * @returns an uninitialized trici id like u22d860cd-07e1-4d7f-bd9a-ca5ed5c242f_fss_1681757187_muton_-1
+ */
+export function generateUninitializedTriciId(installationId: string, type: string) {
+  let triciId = `${installationId}_${type}_${Date.now}_muton_-1`;
+  return triciId;
+}
+
+/**
  *  Generate an updated trici id for the given trici id
  * @description A trici is is a string of the form uuid_type_createdAtDate_muton_mutatedAtDate
  * @param triciId The trici id to be updated
@@ -237,5 +249,17 @@ export function clearNodeIpcServerSocket(socketPath: string): boolean {
   } catch (error) {
     console.error("Error removing socket file: ", error);
     return false;
+  }
+}
+
+
+/**
+ * Checks a condition and logs an error if the condition is false
+ */
+export function invariant(condition: boolean, message: string) {
+  console.log("invariant condition: ", condition);
+  if (!condition) {
+    console.error(message);
+    throw Error(message);
   }
 }
