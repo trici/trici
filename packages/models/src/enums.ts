@@ -27,6 +27,7 @@ export enum IPC_SERVER_EVENTS {
 export enum KEY_PARTS {
   FOCUS_SESSION = 'fcs',
   DAILY_USER_ACTIVITY = 'dua',
+  USER_PREFERENCES = 'upref',
 }
 
 export enum TRICI_APP_EVENT {
@@ -39,7 +40,7 @@ export enum TRICI_APP_EVENT {
   USER_GOING_INACTIVE = 'user-going-inactive',
   USER_HYPER_ACTIVE = 'user-hyper-active',
   USER_BECOMING_HYPER_ACTIVE = 'user-becoming-hyper-active',
-
+  SESSION_STARTED_WITH_DISPLAY_TO_RECORD_NOT_SET = 'session-started-with-display-to-record-not-set',
 }
 
 
