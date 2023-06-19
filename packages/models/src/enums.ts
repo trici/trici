@@ -43,4 +43,15 @@ export enum TRICI_APP_EVENT {
   SESSION_STARTED_WITH_DISPLAY_TO_RECORD_NOT_SET = 'session-started-with-display-to-record-not-set',
 }
 
+export enum NODE_ENV {
+  PRODUCTION = 'production',
+  DEVELOPMENT = 'development',
+  TEST = 'test',
+}
+
+export enum PLATFORM {
+  darwin = 'darwin',
+  win32 = 'win32',
+  linux = 'linux',
+}
 
