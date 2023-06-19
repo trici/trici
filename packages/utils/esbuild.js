@@ -1,7 +1,6 @@
 
 const esbuild = require('esbuild');
 
-
 async function build(args) {
     console.log("Building @trici/utils ...");
     console.log("args: ", args);
@@ -12,9 +11,9 @@ async function build(args) {
         platform: 'node',
         sourcemap: true,
         target: 'node16',
-        tsconfig: '../../tsconfig.json',
+        tsconfig: 'tsconfig.json',
         external: [
-            'sharp',
+            'sharp'
         ],
     });
 }

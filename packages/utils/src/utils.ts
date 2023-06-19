@@ -257,7 +257,6 @@ export function clearNodeIpcServerSocket(socketPath: string): boolean {
  * Checks a condition and logs an error if the condition is false
  */
 export function invariant(condition: boolean, message: string) {
-  console.log("invariant condition: ", condition);
   if (!condition) {
     console.error(message);
     throw Error(message);
