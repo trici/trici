@@ -6,7 +6,8 @@
 		"emitDeclarationOnly": true,
 		"esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "baseUrl": "./"
 	},
 	"include": [
 		"src/**/*.ts"

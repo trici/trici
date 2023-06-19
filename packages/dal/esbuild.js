@@ -12,7 +12,7 @@ async function build(args) {
         platform: 'node',
         sourcemap: true,
         target: 'node16',
-        tsconfig: '../../tsconfig.json',
+        tsconfig: 'tsconfig.json',
         'external': [
           'pouchdb',
         ],
