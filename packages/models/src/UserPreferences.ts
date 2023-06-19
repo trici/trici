@@ -1,5 +1,5 @@
 import * as Immutable from 'immutable';
-import { Constants } from '@trici/models';
+import { Constants } from './Constants';
 
 export interface IUserPreferences {
   _id: string;
