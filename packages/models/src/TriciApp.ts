@@ -1,12 +1,11 @@
 import * as Immutable from 'immutable';
 import { Constants } from './Constants';
-import { generateUUIDv5 } from '@trici/utils';
 
 export interface ITriciApp {
   installationId: string;
   lastLaunchTime: number;
   lastQuitTime: number;
-  generateInstallationId(): Promise<TriciApp>;
+  setInstallationId(installationId: string): TriciApp;
   setCleanShutdownValues(): TriciApp;
   setLastLaunchTime(): TriciApp;
 }
@@ -52,8 +51,7 @@ export class TriciApp extends TriciAppRecord implements ITriciApp{
     return this.get('lastLaunchTime') < this.get('lastQuitTime');
   }
 
-  public async generateInstallationId(): Promise<TriciApp> {
-    const installationId = await generateUUIDv5('triciAppInstallationId');
+  public setInstallationId(installationId: string): TriciApp {
     console.log("generatedInstallationId: ", installationId);
     return this.set('installationId', installationId);
   }
