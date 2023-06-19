@@ -20,7 +20,7 @@ interface IFocusSessionType {
   startedBy: SESSION_STARTED_BY;
 }
 
-const FocusSessionSchema: IFocusSessionType= {
+const FocusSessionSchema: IFocusSessionType = {
   _id: "uninintialized",
   startTime: 0,
   endTime: 0,

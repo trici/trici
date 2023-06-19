@@ -9,7 +9,6 @@
   "types": "dist/index.d.ts",
   "directories": {
     "src": "src",
-    "lib": "lib",
     "test": "__tests__"
   },
   "repository": {
