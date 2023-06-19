@@ -4,3 +4,4 @@ __tests__/testAppData
 *.log
 *.map
 dist
+logs
