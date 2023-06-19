@@ -32,7 +32,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
       if (process.platform === "win32") {
         throw new Error("Not implemented");
       } else if (process.platform === 'darwin') {
-        const pathToExecutable = config.builtFor === 'dev' ? path.join(this.appRoot, 'bin', 'dev', 'MacFrontmostObserver') : path.join(this.appRoot, 'bin', 'MacFrontmostObserver');
+        const pathToExecutable = config.builtFor === 'dev' || config.builtFor === 'livedev' ? path.join(this.appRoot, 'bin', 'dev', 'MacFrontmostObserver') : path.join(this.appRoot, 'bin', 'MacFrontmostObserver');
         this.logger.debug("AppObserverService starting:", pathToExecutable);
         this.child = child_process.spawn(pathToExecutable);
         this.logger.info(`AppObserverService started:${this.child.pid}`);
