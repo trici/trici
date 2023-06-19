@@ -2,10 +2,13 @@ import jsonpatch from "fast-json-patch";
 import type { Logger } from "@trici/logger";
 import PouchDB from "pouchdb";
 
+export interface ITriciPouchDocument {
+  _id: string;
+}
 export interface ITriciRepository {
   init(dataDirectoryPath: string): void;
   get(id: string): Promise<PouchDB.Core.Document<any> | null>;
-  save(obj: any, idOfDocToDelete: string): Promise<any>;
+  save(obj: ITriciPouchDocument & any , idOfDocToDelete: string): Promise<ITriciPouchDocument & any>;
   remove(idOfDocToDelete: string): Promise<any>;
   query(queryOptions: any): Promise<any>;
 }
@@ -43,7 +46,7 @@ export class TriciRepository implements ITriciRepository {
     }
   }
 
-  public get(_id: string): Promise<any> {
+  public get(_id: string): Promise<PouchDB.Core.Document<any>> {
     return new Promise((fulfill, reject) => {
       let objFromDb;
       this.#db
@@ -65,7 +68,7 @@ export class TriciRepository implements ITriciRepository {
     });
   }
 
-  public save(obj: any, idOfDocToDelete: string | null): Promise<PouchDB.Core.Response> {
+  public save(obj: ITriciPouchDocument & any, idOfDocToDelete: string | null): Promise<ITriciPouchDocument & any> {
     this.#logger.debug(`Saving Obj in pouchDb:${JSON.stringify(obj)}`);
     return new Promise((fulfill, reject) => {
       this.#db
@@ -73,11 +76,11 @@ export class TriciRepository implements ITriciRepository {
         .then((objFromDb: PouchDB.Core.Document<any>) => {
           const revToDelete = objFromDb._rev;
           const changes = jsonpatch.compare(objFromDb, obj);
-          objFromDb = jsonpatch.applyPatch(objFromDb, changes).newDocument; // the _id of the objFromDb changed after applying patched, _rev was also
+          const updObjFromDb = jsonpatch.applyPatch(objFromDb, changes).newDocument; // the _id of the objFromDb changed after applying patched, _rev was also
           // deleted
           this.#logger.debug(`objFromDb after changes: ${JSON.stringify(objFromDb)}`);
           this.#db
-            .put(objFromDb)
+            .put(updObjFromDb)
             .then((resp: PouchDB.Core.Response) => {
               this.#logger.debug(`Saved Obj successfully in Db. Resp: ${JSON.stringify(resp)}`);
               this.#db
@@ -95,7 +98,7 @@ export class TriciRepository implements ITriciRepository {
                     )}`
                   );
                 });
-              fulfill(resp);
+              fulfill(updObjFromDb);
             })
             .catch((err: PouchDB.Core.Error) => {
               this.#logger.error(`Error saving obj in pouchDB. Error: ${JSON.stringify(err)}`);
