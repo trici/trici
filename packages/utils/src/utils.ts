@@ -49,8 +49,10 @@ export function createIpcClient(showLogs: boolean = true, logger?: Logger): ITri
           ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.DISCONNECT, () => {
             // console.log("Client disconnected from node-ipc server");
           });
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.CLI_MESSAGE, (message) => {
-            // const message = JSON.parse(data);
+          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.PING, (message) => {
+            console.log("Client received message from node-ipc server: ", message);
+            // const response = JSON.parse(message);
+            // console.log("Client received message from node-ipc server: ", response);
 
             if (message.type === "pong") {
               resolve(message);
