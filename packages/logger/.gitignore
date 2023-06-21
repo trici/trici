@@ -3,3 +3,4 @@ __tests__/logs
 *.log
 *.map
 dist
+logs
