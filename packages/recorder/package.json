@@ -5,7 +5,8 @@
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",
   "license": "ISC",
-  "main": "lib/recorder.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "directories": {
     "src": "src",
     "bin": "bin",
@@ -17,7 +18,8 @@
   },
   "scripts": {
     "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js ",
-    "build-dev": "npm run esbuild-dev",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
+    "build-dev": "npm run build-types && npm run esbuild-dev",
     "test": "node ./__tests__/recorder.test.js"
   },
   "bugs": {
