@@ -11,7 +11,3 @@ export const Constants = {
   HYPER_ACTIVE_ZONE_BEGIN_TIME_IN_SECONDS: 15, // 20 seconds
 };
 
-export const ErrorMessages = {
-  DEFAULT_SCREEN_TO_RECORD_NOT_SET: "Default screen to record not set",
-  FOCUS_SESSION_ALREADY_IN_PROGRESS: "Focus session already in progress",
-};
