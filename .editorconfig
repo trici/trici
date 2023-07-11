@@ -18,8 +18,14 @@ trim_trailing_whitespace = false
 [*.js]
 max_line_length = 120
 
+# JSX files
+[*.jsx]
+max_line_length = 120
+
 # TypeScript files
 [*.ts]
+max_line_length = 120
+[*.tsx]
 max_line_length = 120
 
 
