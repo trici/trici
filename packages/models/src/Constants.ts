@@ -9,5 +9,8 @@ export const Constants = {
   HYPER_ACTIVE_THRESHOLD: 6, // 6 seconds seconds
   HYPER_ACTIVE_ZONE_TIME_IN_SECONDS: 50, // 60 seconds
   HYPER_ACTIVE_ZONE_BEGIN_TIME_IN_SECONDS: 15, // 20 seconds
+  DEFAULT_GLOBAL_SHOW_HIDE_SHORTCUT: "CommandOrControl+Shift+K",
+  DEFAULT_START_FOCUS_SESSION_SHORTCUT: "CommandOrControl+Shift+S",
+  DEFAUL_STOP_FOCUS_SESSION_SHORTCUT: "CommandOrControl+Shift+E",
 };
 
