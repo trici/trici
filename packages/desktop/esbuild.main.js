@@ -12,7 +12,8 @@ async function buildJs() {
     platform: 'node',
     sourcemap: true,
     target: 'node16',
-    external: ['pouchdb', 'winston', 'macos-notification-state', 'electron', 'shelljs', 'mac-screen-capture-permissions','sharp'],
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+    external: ['pouchdb', 'winston', 'macos-notification-state', 'electron', 'shelljs', 'mac-screen-capture-permissions']
   });
 }
 

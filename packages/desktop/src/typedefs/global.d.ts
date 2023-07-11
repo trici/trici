@@ -7,6 +7,7 @@ declare global {
   var userDataDirectoryCheckResult: userDataDirectoryCheckResult;
   var logger : Logger;
   var userPreferences: UserPreferences;
+  var config: any;
 }
 
 export {};

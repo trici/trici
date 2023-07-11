@@ -1,5 +1,5 @@
 const { performance } = require("perf_hooks");
-const { app } = require("electron");
+const { app, ipcMain } = require("electron");
 const config = require("@trici/config");
 const electronUnhandled = require("electron-unhandled");
 
@@ -10,6 +10,7 @@ electronUnhandled({
   },
 });
 
+global.config = config;
 
 const referencePath = config.mainProcessBuiltModuleReferencePath;
 
@@ -26,6 +27,13 @@ if (!gotTheLock) {
   app.quit();
 }
 
+ipcMain.on("getAppPath", (event, arg) => {
+  event.returnValue = app.getAppPath();
+});
+
+ipcMain.on("getConfig", (event, arg) => {
+  event.returnValue = config;
+});
 
 
 app.once("ready", () => {

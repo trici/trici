@@ -8,6 +8,21 @@
   </title>
 </head>
 <body>
-  This is the settings page.
+  <div id="root"></div>
+  <script>
+    console.log('loading settings app');
+    (function() {
+      console.log("Inside IIFE");
+      const script = document.createElement('script');
+      if (bridgeApi.env === 'development') {
+        script.src = '../dist/dev/settings.app.js'
+      } else if (bridgeApi.env === 'livedev'){
+        script.src = '../dist/live/settings.app.js';
+      } else {
+        script.src = '../dist/settings.app.js';
+      }
+      document.body.appendChild(script);
+    })();
+  </script>
 </body>
 </html>

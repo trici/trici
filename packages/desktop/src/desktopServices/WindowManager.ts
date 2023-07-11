@@ -1,8 +1,9 @@
 import { IConsoleLogger, Logger } from "@trici/logger";
-import { BrowserWindow } from "electron";
+import { app, BrowserWindow } from "electron";
 import { IActionDispatcher } from "./ActionDispatcher";
 import contextMenu from "electron-context-menu";
 import { TriciAction } from "../typedefs/TriciAction";
+
 
 export interface IWindowManager {
   registerActionHandlers(): void
@@ -30,11 +31,22 @@ export class WindowManager implements IWindowManager {
           case "OPEN_SETTINGS_WINDOW":
             this._createAndShowSettingsWindow();
             break;
+          case "RELOAD_OPEN_WINDOWS":
+            this._reloadOpenWindows();
           default:
             break;
         }
       });
       this.actionHandlersRegistered = true;
+    }
+  }
+
+  private _reloadOpenWindows(): void {
+    if (this.settingsWindow) {
+      this.settingsWindow.reload();
+    }
+    if (this.mainWindow) {
+      this.mainWindow.reload();
     }
   }
 
@@ -51,12 +63,15 @@ export class WindowManager implements IWindowManager {
       this.settingsWindow.show();
       return;
     }
+    const appPath = app.getAppPath();
+    const preloadPath = `${appPath}/src/preload/preload.js`;
+    console.log("preloadPath", preloadPath);
     this.settingsWindow = new BrowserWindow({
       width: 800,
       height: 600,
       webPreferences: {
         nodeIntegration: false,
-        preload: `${__dirname}/src/preload.js`,
+        preload: preloadPath,
         contextIsolation: true,
       },
     });

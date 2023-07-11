@@ -1,4 +1,4 @@
-import { app } from "electron";
+import { app, session, globalShortcut } from "electron";
 import LoggingService from "@trici/logger";
 import config from "@trici/config";
 import { Constants } from "@trici/models";
@@ -7,6 +7,9 @@ import type { IAppJsonStorageService } from "./AppJsonStorageService";
 import type { IProcessManager } from "@trici/pm";
 import { checkUserDataDirectory } from "@trici/utils";
 import EventEmitter from "events";
+import path from "path";
+import os from "os";
+import { generateUUIDv5 } from "@trici/utils";
 
 
 export interface IAppService {
@@ -129,6 +132,15 @@ export class AppService implements IAppService {
 
       this.#registerAppLifecycleEventHandlersOnStartup();
 
+      // if (config.builtFor === 'dev' || config.builtFor === 'livedev') {
+      //   const reactDevToolsPath = path.join(
+      //     os.homedir(),
+      //     '/Library/Application Support/Google/Chrome/Default/Extensions/fmkadmapgofadopljbjfkapdkoienihi/4.27.8_0'
+      //   );
+      //   await session.defaultSession.loadExtension(reactDevToolsPath);
+
+      // }
+
       logger.debug("AppService.startApp");
       if (process.platform === "darwin") {
         app.commandLine.appendSwitch("--disable-acclereated-video-decode");
@@ -139,7 +151,8 @@ export class AppService implements IAppService {
         // Load the TriciApp object as a global
         let triciApp = await this.#appJsonStorageService.getTriciAppObject();
         if (triciApp.installationId === Constants.UNINITIALIZED_ID) {
-          triciApp = await triciApp.generateInstallationId();
+          const installationId = await generateUUIDv5('triciInstallationId');
+          triciApp = triciApp.setInstallationId(installationId);
           this.#appJsonStorageService.setTriciAppObject(triciApp);
           console.log("installationIdAfterGenerate: ", triciApp.installationId);
         }
