@@ -5,7 +5,7 @@ import config from "@trici/config";
 import type { Logger } from "@trici/logger";
 import { v5 as uuidv5 } from "uuid";
 import { generateSystemFingerprint } from "./fingerprint";
-import { IPC_SERVER_EVENTS } from "@trici/models";
+import { Constants, IPC_SERVER_EVENTS } from "@trici/models";
 
 import ipc from "node-ipc";
 
@@ -190,7 +190,7 @@ export function generateNewTriciId(uuid: string, type: string) {
  * @returns an uninitialized trici id like u22d860cd-07e1-4d7f-bd9a-ca5ed5c242f_fss_1681757187_muton_-1
  */
 export function generateUninitializedTriciId(installationId: string, type: string) {
-  let triciId = `${installationId}_${type}_${Date.now}_muton_-1`;
+  let triciId = `${installationId}_${type}_${Date.now()}_muton_-1`;
   return triciId;
 }
 
@@ -201,6 +201,10 @@ export function generateUninitializedTriciId(installationId: string, type: strin
  * @returns an updated trici id like 22d860cd-07e1-4d7f-bd9a-ca5ed5c242f_fss_1681757187_muton_1681757187
  */
 export function generateUpdatedTriciId(triciId: string) {
+  if (!isValidTriciId(triciId)) {
+    throw new Error("Invalid trici id");
+  }
+
   let mutatedAt = Date.now();
   let triciIdParts = triciId.split("_");
   triciIdParts[triciIdParts.length - 1] = mutatedAt.toString();
@@ -208,8 +212,19 @@ export function generateUpdatedTriciId(triciId: string) {
   return updatedTriciId;
 }
 
-
 /**
+ * Tests the given id for the Trici ID format
+ * @param id
+ * @returns boolean
+ */
+function isValidTriciId(id: string) {
+  let regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_[a-z]+_\d+_muton_(-1|\d+)$/;
+  return regex.test(id);
+}
+
+
+
+/*
  * Check whether the given trici id is valid for today. A trici id is valid for today if the createdAt date is today
  * @param triciId The trici id to be checked
  * @returns true if the trici id is valid for today, false otherwise

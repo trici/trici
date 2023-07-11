@@ -10,6 +10,7 @@
  * the code would fail when it tried to import shelljs.
  */
 import fs from "fs";
+import * as path from "path";
 import { promisify } from "util";
 import { exec, ExecException } from "child_process";
 
@@ -104,4 +105,45 @@ export async function execShellCommandAsync(command: string, timeoutInSeconds: n
     const execError = error as ExecException & { stderr?: string };
     throw { code: execError.code, command: command, err: execError.stderr || 'Unknown Error' };
   }
+}
+
+
+/**
+ * Get the version of the app based on the VERSION file
+ * @returns {string} - The version of the package
+ */
+export function getVersion(): string {
+  const versionFilePath = path.join(process.cwd(), "VERSION");
+
+  if (fs.existsSync(versionFilePath)) {
+    const version = fs.readFileSync(versionFilePath, "utf-8");
+    return version.trim();
+  } else {
+    return "NaN";
+  }
+}
+
+
+/**
+ * Deletes aa directory and the content inside it
+ * @param dirPath Path to the directory to be deleted
+ * @returns void
+ */
+export function deleteDirectoryWithContents(dirPath: string) {
+  return new Promise((resolve, reject) => {
+    // delete the logs directory
+    try {
+      fs.rm(dirPath, { recursive: true }, (err) => {
+        if (err) {
+          // throw err;
+          reject(err);
+        }
+        console.log("Deleted logs directory");
+        resolve(true);
+      });
+    } catch (err) {
+      console.error(err);
+      reject(err);
+    }
+  });
 }
