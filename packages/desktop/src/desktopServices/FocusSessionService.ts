@@ -3,7 +3,6 @@ import { generateNewTriciId, generateUpdatedTriciId } from "@trici/utils";
 import { screen } from "electron";
 import { ITriciRepository } from "@trici/dal";
 import { AppEventEmitter } from "./AppEventEmitter";
-import { ErrorMessages } from "packages/models/src/Constants";
 export interface IFocusSessionService {
   startFocusSession(startedBy: SESSION_STARTED_BY): Promise<FocusSession>;
   endFocusSession(): Promise<FocusSession>;
@@ -50,7 +49,6 @@ export class FocusSessionService implements IFocusSessionService {
     if (displays.length > 1 && userPreferences.defaultScreenToRecord === Constants.UNINITIALIZED_NUMBER) {
       this.appEventEmitter.emit(TRICI_APP_EVENT.SESSION_STARTED_WITH_DISPLAY_TO_RECORD_NOT_SET);
       throw new DisplayNotSelectedError(
-        ErrorMessages.DEFAULT_SCREEN_TO_RECORD_NOT_SET
       );
     } else {
       try {
