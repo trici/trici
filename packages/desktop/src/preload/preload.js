@@ -13,6 +13,8 @@ console.log('config:', config);
 let registeredQueryResultHandlers = [];
 let registeredMessageHandlers = [];
 
+let initValues = [];
+
 ipcRenderer.on('queryRepoResult', (event, result) => {
   console.log('Inside queryRepoResult:', result);
   const foundHandler = registeredQueryResultHandlers.find(obj => obj.handlerType === result.handler);
@@ -34,8 +36,11 @@ ipcRenderer.on('queryRepoResult', (event, result) => {
   }
 });
 
-ipcRenderer.on('receiveMessageRenderer', (event, response) => {
-  if (response.handler === 'sleep') {
+ipcRenderer.on('messageFromMain', (event, response) => {
+  if (response.initValue) {
+    initValues.push(response);
+    console.log('Added initValue:', response);
+  } else if (response.handler === 'sleep') {
     ipcRenderer.send('sendMessageMain', {
       handler: 'askAfter',
       args: { askAfter: response.data.sleepTime },
@@ -51,7 +56,7 @@ ipcRenderer.on('receiveMessageRenderer', (event, response) => {
     if (!handlersWhichAreRegisteredLaterInTheAppLifecyle.includes(response.handler)) {
       console.log('receiveMessageRenderer.response:', response);
     }
-    const foundHandler = registeredHandlers.find(obj => obj.registeredHandlerTypes.includes(response.handler));
+    const foundHandler = registeredMessageHandlers.find(obj => obj.registeredHandlerTypes.includes(response.handler));
     if (foundHandler) {
       foundHandler.handler(response);
     } else if (!handlersWhichAreRegisteredLaterInTheAppLifecyle.includes(response.handler)) {
@@ -94,20 +99,21 @@ const API = {
     ipcRenderer.send('sendMessageMain', msg);
   },
   registerReceiveHandlers: (componentId, handler, registeredHandlerTypes) => {
-    if (!registeredHandlers.some(obj => obj.componentId === componentId)) {
-      registeredHandlers.push({ componentId, handler, registeredHandlerTypes });
+    if (!registeredMessageHandlers.some(obj => obj.componentId === componentId)) {
+      registeredMessageHandlers.push({ componentId, handler, registeredHandlerTypes });
       console.log('receive registered handler for componentId:', componentId);
     } else {
       console.log('handler already registered for ComponentId:', componentId);
     }
   },
   deregisterReceiveHandlers: componentId => {
-    registeredHandlers = registeredHandlers.filter(obj => obj.componentId !== componentId);
+    registeredMessageHandlers = registeredMessageHandlers.filter(obj => obj.componentId !== componentId); // eslint-disable-line  no-param-reassign
   },
   getAllDisplays: () => {
     const displays = ipcRenderer.sendSync('getAllDisplays', {});
     return displays;
   },
+  getInitValues: () => initValues,
 };
 
 console.log('API:', API);

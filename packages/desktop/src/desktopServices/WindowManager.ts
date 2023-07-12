@@ -1,23 +1,23 @@
-import { IConsoleLogger, Logger } from "@trici/logger";
-import { app, BrowserWindow } from "electron";
-import { IActionDispatcher } from "./ActionDispatcher";
-import contextMenu from "electron-context-menu";
-import { TriciAction } from "../typedefs/TriciAction";
-
+import { IConsoleLogger, Logger } from '@trici/logger';
+import { app, BrowserWindow } from 'electron';
+import { IActionDispatcher } from './ActionDispatcher';
+import contextMenu from 'electron-context-menu';
+import { TriciAction } from '../typedefs/TriciAction';
+import { SettingsKey } from '../app/windows/settings/typedefs/types';
 
 export interface IWindowManager {
-  registerActionHandlers(): void
+  registerActionHandlers(): void;
   // getMainWindow(): BrowserWindow | null;
 }
 
 export class WindowManager implements IWindowManager {
   logger: Logger | IConsoleLogger;
-  settingsWindow: BrowserWindow | null ;
-  mainWindow: BrowserWindow | null ;
+  settingsWindow: BrowserWindow | null;
+  mainWindow: BrowserWindow | null;
   actionHandlersRegistered: boolean = false;
-  actionDispatcher: IActionDispatcher<TriciAction> ;
+  actionDispatcher: IActionDispatcher<TriciAction>;
 
-  constructor(logger: Logger | IConsoleLogger, actionDispatcher: IActionDispatcher<TriciAction> ) {
+  constructor(logger: Logger | IConsoleLogger, actionDispatcher: IActionDispatcher<TriciAction>) {
     this.logger = logger;
     this.settingsWindow = null;
     this.mainWindow = null;
@@ -28,10 +28,10 @@ export class WindowManager implements IWindowManager {
     if (!this.actionHandlersRegistered) {
       this.actionDispatcher.register((action: TriciAction) => {
         switch (action.type) {
-          case "OPEN_SETTINGS_WINDOW":
-            this._createAndShowSettingsWindow();
+          case 'OPEN_SETTINGS_WINDOW':
+            this._createAndShowSettingsWindow(action.args.section);
             break;
-          case "RELOAD_OPEN_WINDOWS":
+          case 'RELOAD_OPEN_WINDOWS':
             this._reloadOpenWindows();
           default:
             break;
@@ -51,21 +51,26 @@ export class WindowManager implements IWindowManager {
   }
 
   private _showMainWindow(): void {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
 
   private _hideMainWindow(): void {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
 
-  private _createAndShowSettingsWindow(): void {
+  private _createAndShowSettingsWindow(settingKey: SettingsKey): void {
     if (this.settingsWindow) {
       this.settingsWindow.show();
+      this.settingsWindow.webContents.send('messageFromMain', {
+        success: true,
+        handler: 'openSettingsWindow',
+        data: { section: settingKey },
+      });
       return;
     }
     const appPath = app.getAppPath();
     const preloadPath = `${appPath}/src/preload/preload.js`;
-    console.log("preloadPath", preloadPath);
+    console.log('preloadPath', preloadPath);
     this.settingsWindow = new BrowserWindow({
       width: 800,
       height: 600,
@@ -80,8 +85,15 @@ export class WindowManager implements IWindowManager {
       window: this.settingsWindow,
       showInspectElement: true,
     });
+
+    this.settingsWindow.webContents.send('messageFromMain', {
+      success: true,
+      handler: 'openSettingsSection',
+      data: { section: settingKey },
+      initValue: true,
+    });
     // this.settingsWindow.webContents.openDevTools();
-    this.settingsWindow.on("closed", () => {
+    this.settingsWindow.on('closed', () => {
       this.settingsWindow = null;
     });
   }

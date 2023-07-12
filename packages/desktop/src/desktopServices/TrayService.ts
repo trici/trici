@@ -6,10 +6,11 @@
  *
  */
 
-import { app, Menu, Tray } from "electron";
-import { TrayState } from "@trici/models";
-import type { Logger } from "@trici/logger";
-import { dispatch } from "./ActionDispatcher";
+import { app, Menu, Tray } from 'electron';
+import { TrayState } from '@trici/models';
+import type { Logger } from '@trici/logger';
+import { dispatch } from './ActionDispatcher';
+import { SettingsKey } from '../app/windows/settings/typedefs/types';
 
 export interface ITrayService {
   createTrayInstance(logger: Logger): void;
@@ -23,33 +24,42 @@ class TrayService implements ITrayService {
     this._trayState = TrayState.DEFAULT;
   }
 
-
   private _getTrayContextMenu(): Menu {
     let template: any[] = [];
     if (this._trayState === TrayState.DEFAULT) {
       template = [
         {
           label: 'Show/Hide Trici',
-          click: () => { console.log('Show/Hide Trici'); },
+          click: () => {
+            console.log('Show/Hide Trici');
+          },
         },
         {
           label: 'Settings',
-          click: () => { console.log('Settings'); dispatch({ type: 'OPEN_SETTINGS_WINDOW' }); },
+          click: () => {
+            dispatch({ type: 'OPEN_SETTINGS_WINDOW', args: { section: SettingsKey.SCREEN_TO_RECORD } });
+          },
         },
         {
           label: 'Quit',
-          click: () => { app.quit()},
-        }
+          click: () => {
+            app.quit();
+          },
+        },
       ];
     } else if (this._trayState === TrayState.SESSION_IN_PROGRESS) {
       template = [
         {
           label: 'Show/Hide Trici',
-          click: () => { console.log('Show/Hide Trici'); },
+          click: () => {
+            console.log('Show/Hide Trici');
+          },
         },
         {
           label: 'Stop Session',
-          click: () => { console.log('Stop Session'); },
+          click: () => {
+            console.log('Stop Session');
+          },
         },
       ];
     }
@@ -63,7 +73,6 @@ class TrayService implements ITrayService {
     // this._tray.setToolTip(config.trayIconToolTip);
     const contextMenu = this._getTrayContextMenu();
     this._tray.setContextMenu(contextMenu);
-
   }
 }
 

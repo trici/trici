@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RendererRepository } from '../../../dataaccess/RendererRepository';
 import { IBridgeAPIInterface } from '../../../../typedefs/preload';
 import { SelectScreenToRecord } from './SelectScreenToRecord';
+import { IMessageFromMain } from '../../../../typedefs/preload';
 
 const bridgeApi: IBridgeAPIInterface = window.bridgeApi;
 
@@ -25,18 +26,62 @@ type SaveUserPreferencesArgs = {
   idOfDocToDelete: string;
 };
 
-export function SettingsContainer() {
+export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: SettingsKey }) {
+  const isSettingsItemActive = (settingsKey: SettingsKey) => {
+    return settingsKey === activeSettingsItem;
+  };
+
   const _getSettingsItems = (): ISettingsItem[] => {
     const settingsItems = [
-      { key: SettingsKey.SHORTCUTS, label: 'Shortcuts', icon: IconSettings, isActive: true },
-      { key: SettingsKey.SCREEN_TO_RECORD, label: 'Screen to Record', icon: IconSettings, isActive: false },
-      { key: SettingsKey.FOCUS_SESSION, label: 'Focus Session', icon: IconSettings, isActive: false },
-      { key: SettingsKey.WEBSITE_BLOCKING, label: 'Website Blocking', icon: IconSettings, isActive: false },
-      { key: SettingsKey.STORAGE, label: 'Storage', icon: IconSettings, isActive: false },
-      { key: SettingsKey.SOUNDS, label: 'Sounds', icon: IconSettings, isActive: false },
-      { key: SettingsKey.UPDATES, label: 'Updates', icon: IconSettings, isActive: false },
-      { key: SettingsKey.LOGGING, label: 'Logging', icon: IconSettings, isActive: false },
-      { key: SettingsKey.ABOUT, label: 'About', icon: IconSettings, isActive: false },
+      {
+        key: SettingsKey.SHORTCUTS,
+        label: 'Shortcuts',
+        icon: IconSettings,
+        isActive: isSettingsItemActive(SettingsKey.SHORTCUTS),
+      },
+      {
+        key: SettingsKey.SCREEN_TO_RECORD,
+        label: 'Screen to Record',
+        icon: IconSettings,
+        isActive: isSettingsItemActive(SettingsKey.SCREEN_TO_RECORD),
+      },
+      {
+        key: SettingsKey.FOCUS_SESSION,
+        label: 'Focus Session',
+        icon: IconSettings,
+        isActive: isSettingsItemActive(SettingsKey.FOCUS_SESSION),
+      },
+      {
+        key: SettingsKey.WEBSITE_BLOCKING,
+        label: 'Website Blocking',
+        icon: IconSettings,
+        isActive: isSettingsItemActive(SettingsKey.WEBSITE_BLOCKING),
+      },
+      {
+        key: SettingsKey.STORAGE,
+        label: 'Storage',
+        icon: IconSettings,
+        isActive: isSettingsItemActive(SettingsKey.STORAGE),
+      },
+      {
+        key: SettingsKey.SOUNDS,
+        label: 'Sounds',
+        icon: IconSettings,
+        isActive: isSettingsItemActive(SettingsKey.SOUNDS),
+      },
+      {
+        key: SettingsKey.UPDATES,
+        label: 'Updates',
+        icon: IconSettings,
+        isActive: isSettingsItemActive(SettingsKey.UPDATES),
+      },
+      {
+        key: SettingsKey.LOGGING,
+        label: 'Logging',
+        icon: IconSettings,
+        isActive: isSettingsItemActive(SettingsKey.LOGGING),
+      },
+      { key: SettingsKey.ABOUT, label: 'About', icon: IconSettings, isActive: isSettingsItemActive(SettingsKey.ABOUT) },
     ];
     return settingsItems;
   };
@@ -44,6 +89,13 @@ export function SettingsContainer() {
   const [state, setState] = useState({
     settingsItems: _getSettingsItems(),
   });
+
+  // useEffect(() => {
+  //   console.log('SettingsContainer useEffect');
+  //   if (activeSettingsItem) {
+  //     _changeActiveSettingItem(activeSettingsItem);
+  //   }
+  // }, []);
 
   const queryClient = useQueryClient();
 
@@ -65,8 +117,8 @@ export function SettingsContainer() {
   });
 
   const _updateUserPreferences = (userPreferences: UserPreferences, idOfDocToDelete: string) => {
-    console.log('updatedUserPreferences', userPreferences.toJS());
-    console.log('idOfDocToDelete', idOfDocToDelete);
+    // console.log('updatedUserPreferences', userPreferences.toJS());
+    // console.log('idOfDocToDelete', idOfDocToDelete);
     mutation.mutate({ userPreferences, idOfDocToDelete });
   };
 
@@ -88,10 +140,6 @@ export function SettingsContainer() {
     });
   };
 
-  useEffect(() => {
-    // console.log('SettingsContainer');
-  }, []);
-
   const activeItem = state.settingsItems.find(item => item.isActive);
 
   if (userPreferencesQuery.isLoading) {
@@ -109,10 +157,7 @@ export function SettingsContainer() {
           <GlobalShortcuts userPreferences={userPreferencesQuery.data} onSave={_updateUserPreferences} />
         )}
         {activeItem && activeItem.key === SettingsKey.SCREEN_TO_RECORD && (
-          <SelectScreenToRecord
-            userPreferences={userPreferencesQuery.data}
-            onSave={_updateUserPreferences}
-          />
+          <SelectScreenToRecord userPreferences={userPreferencesQuery.data} onSave={_updateUserPreferences} />
         )}
         {activeItem && activeItem.key === SettingsKey.FOCUS_SESSION && <div>Focus Session</div>}
         {activeItem && activeItem.key === SettingsKey.WEBSITE_BLOCKING && <div>Website Blocking</div>}
