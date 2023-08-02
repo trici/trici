@@ -1,16 +1,21 @@
-import { app, session, globalShortcut } from "electron";
-import LoggingService from "@trici/logger";
-import config from "@trici/config";
-import { Constants } from "@trici/models";
-import type { ITrayService } from "./TrayService";
-import type { IAppJsonStorageService } from "./AppJsonStorageService";
-import type { IProcessManager } from "@trici/pm";
-import { checkUserDataDirectory } from "@trici/utils";
-import EventEmitter from "events";
-import path from "path";
-import os from "os";
-import { generateUUIDv5 } from "@trici/utils";
-
+import { app, session, globalShortcut } from 'electron';
+import LoggingService from '@trici/logger';
+import config from '@trici/config';
+import { Constants, AlertWindowMessageType } from '@trici/models';
+import type { ITrayService } from './TrayService';
+import type { IAppJsonStorageService } from './AppJsonStorageService';
+import type { IProcessManager } from '@trici/pm';
+import { checkUserDataDirectory, userDataDirectoryCheckResult } from '@trici/utils';
+import EventEmitter from 'events';
+import path from 'path';
+import os from 'os';
+import { generateUUIDv5 } from '@trici/utils';
+import {
+  hasScreenCapturePermission,
+  hasPromptedForPermission,
+  openSystemPreferences,
+} from 'mac-screen-capture-permissions';
+import { dispatch } from './ActionDispatcher';
 
 export interface IAppService {
   start(): void;
@@ -23,11 +28,7 @@ export class AppService implements IAppService {
   #processManager: IProcessManager;
   #eventEmitter: EventEmitter;
 
-  constructor(
-    pm: IProcessManager,
-    trayService: ITrayService,
-    appJsonStorageService: IAppJsonStorageService
-  ) {
+  constructor(pm: IProcessManager, trayService: ITrayService, appJsonStorageService: IAppJsonStorageService) {
     this.#processManager = pm;
     this.#trayService = trayService;
     this.#appJsonStorageService = appJsonStorageService;
@@ -43,21 +44,21 @@ export class AppService implements IAppService {
     // Also see https://www.electronjs.org/docs/api/app#event-window-all-closed
     // Hence we are using the will-quit
     // Quit when all windows are closed.
-    app.on("window-all-closed", () => {
+    app.on('window-all-closed', () => {
       // On OS X it is common for applications and their menu bar
       // to stay active until the user quits explicitly with Cmd + Q
       // in case it is still recording. see https://trello.com/c/wQyv5cdv
-      logger.debug("app.on.window-all-closed");
+      logger.debug('app.on.window-all-closed');
     });
 
-    app.on("activate", (event, hasVisibleWindows) => {
+    app.on('activate', (event, hasVisibleWindows) => {
       // if (mainWindow && !mainWindow.isFocused()) {
       //   showMainWindow();
       // }
     });
     // app.on('before-quit', () => (willQuitApp = true));
 
-    app.on("browser-window-blur", (evt, browserWindow) => {
+    app.on('browser-window-blur', (evt, browserWindow) => {
       // if (browserWindow.getTitle().toLowerCase() === 'trici') {
       //   if (
       //     process.platform === 'darwin'
@@ -71,16 +72,16 @@ export class AppService implements IAppService {
       // }
     });
 
-    app.on("did-become-active", (event) => {
+    app.on('did-become-active', event => {
       // if (mainWindow && !mainWindow.isFocused()) {
       //   showMainWindow();
       // }
     });
 
-    app.on("before-quit", async (evt) => {
+    app.on('before-quit', async evt => {
       if (!this.#cleanupInitiated) {
         evt.preventDefault();
-        console.log("app.on.before-quit");
+        console.log('app.on.before-quit');
         try {
           this.#processManager.killPrimaryProcess();
           // kill any running child processes
@@ -91,20 +92,20 @@ export class AppService implements IAppService {
           this.#cleanupInitiated = true;
           app.quit();
         } catch (e) {
-          console.log("Error while setting the shut down values", e);
+          console.log('Error while setting the shut down values', e);
         }
       }
     });
 
-    app.on("will-quit", (evt) => {
-      console.log("app.on.will-quit");
+    app.on('will-quit', evt => {
+      console.log('app.on.will-quit');
       // TriciShell.stopRecordingKaalSession();
       // TriciShell.stopProxyServer();
       // globalShortcut.unregisterAll();
     });
 
-    app.on("quit", (evt, exitCode) => {
-      console.log("app.on.quit");
+    app.on('quit', (evt, exitCode) => {
+      console.log('app.on.quit');
     });
 
     // screen.on('display-added', (evt, newDisplay) => {
@@ -118,16 +119,19 @@ export class AppService implements IAppService {
     //   }
     // });
 
-    process.on("SIGINT", () => {
-      logger.debug("Received SIGINT");
+    process.on('SIGINT', () => {
+      logger.debug('Received SIGINT');
       app.quit();
     });
   };
 
-  async start(): Promise<void>{
+  async start(): Promise<void> {
     try {
       // Check user data directory for required subdirectories. Ex of userDataDirectory: /Users/username/Library/Application Support/Trici
-      let userDataDirectoryCheckResult = await checkUserDataDirectory(app.getPath("userData"), "default");
+      let userDataDirectoryCheckResult: userDataDirectoryCheckResult = await checkUserDataDirectory(
+        app.getPath('userData'),
+        'default',
+      );
       global.userDataDirectoryCheckResult = userDataDirectoryCheckResult;
 
       this.#registerAppLifecycleEventHandlersOnStartup();
@@ -141,12 +145,12 @@ export class AppService implements IAppService {
 
       // }
 
-      logger.debug("AppService.startApp");
-      if (process.platform === "darwin") {
-        app.commandLine.appendSwitch("--disable-acclereated-video-decode");
+      logger.debug('AppService.startApp');
+      if (process.platform === 'darwin') {
+        app.commandLine.appendSwitch('--disable-acclereated-video-decode');
       }
 
-      logger.info("Load the TriciApp object as a global");
+      logger.info('Load the TriciApp object as a global');
       try {
         // Load the TriciApp object as a global
         let triciApp = await this.#appJsonStorageService.getTriciAppObject();
@@ -154,7 +158,7 @@ export class AppService implements IAppService {
           const installationId = await generateUUIDv5('triciInstallationId');
           triciApp = triciApp.setInstallationId(installationId);
           this.#appJsonStorageService.setTriciAppObject(triciApp);
-          console.log("installationIdAfterGenerate: ", triciApp.installationId);
+          console.log('installationIdAfterGenerate: ', triciApp.installationId);
         }
         triciApp = triciApp.setLastLaunchTime();
         global.triciApp = triciApp;
@@ -165,21 +169,36 @@ export class AppService implements IAppService {
           appDetails: global.appDetails,
         });
       } catch (e) {
-        logger.error("Error while loading the TriciApp object", e);
+        logger.error('Error while loading the TriciApp object', e);
       }
 
-      logger.debug("Registering primary process: " + process.pid);
-
       this.#processManager.registerPrimaryProcess(process.pid);
+      // Ask for the user's permission to record the screen on Mac
+      if (process.platform === 'darwin') {
+        // openSystemPreferences();
+        const promptForPermissionWillShow = !hasPromptedForPermission();
+        const screenCapturePermissionAtStartup = hasScreenCapturePermission();
+        console.log('screenCapturePermissionAtStartup: ', screenCapturePermissionAtStartup);
+        console.log('promptForPermissionWillShow: ', promptForPermissionWillShow);
+        if (screenCapturePermissionAtStartup) {
+          logger.info('Screen capture permission already granted');
 
-      // Initialize the tray
-      this.#trayService.createTrayInstance(logger);
+          // Initialize the tray
+          this.#trayService.createTrayInstance(logger);
+        } else if (promptForPermissionWillShow) {
+          console.log('User should be seeing prompt for permission');
+        } else {
+          console.log('User should not be seeing prompt for permission');
+          dispatch({
+            type: 'SHOW_ALERT_WINDOW',
+            args: { alertType: AlertWindowMessageType.SCREEN_RECORDING_PERMISSION_REVOKED, quitAppOnClose: true },
+          });
+        }
+      }
     } catch (e) {
-      console.log("Error while starting the app", e);
-      logger.error("Error while starting the app", e);
+      console.log('Error while starting the app', e);
+      logger.error('Error while starting the app', e);
       app.quit();
     }
   }
-
-
-};
+}

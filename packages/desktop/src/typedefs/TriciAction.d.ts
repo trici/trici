@@ -1,4 +1,4 @@
-import { SettingsKey } from '../app/windows/settings/typedefs/types';
+import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
 
 export type TriciAction =
   | {
@@ -10,4 +10,11 @@ export type TriciAction =
     }
   | {
       type: 'RELOAD_OPEN_WINDOWS';
+    }
+  | {
+      type: 'SHOW_ALERT_WINDOW';
+      args: { alertType: AlertType; quitAppOnClose: boolean };
+    }
+  | {
+      type: 'OPEN_SYSTEM_PREFERENCES_CLOSE_ALERT';
     };

@@ -3,7 +3,8 @@ import { app, BrowserWindow } from 'electron';
 import { IActionDispatcher } from './ActionDispatcher';
 import contextMenu from 'electron-context-menu';
 import { TriciAction } from '../typedefs/TriciAction';
-import { SettingsKey } from '../app/windows/settings/typedefs/types';
+import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
+import { openSystemPreferences } from 'mac-screen-capture-permissions';
 
 export interface IWindowManager {
   registerActionHandlers(): void;
@@ -13,15 +14,19 @@ export interface IWindowManager {
 export class WindowManager implements IWindowManager {
   logger: Logger | IConsoleLogger;
   settingsWindow: BrowserWindow | null;
+  alertWindow: BrowserWindow | null;
   mainWindow: BrowserWindow | null;
   actionHandlersRegistered: boolean = false;
   actionDispatcher: IActionDispatcher<TriciAction>;
+  preloadScriptPath: string;
 
   constructor(logger: Logger | IConsoleLogger, actionDispatcher: IActionDispatcher<TriciAction>) {
     this.logger = logger;
     this.settingsWindow = null;
     this.mainWindow = null;
+    this.alertWindow = null;
     this.actionDispatcher = actionDispatcher;
+    this.preloadScriptPath = `${app.getAppPath()}/src/preload/preload.js`;
   }
 
   registerActionHandlers(): void {
@@ -33,11 +38,25 @@ export class WindowManager implements IWindowManager {
             break;
           case 'RELOAD_OPEN_WINDOWS':
             this._reloadOpenWindows();
+            break;
+          case 'SHOW_ALERT_WINDOW':
+            this._createAndShowAlertWindow(action.args.alertType, action.args.quitAppOnClose);
+            break;
+          case 'OPEN_SYSTEM_PREFERENCES_CLOSE_ALERT':
+            this._openSystemPreferences();
+            this._closeAlertWindow();
+            break;
           default:
             break;
         }
       });
       this.actionHandlersRegistered = true;
+    }
+  }
+
+  private _openSystemPreferences(): void {
+    if (process.platform === 'darwin') {
+      openSystemPreferences();
     }
   }
 
@@ -47,6 +66,9 @@ export class WindowManager implements IWindowManager {
     }
     if (this.mainWindow) {
       this.mainWindow.reload();
+    }
+    if (this.alertWindow) {
+      this.alertWindow.reload();
     }
   }
 
@@ -58,25 +80,76 @@ export class WindowManager implements IWindowManager {
     throw new Error('Method not implemented.');
   }
 
+  private _createAndShowAlertWindow(alertType: string, quitAppOnClose: boolean): void {
+    console.log('Show Alert Window: ', alertType);
+    // throw new Error('Method not implemented.');
+    if (this.alertWindow) {
+      this.alertWindow.show();
+      this.alertWindow.webContents.send('messageFromMain', {
+        success: true,
+        handler: 'showAlertType',
+        data: { alertType },
+        initValue: true,
+      });
+      return;
+    }
+    const preloadScriptPath = this.preloadScriptPath;
+    this.alertWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      // frame: false,
+      titleBarStyle: 'hidden',
+      alwaysOnTop: true,
+      webPreferences: {
+        nodeIntegration: false,
+        preload: preloadScriptPath,
+        contextIsolation: true,
+      },
+    });
+    if (quitAppOnClose) {
+      this.alertWindow.on('close', () => {
+        console.log('Closing the app as quitAppOnClose is true');
+        app.quit();
+      });
+    }
+    contextMenu({
+      window: this.alertWindow,
+      showInspectElement: true,
+    });
+    this.alertWindow.loadFile(`src/alert.html`);
+    this.alertWindow.webContents.send('messageFromMain', {
+      success: true,
+      handler: 'showAlertType',
+      data: { alertType },
+      initValue: true,
+    });
+  }
+
+  private _closeAlertWindow(): void {
+    if (this.alertWindow) {
+      this.alertWindow.close();
+      this.alertWindow = null;
+    }
+  }
+
   private _createAndShowSettingsWindow(settingKey: SettingsKey): void {
     if (this.settingsWindow) {
       this.settingsWindow.show();
       this.settingsWindow.webContents.send('messageFromMain', {
         success: true,
-        handler: 'openSettingsWindow',
+        handler: 'openSettingsSection',
         data: { section: settingKey },
+        initValue: true,
       });
       return;
     }
-    const appPath = app.getAppPath();
-    const preloadPath = `${appPath}/src/preload/preload.js`;
-    console.log('preloadPath', preloadPath);
+    const preloadScriptPath = this.preloadScriptPath;
     this.settingsWindow = new BrowserWindow({
       width: 800,
       height: 600,
       webPreferences: {
         nodeIntegration: false,
-        preload: preloadPath,
+        preload: preloadScriptPath,
         contextIsolation: true,
       },
     });

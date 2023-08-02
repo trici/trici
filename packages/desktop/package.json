@@ -68,6 +68,7 @@
     "electron-json-storage": "^4.6.0",
     "electron-unhandled": "^4.0.1",
     "loglevel": "^1.8.1",
+    "mac-screen-capture-permissions": "^2.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recoil": "^0.7.7"

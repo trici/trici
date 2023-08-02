@@ -8,11 +8,14 @@ import { Logger, IConsoleLogger } from '@trici/logger';
 import { MainProcessQueryResult } from '../typedefs/MainProcessQueryResult';
 import { IAppJsonStorageService } from './AppJsonStorageService';
 import { screen } from 'electron';
+import { dispatch } from './ActionDispatcher';
+import { IMessageFromMain, IMessageFromRenderer } from '../typedefs/preload';
 
 export interface IMainProcessIpcMessageHandlerService {
   initialize(): void;
 }
 
+const successResponseForVoidFunctions: IMessageFromMain = { success: true, handler: '', data: {}, initValue: false };
 export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessageHandlerService {
   private logger: Logger | IConsoleLogger;
   private dataAccessService: IMainProcessDataAccessService;
@@ -64,6 +67,9 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
     });
   }
 
+  /**
+   * This for all synchronous ipcMain.on calls.
+   */
   private _registerIpcMethodHandlers(): void {
     ipcMain.on('getAllDisplays', async (event, params) => {
       const displays = screen.getAllDisplays();
@@ -71,10 +77,49 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
     });
   }
 
+  private async _handleMessage(msg: IMessageFromRenderer): Promise<IMessageFromMain> {
+    let response: IMessageFromMain = {
+      success: false,
+      handler: '',
+      data: null,
+      initValue: false,
+    };
+    switch (msg.handler) {
+      case 'openSystemPreferencesAndCloseAlert': {
+        dispatch({ type: 'OPEN_SYSTEM_PREFERENCES_CLOSE_ALERT' });
+        response = successResponseForVoidFunctions;
+        break;
+      }
+    }
+
+    return response;
+  }
+  /**
+   * Handle messages from the renderer process.
+   */
+  private _registerMessageHandlers(): void {
+    ipcMain.on('messageFromRenderer', async (event, msg) => {
+      try {
+        const response = await this._handleMessage(msg);
+        if (response.success && response.handler !== '') {
+          event.sender.send('messageFromMain', response);
+        } else if (!response.success) {
+          logger.error('response.success is false:', response);
+        }
+      } catch (err: any) {
+        const errorString = `errorMessage: ${err.toString()},
+          params: ${JSON.stringify(msg)}
+          StackTrace: ${err.stack}`;
+        logger.error(errorString);
+      }
+    });
+  }
+
   public initialize(): void {
     if (!this.initialized) {
       this._registerQueryHandlers();
       this._registerIpcMethodHandlers();
+      this._registerMessageHandlers();
       this.initialized = true;
     }
   }

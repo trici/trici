@@ -30,7 +30,7 @@ export const LogUtils = {
           rawMethod(message);
         }
         const rendererLogMessage = { method: methodName, level: logLevel, message };
-        window.bridgeApi.send({ handler: 'rendererLog', args: rendererLogMessage });
+        window.bridgeApi.sendMessage({ handler: 'rendererLog', args: rendererLogMessage });
       };
     };
     log.setLevel('warn');

@@ -6,13 +6,26 @@ const ROOT_DIR = __dirname;
 
 async function buildJs() {
   await esbuild.build({
-    entryPoints: [path.join(ROOT_DIR, 'src','app','windows','settings','settingsBundleEntry.js')],
+    entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'settings', 'settingsBundleEntry.js')],
     bundle: true,
     outfile: path.join(ROOT_DIR, 'dist', 'dev', 'settings.app.js'),
     sourcemap: true,
     tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
     target: ['chrome94'],
   });
+
+  console.log('Settings Window Build finished!!');
+
+  await esbuild.build({
+    entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'alert', 'alertBundleEntry.js')],
+    bundle: true,
+    outfile: path.join(ROOT_DIR, 'dist', 'dev', 'alert.app.js'),
+    sourcemap: true,
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+    target: ['chrome94'],
+  });
+
+  console.log('Alert Window build finished!!');
 }
 
 async function build(args) {
@@ -23,7 +36,7 @@ async function build(args) {
       .then(() => {
         console.log('✅ Build JS complete');
       })
-      .catch((err) => {
+      .catch(err => {
         console.error('❌ Build JS failed', err);
       }),
   ]);

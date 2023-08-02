@@ -18,15 +18,19 @@ export interface IMessageFromMain {
   initValue: boolean;
 }
 
+export interface IMessageFromRenderer {
+  handler: string;
+  args: any;
+}
+
 export interface IBridgeAPIInterface {
   triciConfig: typeof config; // replace with the actual type of `config`
   env: typeof NODE_ENV;
   platform: typeof PLATFORM;
-  send: (msg: any) => void; // replace `any` with the actual type of `msg`, if known
   appPath: string; // replace with the actual type of `appPath`
   query: (query: any) => void; // replace `any` with the actual type of `query`, if known
   registerQueryResultHandler: (handler: Function, handlerType: string) => void;
-  sendMessage: (msg: any) => void; // replace `any` with the actual type of `msg`, if known
+  sendMessage: (msg: IMessageFromRenderer) => void; // replace `any` with the actual type of `msg`, if known
   registerReceiveHandlers: (
     componentId: string,
     handler: (message: IMessageFromMain) => void,

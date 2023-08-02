@@ -78,9 +78,6 @@ const API = {
   triciConfig: config,
   env: NODE_ENV,
   platform: PLATFORM,
-  send: msg => {
-    ipcRenderer.send('sendMessageMain', msg);
-  },
   appPath,
   query: query => {
     ipcRenderer.send('queryRepo', query);
@@ -96,7 +93,7 @@ const API = {
     }
   },
   sendMessage: msg => {
-    ipcRenderer.send('sendMessageMain', msg);
+    ipcRenderer.send('messageFromRenderer', msg);
   },
   registerReceiveHandlers: (componentId, handler, registeredHandlerTypes) => {
     if (!registeredMessageHandlers.some(obj => obj.componentId === componentId)) {

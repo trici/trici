@@ -4,7 +4,6 @@ const path = require('path');
 
 const ROOT_DIR = __dirname;
 
-
 let playSoundOnBuildErrorPlugin = {
   name: 'play-sound-on-build-error',
   setup(build) {
@@ -20,8 +19,8 @@ let playSoundOnBuildErrorPlugin = {
 };
 
 async function buildJs() {
-  let ctx = await esbuild.context({
-    entryPoints: [path.join(ROOT_DIR, 'src','app','windows','settings','settingsBundleEntry.js')],
+  let settingsWindowContext = await esbuild.context({
+    entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'settings', 'settingsBundleEntry.js')],
     bundle: true,
     outfile: path.join(ROOT_DIR, 'dist', 'live', 'settings.app.js'),
     sourcemap: true,
@@ -30,15 +29,35 @@ async function buildJs() {
     plugins: [playSoundOnBuildErrorPlugin],
   });
 
-  await ctx.watch();
+  await settingsWindowContext.watch();
 
-  let { host, port } = await ctx.serve({
+  let { host, port } = await settingsWindowContext.serve({
     servedir: path.join(ROOT_DIR, 'dist', 'live'),
     port: 8080,
     host: 'localhost',
   });
 
-  console.log(`Serving on http://${host}:${port}`);
+  console.log(`Serving Settings bundle on http://${host}:${port}`);
+
+  let alertWindowContext = await esbuild.context({
+    entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'alert', 'alertBundleEntry.js')],
+    bundle: true,
+    outfile: path.join(ROOT_DIR, 'dist', 'live', 'alert.app.js'),
+    sourcemap: true,
+    target: ['chrome94'],
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+    plugins: [playSoundOnBuildErrorPlugin],
+  });
+
+  await alertWindowContext.watch();
+
+  let { host: alertHost, port: alertPort } = await alertWindowContext.serve({
+    servedir: path.join(ROOT_DIR, 'dist', 'live'),
+    port: 8081,
+    host: 'localhost',
+  });
+
+  console.log(`Serving Alert bundle on http://${alertHost}:${alertPort}`);
 }
 
 async function build(args) {
@@ -49,7 +68,7 @@ async function build(args) {
       .then(() => {
         console.log('✅ Build JS complete');
       })
-      .catch((err) => {
+      .catch(err => {
         console.error('❌ Build JS failed', err);
       }),
   ]);

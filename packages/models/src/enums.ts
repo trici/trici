@@ -1,4 +1,3 @@
-
 export enum TrayState {
   DEFAULT = 'DEFAULT',
   SESSION_IN_PROGRESS = 'SESSION_IN_PROGRESS',
@@ -55,3 +54,6 @@ export enum PLATFORM {
   linux = 'linux',
 }
 
+export enum AlertWindowMessageType {
+  SCREEN_RECORDING_PERMISSION_REVOKED = 'SCREEN_RECORDING_PERMISSION_REVOKED',
+}
