@@ -10,7 +10,7 @@ import { app, Menu, Tray } from 'electron';
 import { TrayState } from '@trici/models';
 import type { Logger } from '@trici/logger';
 import { dispatch } from './ActionDispatcher';
-import { SettingsKey } from '../app/windows/settings/typedefs/types';
+import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
 
 export interface ITrayService {
   createTrayInstance(logger: Logger): void;

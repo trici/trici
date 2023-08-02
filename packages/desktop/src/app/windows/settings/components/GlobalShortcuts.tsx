@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ISettingsItemComponentProps } from '../typedefs/types';
+import { ISettingsItemComponentProps } from '../typedefs/SettingsWindowTypes';
 import { Constants, IUserPreferences } from '@trici/models';
 import { ConfigureGlobalShortcut } from './ConfigureGlobalShortcut';
 import { generateUpdatedTriciId } from '../../../common/Utils';

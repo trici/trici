@@ -4,7 +4,7 @@ import { MantineProvider, Grid } from '@mantine/core';
 import { SettingsContainer } from './SettingsContainer';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { IMessageFromMain } from '../../../../typedefs/preload';
-import { SettingsKey } from '../typedefs/types';
+import { SettingsKey } from '../typedefs/SettingsWindowTypes';
 import log from 'loglevel';
 
 const queryClient = new QueryClient();

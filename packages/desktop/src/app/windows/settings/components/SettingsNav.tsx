@@ -17,11 +17,11 @@ import {
   IconReceiptRefund,
   IconLogout,
   IconSwitchHorizontal,
-  IconKeyboard
+  IconKeyboard,
 } from '@tabler/icons-react';
-import { ISettingsNavProps } from '../typedefs/types';
+import { ISettingsNavProps } from '../typedefs/SettingsWindowTypes';
 
-const useStyles = createStyles((theme) => ({
+const useStyles = createStyles(theme => ({
   navbar: {
     backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
   },
@@ -69,9 +69,7 @@ const useStyles = createStyles((theme) => ({
   },
 
   footer: {
-    borderTop: `${rem(1)} solid ${
-      theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
-    }`,
+    borderTop: `${rem(1)} solid ${theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]}`,
     paddingTop: theme.spacing.md,
   },
 }));
@@ -104,18 +102,18 @@ const useStyles = createStyles((theme) => ({
 //   { link: '', label: 'About', icon: IconFileAnalytics },
 // ];
 
-export function SettingsNav({items, onChangeNavItem }: ISettingsNavProps) {
+export function SettingsNav({ items, onChangeNavItem }: ISettingsNavProps) {
   const { classes, cx } = useStyles();
   // const [section, setSection] = React.useState<'account' | 'general'>('account');
   // const [active, setActive] = React.useState('Billing');
 
-  const links = items.map((item) => (
+  const links = items.map(item => (
     <a
-      className={cx(classes.link, { [classes.linkActive]: item.isActive})}
+      className={cx(classes.link, { [classes.linkActive]: item.isActive })}
       key={item.key}
-      onClick={(event) => {
+      onClick={event => {
         event.preventDefault();
-        onChangeNavItem(item.key)
+        onChangeNavItem(item.key);
       }}
     >
       <item.icon className={classes.linkIcon} stroke={1.5} />

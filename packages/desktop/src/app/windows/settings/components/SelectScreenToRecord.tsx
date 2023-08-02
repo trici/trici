@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ISettingsItemComponentProps } from '../typedefs/types';
+import { ISettingsItemComponentProps } from '../typedefs/SettingsWindowTypes';
 import { generateUpdatedTriciId } from '../../../common/Utils';
 
 type DisplayUnit = {

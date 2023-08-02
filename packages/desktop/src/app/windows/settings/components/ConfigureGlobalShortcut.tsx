@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IConfigureGlobalShortcutProps, IConfigureGlobalShortcutState } from '../typedefs/types';
+import { IConfigureGlobalShortcutProps, IConfigureGlobalShortcutState } from '../typedefs/SettingsWindowTypes';
 import { Constants } from '@trici/models';
 import { Button, TextInput, createStyles } from '@mantine/core';
 import { IconDeviceFloppy } from '@tabler/icons-react';
@@ -57,9 +57,9 @@ export function ConfigureGlobalShortcut({
     // onShortcutChange(state.shortcut);
   };
 
-  const _saveShortcut = ()  => {
+  const _saveShortcut = () => {
     onShortcutChange(state.shortcut);
-  }
+  };
 
   const { classes } = useStyles();
 
@@ -77,7 +77,12 @@ export function ConfigureGlobalShortcut({
         />
       </div>
       <div className={classes.item}>
-        <Button onClick={_saveShortcut} variant="default" leftIcon={<IconDeviceFloppy size='1rem' />} disabled={!state.isShortcutValid}>
+        <Button
+          onClick={_saveShortcut}
+          variant="default"
+          leftIcon={<IconDeviceFloppy size="1rem" />}
+          disabled={!state.isShortcutValid}
+        >
           Save
         </Button>
       </div>

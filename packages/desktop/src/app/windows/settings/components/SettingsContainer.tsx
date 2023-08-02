@@ -3,7 +3,7 @@ import { SettingsNav } from './SettingsNav';
 import { AppShell } from '@mantine/core';
 import { UserPreferences } from '@trici/models';
 import { IconSettings } from '@tabler/icons-react';
-import { SettingsKey, ISettingsItem } from '../typedefs/types';
+import { SettingsKey, ISettingsItem } from '../typedefs/SettingsWindowTypes';
 import { GlobalShortcuts } from './GlobalShortcuts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RendererRepository } from '../../../dataaccess/RendererRepository';
