@@ -1,13 +1,12 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import config from '@trici/config';
+import type { Logger } from '@trici/logger';
+import { v5 as uuidv5 } from 'uuid';
+import { generateSystemFingerprint } from './fingerprint';
+import { Constants, IPC_SERVER_EVENTS } from '@trici/models';
 
-import * as fs from "fs";
-import * as path from "path";
-import config from "@trici/config";
-import type { Logger } from "@trici/logger";
-import { v5 as uuidv5 } from "uuid";
-import { generateSystemFingerprint } from "./fingerprint";
-import { Constants, IPC_SERVER_EVENTS } from "@trici/models";
-
-import ipc from "node-ipc";
+import ipc from 'node-ipc';
 
 function _getIpcConfig(showLogs: boolean = true, logger?: Logger): any {
   let ipcLogger = logger ? logger.info.bind(logger) : console.log.bind(console);
@@ -26,7 +25,7 @@ function _getIpcConfig(showLogs: boolean = true, logger?: Logger): any {
 
 export interface ITriciIpcClient {
   connectAndPing: () => Promise<{ type: string; data: any }>;
-  connectAndSendMessage: (msg: any) => Promise<{ success: boolean; message: string, data: any}>;
+  connectAndSendMessage: (msg: any) => Promise<{ success: boolean; message: string; data: any }>;
   disconnect: () => void;
 }
 
@@ -44,24 +43,24 @@ export function createIpcClient(showLogs: boolean = true, logger?: Logger): ITri
         const ipcConfigId = config.ipcConfigId;
         ipc.connectTo(ipcConfigId, () => {
           ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.CONNECT, () => {
-            ipc.of[ipcConfigId].emit(IPC_SERVER_EVENTS.PING, { msg: "ping" });
+            ipc.of[ipcConfigId].emit(IPC_SERVER_EVENTS.PING, { msg: 'ping' });
           });
           ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.DISCONNECT, () => {
             // console.log("Client disconnected from node-ipc server");
           });
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.PING, (message) => {
-            console.log("Client received message from node-ipc server: ", message);
+          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.PING, message => {
+            console.log('Client received message from node-ipc server: ', message);
             // const response = JSON.parse(message);
             // console.log("Client received message from node-ipc server: ", response);
 
-            if (message.type === "pong") {
+            if (message.type === 'pong') {
               resolve(message);
             }
           });
         });
       });
     },
-    connectAndSendMessage: (msg: any): Promise<{ success: boolean; message: string, data: any}> => {
+    connectAndSendMessage: (msg: any): Promise<{ success: boolean; message: string; data: any }> => {
       return new Promise((resolve, reject) => {
         const ipcConfigId = config.ipcConfigId;
         let connectionTimeout: NodeJS.Timeout;
@@ -71,7 +70,7 @@ export function createIpcClient(showLogs: boolean = true, logger?: Logger): ITri
           if (ipc.of[ipcConfigId]) {
             ipc.disconnect(ipcConfigId);
           }
-          reject(new Error("Connection timed out."));
+          reject(new Error('Connection timed out.'));
         }, 1500); // Adjust the timeout duration (in milliseconds) as needed
 
         ipc.connectTo(ipcConfigId, () => {
@@ -84,14 +83,14 @@ export function createIpcClient(showLogs: boolean = true, logger?: Logger): ITri
             console.log('Client disconnected from node-ipc server');
           });
 
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.ERROR, (err) => {
+          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.ERROR, err => {
             clearTimeout(connectionTimeout);
             const connectError = new Error(`${err.message}`);
-            connectError.name = "ConnectError";
+            connectError.name = 'ConnectError';
             reject(connectError);
           });
 
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.CLI_MESSAGE, (response) => {
+          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.CLI_MESSAGE, response => {
             // console.log("got resp: " + JSON.stringify(response));
             resolve(response);
           });
@@ -109,44 +108,44 @@ export function createIpcClient(showLogs: boolean = true, logger?: Logger): ITri
   return client;
 }
 
-/**
- * Deletes aa directory and the content inside it
- * @param dirPath Path to the directory to be deleted
- * @returns void
- */
-export function deleteDirectoryWithContents(dirPath: string) {
-  return new Promise((resolve, reject) => {
-    // delete the logs directory
-    try {
-      fs.rm(dirPath, { recursive: true }, (err) => {
-        if (err) {
-          // throw err;
-          reject(err);
-        }
-        console.log("Deleted logs directory");
-        resolve(true);
-      });
-    } catch (err) {
-      console.error(err);
-      reject(err);
-    }
-  });
-}
+// /**
+//  * Deletes aa directory and the content inside it
+//  * @param dirPath Path to the directory to be deleted
+//  * @returns void
+//  */
+// export function deleteDirectoryWithContents(dirPath: string) {
+//   return new Promise((resolve, reject) => {
+//     // delete the logs directory
+//     try {
+//       fs.rm(dirPath, { recursive: true }, (err) => {
+//         if (err) {
+//           // throw err;
+//           reject(err);
+//         }
+//         console.log("Deleted logs directory");
+//         resolve(true);
+//       });
+//     } catch (err) {
+//       console.error(err);
+//       reject(err);
+//     }
+//   });
+// }
 
-/**
- * Get the version of the app based on the VERSION file
- * @returns {string} - The version of the package
- */
-export function getVersion(): string {
-  const versionFilePath = path.join(process.cwd(), "VERSION");
+// /**
+//  * Get the version of the app based on the VERSION file
+//  * @returns {string} - The version of the package
+//  */
+// export function getVersion(): string {
+//   const versionFilePath = path.join(process.cwd(), 'VERSION');
 
-  if (fs.existsSync(versionFilePath)) {
-    const version = fs.readFileSync(versionFilePath, "utf-8");
-    return version.trim();
-  } else {
-    return "NaN";
-  }
-}
+//   if (fs.existsSync(versionFilePath)) {
+//     const version = fs.readFileSync(versionFilePath, 'utf-8');
+//     return version.trim();
+//   } else {
+//     return 'NaN';
+//   }
+// }
 
 /**
  * Generate a UUIDv5
@@ -158,7 +157,7 @@ export async function generateUUIDv5(name: string) {
   try {
     let fingerprint = await generateSystemFingerprint();
     if (fingerprint === null) {
-      throw new Error("Could not generate system fingerprint");
+      throw new Error('Could not generate system fingerprint');
     }
     const uuidNamespace = uuidv5(fingerprint, uuidv5.DNS);
     const uuid = uuidv5(name, uuidNamespace);
@@ -202,13 +201,13 @@ export function generateUninitializedTriciId(installationId: string, type: strin
  */
 export function generateUpdatedTriciId(triciId: string) {
   if (!isValidTriciId(triciId)) {
-    throw new Error("Invalid trici id");
+    throw new Error('Invalid trici id');
   }
 
   let mutatedAt = Date.now();
-  let triciIdParts = triciId.split("_");
+  let triciIdParts = triciId.split('_');
   triciIdParts[triciIdParts.length - 1] = mutatedAt.toString();
-  let updatedTriciId = triciIdParts.join("_");
+  let updatedTriciId = triciIdParts.join('_');
   return updatedTriciId;
 }
 
@@ -222,29 +221,29 @@ function isValidTriciId(id: string) {
   return regex.test(id);
 }
 
-
-
 /*
  * Check whether the given trici id is valid for today. A trici id is valid for today if the createdAt date is today
  * @param triciId The trici id to be checked
  * @returns true if the trici id is valid for today, false otherwise
  */
 export function isTriciIdValidForToday(triciId: string) {
-  let triciIdParts = triciId.split("_");
+  let triciIdParts = triciId.split('_');
   let createdAt = parseInt(triciIdParts[2]);
   console.log(`createdAt: ${createdAt}`);
   let createdAtDate = new Date(createdAt);
   console.log(`createdAtDate: ${createdAtDate}`);
   let today = new Date();
   console.log(`today: ${today}`);
-  if (createdAtDate.getDate() === today.getDate() && createdAtDate.getMonth() === today.getMonth() && createdAtDate.getFullYear() === today.getFullYear()) {
+  if (
+    createdAtDate.getDate() === today.getDate() &&
+    createdAtDate.getMonth() === today.getMonth() &&
+    createdAtDate.getFullYear() === today.getFullYear()
+  ) {
     return true;
   } else {
     return false;
   }
 }
-
-
 
 /**
  * Clear the node-ipc server socket
@@ -257,18 +256,17 @@ export function clearNodeIpcServerSocket(socketPath: string): boolean {
   try {
     if (fs.existsSync(socketPath)) {
       fs.unlinkSync(socketPath);
-      console.log("Socket file removed.");
+      console.log('Socket file removed.');
       return true;
     } else {
-      console.log("Socket file does not exist.");
+      console.log('Socket file does not exist.');
       return false;
     }
   } catch (error) {
-    console.error("Error removing socket file: ", error);
+    console.error('Error removing socket file: ', error);
     return false;
   }
 }
-
 
 /**
  * Checks a condition and logs an error if the condition is false
