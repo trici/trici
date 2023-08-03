@@ -16,5 +16,8 @@ export type TriciAction =
       args: { alertType: AlertType; quitAppOnClose: boolean };
     }
   | {
-      type: 'OPEN_SYSTEM_PREFERENCES_CLOSE_ALERT';
+      type: 'CLOSE_ALERT_WINDOW';
+    }
+  | {
+      type: 'OPEN_SYSTEM_PREFERENCES';
     };

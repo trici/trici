@@ -66,6 +66,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     try {
       const result = await this._repository.save(userPreferences, idOfDocToDelete);
       const savedUserPreferences = new UserPreferences(result);
+      global.userPreferences = savedUserPreferences;
       return savedUserPreferences;
     } catch (error) {
       throw error;

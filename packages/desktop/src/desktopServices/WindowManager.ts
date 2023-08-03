@@ -42,8 +42,10 @@ export class WindowManager implements IWindowManager {
           case 'SHOW_ALERT_WINDOW':
             this._createAndShowAlertWindow(action.args.alertType, action.args.quitAppOnClose);
             break;
-          case 'OPEN_SYSTEM_PREFERENCES_CLOSE_ALERT':
+          case 'OPEN_SYSTEM_PREFERENCES':
             this._openSystemPreferences();
+            break;
+          case 'CLOSE_ALERT_WINDOW':
             this._closeAlertWindow();
             break;
           default:
@@ -81,7 +83,6 @@ export class WindowManager implements IWindowManager {
   }
 
   private _createAndShowAlertWindow(alertType: string, quitAppOnClose: boolean): void {
-    console.log('Show Alert Window: ', alertType);
     // throw new Error('Method not implemented.');
     if (this.alertWindow) {
       this.alertWindow.show();
@@ -100,6 +101,7 @@ export class WindowManager implements IWindowManager {
       // frame: false,
       titleBarStyle: 'hidden',
       alwaysOnTop: true,
+      resizable: false,
       webPreferences: {
         nodeIntegration: false,
         preload: preloadScriptPath,
@@ -110,6 +112,10 @@ export class WindowManager implements IWindowManager {
       this.alertWindow.on('close', () => {
         console.log('Closing the app as quitAppOnClose is true');
         app.quit();
+      });
+    } else {
+      this.alertWindow.on('close', () => {
+        this.alertWindow = null;
       });
     }
     contextMenu({

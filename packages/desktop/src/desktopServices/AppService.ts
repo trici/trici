@@ -178,8 +178,6 @@ export class AppService implements IAppService {
         // openSystemPreferences();
         const promptForPermissionWillShow = !hasPromptedForPermission();
         const screenCapturePermissionAtStartup = hasScreenCapturePermission();
-        console.log('screenCapturePermissionAtStartup: ', screenCapturePermissionAtStartup);
-        console.log('promptForPermissionWillShow: ', promptForPermissionWillShow);
         if (screenCapturePermissionAtStartup) {
           logger.info('Screen capture permission already granted');
 

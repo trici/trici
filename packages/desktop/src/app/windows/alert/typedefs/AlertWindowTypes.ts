@@ -1,5 +1,4 @@
-import { AlertType } from '../../../../typedefs/TriciAction';
-
+import { AlertWindowMessageType } from '@trici/models';
 export interface IAlertContainerProps {
-  alertType: AlertType;
+  alertType: AlertWindowMessageType;
 }

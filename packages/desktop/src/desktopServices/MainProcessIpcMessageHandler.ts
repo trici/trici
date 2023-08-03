@@ -86,7 +86,14 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
     };
     switch (msg.handler) {
       case 'openSystemPreferencesAndCloseAlert': {
-        dispatch({ type: 'OPEN_SYSTEM_PREFERENCES_CLOSE_ALERT' });
+        dispatch({ type: 'OPEN_SYSTEM_PREFERENCES' });
+        dispatch({ type: 'CLOSE_ALERT_WINDOW' });
+        response = successResponseForVoidFunctions;
+        break;
+      }
+      case 'openSettingsAndCloseAlert': {
+        dispatch({ type: 'OPEN_SETTINGS_WINDOW', args: msg.args });
+        dispatch({ type: 'CLOSE_ALERT_WINDOW' });
         response = successResponseForVoidFunctions;
         break;
       }
