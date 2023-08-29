@@ -1,0 +1,37 @@
+{
+  "name": "@trici/imageutils",
+  "version": "1.0.0",
+  "description": "> TODO: description",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://github.com/trici/trici#readme",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "src": "src",
+    "test": "__tests__"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "build-esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
+    "build-esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
+    "build-dev": "pnpm run build-types && pnpm run build-esbuild-dev",
+    "build-prod": "pnpm run build-esbuild-prod",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
+    "test": "cross-env NODE_ENV=test jest"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "dependencies": {
+    "sharp": "^0.32.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.3",
+    "cross-env": "^7.0.3",
+    "ts-jest": "^29.0.5"
+  }
+}

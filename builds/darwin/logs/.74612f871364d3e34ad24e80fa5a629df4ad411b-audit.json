@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 7
+    },
+    "auditLog": "logs/.74612f871364d3e34ad24e80fa5a629df4ad411b-audit.json",
+    "files": [
+        {
+            "date": 1691923731869,
+            "name": "logs/trici-2023-08-13-16.log",
+            "hash": "6304660c5f7ac3f5dc9ecb28cdf12b2d31ce2a8fd535f6151045303130ae290c"
+        },
+        {
+            "date": 1692010066966,
+            "name": "logs/trici-2023-08-14-16.log",
+            "hash": "db27967829581c2848cb437d0af2bb84717d004d8b3acd29e9cfd28c531260a1"
+        }
+    ],
+    "hashType": "sha256"
+}

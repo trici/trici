@@ -1,0 +1,45 @@
+{
+  "name": "@trici/postprocess",
+  "version": "1.0.0",
+  "description": "> TODO: description",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://github.com/trici/trici#readme",
+  "license": "ISC",
+  "main": "lib/postprocess.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
+    "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
+    "build-dev": "pnpm run build-types && pnpm run esbuild-dev",
+    "build-prod": "pnpm run esbuild-prod",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
+    "test": "node ./__tests__/postprocess.test.js"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "peerDependencies": {
+    "sharp": "^0.32.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  },
+  "dependencies": {
+    "@trici/imageutils": "workspace:^",
+    "@trici/logger": "workspace:^",
+    "@trici/utils": "workspace:^"
+  }
+}

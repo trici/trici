@@ -1,0 +1,30 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 7
+    },
+    "auditLog": "logs/.9f2a1ff372c7c88e0bda6a8cdf7d6d1222e9529e-audit.json",
+    "files": [
+        {
+            "date": 1693210562510,
+            "name": "logs/trici-2023-08-28-13.log",
+            "hash": "e7a51d0b13b9ce763ad2284043f95fdf96ff506742de3211e7727ef760d38042"
+        },
+        {
+            "date": 1693218536725,
+            "name": "logs/trici-2023-08-28-15.log",
+            "hash": "f35ae8b2c47d88059f1715e59301c84a19af749a53bde95aac047c10380b14df"
+        },
+        {
+            "date": 1693249780148,
+            "name": "logs/trici-2023-08-29-00.log",
+            "hash": "4df38c79df7c57e2e6c3bef146d0c4795c07f5f047b4f90cd0bcee2d260d4e75"
+        },
+        {
+            "date": 1693251118371,
+            "name": "logs/trici-2023-08-29-01.log",
+            "hash": "f1d9f55f1b23659b65eb95fd23a9d28ece6e9f958269c218570119011d8ccf11"
+        }
+    ],
+    "hashType": "sha256"
+}

@@ -1,0 +1,48 @@
+{
+  "name": "@trici/dal",
+  "version": "1.0.3",
+  "description": "> TODO: description",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://github.com/trici/trici#readme",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
+    "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
+    "build-dev": "pnpm run build-types && pnpm run esbuild-dev",
+    "build-prod": "pnpm run esbuild-prod",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "devDependencies": {
+    "@trici/logger": "workspace:^",
+    "@trici/utils": "workspace:^",
+    "@types/jest": "^29.5.0",
+    "@types/pouchdb": "^6.4.0",
+    "@types/uuid": "^9.0.1",
+    "cross-env": "^7.0.3"
+  },
+  "dependencies": {
+    "@trici/models": "workspace:^",
+    "fast-json-patch": "^3.1.1",
+    "pouchdb": "^8.0.1",
+    "uuid": "^9.0.0"
+  }
+}

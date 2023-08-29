@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 7
+    },
+    "auditLog": "logs/.617d123ac20aaee4bfabeb6c9b3ed6945c31d507-audit.json",
+    "files": [
+        {
+            "date": 1691698890393,
+            "name": "logs/trici-2023-08-11-01.log",
+            "hash": "f8635fd97d0192b70260eb181f4abdc685ee06c7f726ee86222f193d67286f49"
+        }
+    ],
+    "hashType": "sha256"
+}

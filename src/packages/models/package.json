@@ -1,0 +1,34 @@
+{
+  "name": "@trici/models",
+  "version": "1.1.0",
+  "description": "> TODO: description",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://github.com/trici/trici#readme",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "src": "src",
+    "test": "__tests__"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
+    "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
+    "build-dev": "pnpm run build-types && pnpm run esbuild-dev",
+    "build-prod": "pnpm run esbuild-prod"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "dependencies": {
+    "immutable": "^4.3.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}

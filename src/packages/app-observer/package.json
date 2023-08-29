@@ -1,0 +1,48 @@
+{
+  "name": "@trici/app-observer",
+  "version": "1.2.0",
+  "description": "> TODO: description",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://github.com/trici/trici#readme",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "start": "node start.js",
+    "build": "run-script-os",
+    "build-dev": "run-script-os",
+    "build-prod": "run-script-os",
+    "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
+    "esbuild-dev": "cross-env NODE_ENV=developement node esbuild.js",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
+    "build-prod:darwin": "pnpm run buildBinary-prod:darwin && pnpm run esbuild-prod",
+    "build-dev:darwin": "pnpm run buildBinary-dev:darwin && pnpm run esbuild-dev && pnpm run build-types",
+    "buildBinary-prod:darwin": "if [ -f 'bin/MacFrontmostObserver' ]; then rm bin/MacFrontmostObserver; fi && swift build -c release --package-path src/swift/MacFrontmostObserver && cp src/swift/MacFrontmostObserver/.build/release/MacFrontmostObserver bin/MacFrontmostObserver && shasum -a 256 bin/MacFrontmostObserver > dist/MacFrontmostObserver.sha256",
+    "buildBinary-dev:darwin": "if [ -f 'bin/MacFrontmostObserver' ]; then rm bin/MacFrontmostObserver; fi && swift build -c debug --package-path src/swift/MacFrontmostObserver && cp src/swift/MacFrontmostObserver/.build/debug/MacFrontmostObserver bin/dev/MacFrontmostObserver && shasum -a 256 bin/dev/MacFrontmostObserver > dist/MacFrontmostObserver.sha256"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "run-script-os": "^1.1.6"
+  },
+  "dependencies": {
+    "@trici/config": "workspace:^",
+    "@trici/logger": "workspace:^"
+  }
+}

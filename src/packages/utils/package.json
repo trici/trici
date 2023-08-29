@@ -1,0 +1,45 @@
+{
+  "name": "@trici/utils",
+  "version": "1.2.1",
+  "description": "Utils",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://github.com/trici/trici#readme",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {},
+  "files": [],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
+    "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
+    "build-dev": "pnpm run esbuild-dev && pnpm run build-types",
+    "build-prod": "pnpm run esbuild-prod",
+    "test": "cross-env NODE_ENV=test jest"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "dependencies": {
+    "@trici/config": "workspace:^",
+    "@trici/logger": "workspace:^",
+    "@trici/models": "workspace:^",
+    "node-ipc": "^10.1.0",
+    "systeminformation": "^5.17.12",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.4.9",
+    "@types/node-ipc": "^9.2.0",
+    "@types/uuid": "^9.0.1",
+    "cross-env": "^7.0.3"
+  }
+}

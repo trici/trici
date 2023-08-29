@@ -1,0 +1,34 @@
+{
+  "name": "trici-test",
+  "version": "1.0.0",
+  "description": "AI assistant for developers",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "NODE_ENV=production electron-forge start",
+    "package": "BUILD_ENV=test node prepackage.js && BUILD_ENV=test NODE_ENV=production node packageTestBuild.js",
+    "make": "node prepackage.js && NODE_ENV=production electron-forge make",
+    "cleanTestBuild": "node cleanTestBuild.js",
+    "installTestBuild": "node installTestBuild.js",
+    "test": "npm run cleanTestBuild && npm run installTestBuild"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@electron-forge/cli": "^6.2.1",
+    "@electron-forge/maker-dmg": "^6.3.0",
+    "@electron-forge/maker-zip": "^6.4.1",
+    "electron": "^23.1.4",
+    "electron-packager": "^17.1.2",
+    "fs-extra": "^11.1.1",
+    "ncp": "^2.0.0"
+  },
+  "config": {
+    "forge": "./forge.config.js"
+  },
+  "dependencies": {
+    "electron-unhandled": "^4.0.1",
+    "mac-screen-capture-permissions": "^2.0.0",
+    "pouchdb": "^8.0.1"
+  }
+}

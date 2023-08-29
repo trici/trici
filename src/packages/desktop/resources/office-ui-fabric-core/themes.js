@@ -1,0 +1,125 @@
+import { createTheme } from '@fluentui/react/lib/Styling';
+
+const themeTriciLight = createTheme({
+  palette: {
+    themePrimary: '#0b7b9f',
+    themeLighterAlt: '#f2f9fb',
+    themeLighter: '#cce7ef',
+    themeLight: '#a3d2e2',
+    themeTertiary: '#57a9c5',
+    themeSecondary: '#1f87aa',
+    themeDarkAlt: '#0a6d8e',
+    themeDark: '#085c78',
+    themeDarker: '#064459',
+    accentPrimary: '#eebf3f',
+    accentLight: '#faecc5',
+    accentDark: '#e7a929',
+    neutralLighterAlt: '#f8f8f8',
+    neutralLighter: '#f4f4f4',
+    neutralLight: '#eaeaea',
+    neutralQuaternaryAlt: '#dadada',
+    neutralQuaternary: '#d0d0d0',
+    neutralTertiaryAlt: '#c8c8c8',
+    neutralTertiary: '#595959',
+    neutralSecondary: '#373737',
+    neutralPrimaryAlt: '#2f2f2f',
+    neutralPrimary: '#000000',
+    neutralDark: '#151515',
+    black: '#0b0b0b',
+    white: '#ffffff',
+  },
+});
+
+const themeTriciDark = createTheme({
+  palette: {
+    themePrimary: '#ffffff',
+    themeLighterAlt: '#767676',
+    themeLighter: '#a6a6a6',
+    themeLight: '#c8c8c8',
+    themeTertiary: '#d0d0d0',
+    themeSecondary: '#dadada',
+    themeDarkAlt: '#eaeaea',
+    themeDark: '#f4f4f4',
+    themeDarker: '#f8f8f8',
+    accentPrimary: '#eebf3f',
+    accentLight: '#faecc5',
+    accentDark: '#e7a929',
+    neutralLighterAlt: '#074c63',
+    neutralLighter: '#074b62',
+    neutralLight: '#07485e',
+    neutralQuaternaryAlt: '#064357',
+    neutralQuaternary: '#064053',
+    neutralTertiaryAlt: '#063d50',
+    neutralTertiary: '#c8c8c8',
+    neutralSecondary: '#d0d0d0',
+    neutralPrimaryAlt: '#dadada',
+    neutralPrimary: '#ffffff',
+    neutralDark: '#f4f4f4',
+    black: '#f8f8f8',
+    white: '#074f66',
+  },
+});
+
+const myTheme = createTheme({
+  palette: {
+    themePrimary: '#0078d4',
+    themeLighterAlt: '#eff6fc',
+    themeLighter: '#deecf9',
+    themeLight: '#c7e0f4',
+    themeTertiary: '#71afe5',
+    themeSecondary: '#2b88d8',
+    themeDarkAlt: '#106ebe',
+    themeDark: '#005a9e',
+    themeDarker: '#004578',
+    neutralLighterAlt: '#faf9f8',
+    neutralLighter: '#f3f2f1',
+    neutralLight: '#edebe9',
+    neutralQuaternaryAlt: '#e1dfdd',
+    neutralQuaternary: '#d0d0d0',
+    neutralTertiaryAlt: '#c8c6c4',
+    neutralTertiary: '#a19f9d',
+    neutralSecondary: '#605e5c',
+    neutralPrimaryAlt: '#3b3a39',
+    neutralPrimary: '#323130',
+    neutralDark: '#201f1e',
+    black: '#000000',
+    white: '#ffffff',
+  },
+  defaultFontStyle: {
+    fontFamily: 'Arial, Helvetica, sans-serif, Monaco, Georgia'
+  }
+});
+
+
+const hardikaTheme = createTheme({
+  palette: {
+    themePrimary: '#0075ea',
+    themeLighterAlt: '#f4f9fe',
+    themeLighter: '#d3e8fc',
+    themeLight: '#aed4f9',
+    themeTertiary: '#61aaf3',
+    themeSecondary: '#1c85ed',
+    themeDarkAlt: '#006ad3',
+    themeDark: '#0059b2',
+    themeDarker: '#004283',
+    neutralLighterAlt: '#faf9f8',
+    neutralLighter: '#f3f2f1',
+    neutralLight: '#edebe9',
+    neutralQuaternaryAlt: '#e1dfdd',
+    neutralQuaternary: '#d0d0d0',
+    neutralTertiaryAlt: '#c8c6c4',
+    neutralTertiary: '#a19f9d',
+    neutralSecondary: '#605e5c',
+    neutralPrimaryAlt: '#3b3a39',
+    neutralPrimary: '#323130',
+    neutralDark: '#201f1e',
+    black: '#000000',
+    white: '#ffffff',
+  }});
+
+export const themes = {
+  themeTriciDark,
+  themeTriciLight,
+  themeFluentDefault: myTheme,
+  themeHardikaDefault: hardikaTheme,
+};

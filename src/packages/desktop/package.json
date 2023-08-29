@@ -1,0 +1,84 @@
+{
+  "name": "@trici/desktop",
+  "productName": "TriciDev",
+  "version": "0.2.0",
+  "description": "The Desktop application for Trici ",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://gettrici.com",
+  "license": "ISC",
+  "main": "dist/main.js",
+  "directories": {
+    "dist": "dist",
+    "src": "src",
+    "test": "__tests__",
+    "bin": "bin"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "start": "cross-env NODE_ENV=development electron .",
+    "live-start": "cross-env NODE_ENV=livedev electron .",
+    "esbuild-main": "node esbuild.main.js",
+    "esbuild-renderer": "node esbuild.renderer.js",
+    "build-copy-unbundled": "node copyunbundledfiles.js",
+    "build-live": "cross-env NODE_ENV=livedev node esbuild.renderer.live.js",
+    "build-dev": "cross-env NODE_ENV=development pnpm run esbuild-main && cross-env NODE_ENV=development pnpm run esbuild-renderer && pnpm run build-config-dev && pnpm run build-copy-unbundled",
+    "build-prod": "cross-env NODE_ENV=production pnpm run esbuild-main && cross-env NODE_ENV=production pnpm run esbuild-renderer && pnpm run build-config-prod && pnpm run build-copy-unbundled",
+    "build-config-dev": "cross-env NODE_ENV=development node buildConfig.js",
+    "build-config-prod": "cross-env NODE_ENV=production node buildConfig.js",
+    "test": "cross-env NODE_ENV=test npx playwright test",
+    "updbin": "node updbin.js",
+    "publish": "run-script-os",
+    "publish:darwin": "nx affected --target=build-prod && cross-env NODE_ENV=production node updbin.js && pnpm run build-prod && cross-env NODE_ENV=production node publishToBuild.js"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.31.2",
+    "@tanstack/eslint-plugin-query": "^4.29.9",
+    "@types/electron-json-storage": "^4.5.0",
+    "@types/react": "^18.2.11",
+    "@types/react-dom": "^18.2.4",
+    "@types/uuid": "^9.0.1",
+    "cross-env": "^7.0.3",
+    "electron": "^23.1.4",
+    "playwright": "^1.31.2",
+    "run-script-os": "^1.1.6"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@fluentui/react-components": "^9.21.0",
+    "@mantine/core": "^6.0.13",
+    "@mantine/hooks": "^6.0.13",
+    "@tabler/icons-react": "^2.22.0",
+    "@tanstack/react-query": "^4.29.19",
+    "@trici/app-observer": "workspace:^",
+    "@trici/config": "workspace:^",
+    "@trici/dal": "workspace:^",
+    "@trici/logger": "workspace:^",
+    "@trici/models": "workspace:^",
+    "@trici/pm": "workspace:^",
+    "@trici/recorder": "workspace:^",
+    "@trici/utils": "workspace:^",
+    "electron-context-menu": "^3.6.1",
+    "electron-is-accelerator": "^0.2.0",
+    "electron-json-storage": "^4.6.0",
+    "electron-unhandled": "^4.0.1",
+    "fs-extra": "^11.1.1",
+    "loglevel": "^1.8.1",
+    "mac-screen-capture-permissions": "^2.0.0",
+    "pouchdb": "^8.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recoil": "^0.7.7"
+  }
+}
