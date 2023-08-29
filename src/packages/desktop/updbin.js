@@ -5,7 +5,6 @@ const path = require('path');
 const src = path.resolve(__dirname, '..', 'app-observer', 'bin');
 const dest = path.resolve(__dirname, 'bin');
 
-
 function deleteDir(dirPath) {
   if (fs.existsSync(dirPath)) {
     const entries = fs.readdirSync(dirPath, { withFileTypes: true });
@@ -42,7 +41,14 @@ function copyDir(src, dest) {
     }
   }
 }
-console.log(`Deleting ${dest}...`)
+console.log(`Deleting ${dest}...`);
 deleteDir(dest);
-console.log(`Copying ${src} to ${dest}...`)
+console.log(`Copying ${src} to ${dest}...`);
 copyDir(src, dest);
+
+//copy ffmpeg binary from node_modules to bin
+const ffmpegSrc = path.resolve(__dirname, '..', 'desktop', 'node_modules', 'ffmpeg-static', 'ffmpeg');
+const ffmpegDest = path.resolve(__dirname, 'bin', 'ffmpeg');
+console.log(`Copying ${ffmpegSrc} to ${ffmpegDest}...`);
+fs.copyFileSync(ffmpegSrc, ffmpegDest);
+console.log('Done!');

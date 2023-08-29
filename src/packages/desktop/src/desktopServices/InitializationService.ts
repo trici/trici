@@ -24,6 +24,7 @@ import { IWindowManager } from './WindowManager';
 import { GlobalShortcutService } from './GlobalShortcutService';
 import { MainProcessDataAccessService } from './MainProcessDataAccessService';
 import { MainProcessIpcMessageHandlerService } from './MainProcessIpcMessageHandler';
+import { ChangeTrayStatePlugin } from '../plugins/ChangeTrayStatePlugin';
 
 let logger: Logger;
 let appJsonStorageService: IAppJsonStorageService;
@@ -60,6 +61,8 @@ function regiserCorePlugins(pluginManager: PluginManager, recorder: TriciRecorde
   pluginManager.register(screenRecordingPlugin);
   const askWhichScreenToRecordPlugin = new AskWhichScreenToRecordPlugin(windowManager);
   pluginManager.register(askWhichScreenToRecordPlugin);
+  const changeTrayStatePlugin = new ChangeTrayStatePlugin(trayService);
+  pluginManager.register(changeTrayStatePlugin);
 }
 
 export const InitializationService = {
@@ -102,7 +105,8 @@ export const InitializationService = {
       const userPreferences = new UserPreferences(userPreferencesResult);
       global.userPreferences = userPreferences;
 
-      focusSessionService = new FocusSessionService(repo, appEventEmitter);
+      focusSessionService = new FocusSessionService(repo, appEventEmitter, actionDispatcher);
+      focusSessionService.registerActionHandlers();
       cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
       cliMessageHandlerService.registerCliMessageHandlers();
 

@@ -10,7 +10,10 @@ import { generateNewTriciId, generateUpdatedTriciId } from '@trici/utils';
 import { screen } from 'electron';
 import { ITriciRepository } from '@trici/dal';
 import { AppEventEmitter } from './AppEventEmitter';
+import { TriciAction } from '../typedefs/TriciAction';
+import { IActionDispatcher } from './ActionDispatcher';
 export interface IFocusSessionService {
+  registerActionHandlers(): void;
   startFocusSession(startedBy: SESSION_STARTED_BY): Promise<FocusSession>;
   endFocusSession(): Promise<FocusSession>;
   isFocusSessionInProgress(): boolean;
@@ -22,12 +25,19 @@ export class FocusSessionService implements IFocusSessionService {
   #focusSessionTimer: NodeJS.Timeout | null;
   #repository: ITriciRepository;
   appEventEmitter: AppEventEmitter;
+  actionDispatcher: IActionDispatcher<TriciAction>;
+  actionHandlersRegistered: boolean = false;
 
-  constructor(repository: ITriciRepository, appEventEmitter: AppEventEmitter) {
+  constructor(
+    repository: ITriciRepository,
+    appEventEmitter: AppEventEmitter,
+    actionDispatcher: IActionDispatcher<TriciAction>,
+  ) {
     this.#currentFocusSession = null;
     this.#repository = repository;
     this.#focusSessionTimer = null;
     this.appEventEmitter = appEventEmitter;
+    this.actionDispatcher = actionDispatcher;
   }
 
   static #createNewFocusSession = (startedBy: SESSION_STARTED_BY): FocusSession => {
@@ -44,6 +54,52 @@ export class FocusSessionService implements IFocusSessionService {
       activities: [],
       startedBy: startedBy,
     });
+  };
+
+  registerActionHandlers(): void {
+    if (!this.actionHandlersRegistered) {
+      this.actionDispatcher.register((action: TriciAction) => {
+        switch (action.type) {
+          case 'START_FOCUS_SESSION':
+            this._handleStartFocusSession(SESSION_STARTED_BY.USER);
+            break;
+          case 'END_FOCUS_SESSION':
+            this._handleEndFocusSession();
+            break;
+          default:
+            break;
+        }
+      });
+    }
+    this.actionHandlersRegistered = true;
+  }
+
+  private _handleStartFocusSession = async (startedBy: SESSION_STARTED_BY): Promise<void> => {
+    try {
+      const focusSession = await this.startFocusSession(startedBy);
+      console.log('Focus session started: ', focusSession.toJS());
+    } catch (error: any) {
+      let response;
+      if (error instanceof DisplayNotSelectedError) {
+        response = {
+          success: false,
+          message:
+            'Error starting focus session: Multiple monitors detected. Please set the default screen to record in the settings.',
+        };
+      } else {
+        response = { success: false, message: `Error starting focus session: ${error.message}` };
+      }
+    }
+  };
+
+  private _handleEndFocusSession = async (): Promise<void> => {
+    try {
+      const focusSession = await this.endFocusSession();
+      console.log('Focus session ended: ', focusSession.toJS());
+    } catch (error: any) {
+      const focusSessionEndError = new Error(error.message);
+      console.log(focusSessionEndError.message);
+    }
   };
 
   public async startFocusSession(startedBy: SESSION_STARTED_BY): Promise<FocusSession> {

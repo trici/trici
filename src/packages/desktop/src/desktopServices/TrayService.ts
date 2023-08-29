@@ -14,6 +14,7 @@ import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowType
 
 export interface ITrayService {
   createTrayInstance(logger: Logger): void;
+  changeTrayState(newState: TrayState): void;
 }
 
 class TrayService implements ITrayService {
@@ -32,6 +33,12 @@ class TrayService implements ITrayService {
           label: 'Show/Hide Trici',
           click: () => {
             console.log('Show/Hide Trici');
+          },
+        },
+        {
+          label: 'Start Focus Session',
+          click: () => {
+            dispatch({ type: 'START_FOCUS_SESSION' });
           },
         },
         {
@@ -59,6 +66,7 @@ class TrayService implements ITrayService {
           label: 'Stop Session',
           click: () => {
             console.log('Stop Session');
+            dispatch({ type: 'END_FOCUS_SESSION' });
           },
         },
       ];
@@ -73,6 +81,17 @@ class TrayService implements ITrayService {
     // this._tray.setToolTip(config.trayIconToolTip);
     const contextMenu = this._getTrayContextMenu();
     this._tray.setContextMenu(contextMenu);
+  }
+
+  public changeTrayState(newState: TrayState): void {
+    this._trayState = newState;
+    if (newState === TrayState.DEFAULT) {
+      this._tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_amber.png');
+    } else if (newState === TrayState.SESSION_IN_PROGRESS) {
+      this._tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_red.png');
+    }
+    const contextMenu = this._getTrayContextMenu();
+    this._tray?.setContextMenu(contextMenu);
   }
 }
 

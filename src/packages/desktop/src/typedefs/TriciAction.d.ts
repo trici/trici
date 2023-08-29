@@ -6,6 +6,12 @@ export type TriciAction =
       args: { section: SettingsKey };
     }
   | {
+      type: 'START_FOCUS_SESSION';
+    }
+  | {
+      type: 'END_FOCUS_SESSION';
+    }
+  | {
       type: 'OPEN_FOCUS_SESSION_WINDOW';
     }
   | {
