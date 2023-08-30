@@ -194,6 +194,9 @@ importers:
       electron-unhandled:
         specifier: ^4.0.1
         version: 4.0.1
+      ffmpeg-static:
+        specifier: ^5.1.0
+        version: 5.1.0
       fs-extra:
         specifier: ^11.1.1
         version: 11.1.1

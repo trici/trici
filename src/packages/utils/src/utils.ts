@@ -200,7 +200,6 @@ export function generateUninitializedTriciId(installationId: string, type: strin
  * @returns an updated trici id like 22d860cd-07e1-4d7f-bd9a-ca5ed5c242f9_fss_1681757187_muton_1681757187
  */
 export function generateUpdatedTriciId(triciId: string) {
-  console.log('generateUpdatedTriciId: triciId: ' + triciId);
   if (!isValidTriciId(triciId)) {
     throw new Error(`Invalid trici id: ${triciId}`);
   }
@@ -228,7 +227,6 @@ function isValidTriciId(id: string) {
   const match = id
     .trim()
     .match(/^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})_(\w+)_(\d+)_muton_(\d+|-1)$/);
-  console.log('Matched groups:', match);
   return match !== null;
 }
 
@@ -240,11 +238,8 @@ function isValidTriciId(id: string) {
 export function isTriciIdValidForToday(triciId: string) {
   let triciIdParts = triciId.split('_');
   let createdAt = parseInt(triciIdParts[2]);
-  console.log(`createdAt: ${createdAt}`);
   let createdAtDate = new Date(createdAt);
-  console.log(`createdAtDate: ${createdAtDate}`);
   let today = new Date();
-  console.log(`today: ${today}`);
   if (
     createdAtDate.getDate() === today.getDate() &&
     createdAtDate.getMonth() === today.getMonth() &&
