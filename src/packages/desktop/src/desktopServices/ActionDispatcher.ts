@@ -2,26 +2,27 @@
  * Inspired by the Flux dispacther, this class is used to dispatch actions to services.
  */
 
-import { invariant } from "@trici/utils";
+import { invariant } from '@trici/utils';
 export type DispatchToken = string;
-import type { TriciAction } from "../typedefs/TriciAction"
-import config from "@trici/config"
+import type { TriciAction } from '../typedefs/TriciAction';
+import config from '@trici/config';
 
 export interface IActionDispatcher<TriciAction> {
   register(callback: (payload: TriciAction) => void): DispatchToken;
   unregister(dispatchToken: DispatchToken): void;
   dispatch(payload: TriciAction): void;
-  waitFor(dispatchTokens: DispatchToken[]): void;
-  isDispatching(): boolean;
+  // waitFor(dispatchTokens: DispatchToken[]): void;
+  // isDispatching(): boolean;
 }
 
-class ActionDispatcher implements IActionDispatcher<TriciAction>{
- _callbacks: { [key: string]: (payload: TriciAction) => void };
+class ActionDispatcher implements IActionDispatcher<TriciAction> {
+  _callbacks: { [key: string]: (payload: TriciAction) => void };
   _isDispatching: boolean;
   _isHandled: { [key: string]: boolean };
   _isPending: { [key: string]: boolean };
   _lastID: number;
   _pendingPayload: any;
+  _dispatchQueue: any[];
 
   constructor() {
     this._callbacks = {};
@@ -29,43 +30,74 @@ class ActionDispatcher implements IActionDispatcher<TriciAction>{
     this._isHandled = {};
     this._isPending = {};
     this._lastID = 1;
+    this._dispatchQueue = [];
   }
 
   register(callback: (payload: TriciAction) => void): DispatchToken {
-    const id = "ID_" + this._lastID++;
+    const id = 'ID_' + this._lastID++;
     this._callbacks[id] = callback;
     return id;
   }
 
   unregister(dispatchToken: DispatchToken): void {
-    invariant(this._callbacks[dispatchToken] === undefined, `Dispatcher.unregister(...): ${dispatchToken} does not map to a registered callback.`);
+    invariant(
+      this._callbacks[dispatchToken] === undefined,
+      `Dispatcher.unregister(...): ${dispatchToken} does not map to a registered callback.`,
+    );
     delete this._callbacks[dispatchToken];
   }
 
   dispatch(payload: TriciAction): void {
-    invariant(!this._isDispatching, "Dispatcher.dispatch(...): Cannot dispatch in the middle of a dispatch.");
-    try {
-      this._startDispatching(payload);
-      for (const id in this._callbacks) {
-        if (this._isPending[id]) {
-          continue;
-        }
-        this._invokeCallback(id);
-      }
-    } finally {
-      this._stopDispatching();
+    // invariant(!this._isDispatching, 'Dispatcher.dispatch(...): Cannot dispatch in the middle of a dispatch.');
+    this._dispatchQueue.push(payload);
+    console.log(`dispatchQueue length: ${this._dispatchQueue.length}`);
+    if (!this._isDispatching) {
+      setTimeout(this._processQueue.bind(this), 0);
     }
+    console.log(`Finished execution of dispatch method`);
   }
 
+  _processQueue(): void {
+    this._isDispatching = true;
+    console.log(`processing queue of length ${this._dispatchQueue.length}`);
+    while (this._dispatchQueue.length > 0) {
+      const action = this._dispatchQueue.shift();
+      console.log(`dispatch queue length: ${this._dispatchQueue.length}`);
+      console.log(`dispatching action ${JSON.stringify(action.type)}`);
+      for (const id in this._callbacks) {
+        // console.log(`processing action ${JSON.stringify(action.type)}`);
+        this._callbacks[id](action);
+      }
+    }
+    console.log(`done processing queue of length ${this._dispatchQueue.length}`);
+    this._isDispatching = false;
+  }
+
+  //   try {
+  //     this._startDispatching(payload);
+  //     for (const id in this._callbacks) {
+  //       if (this._isPending[id]) {
+  //         continue;
+  //       }
+  //       this._invokeCallback(id);
+  //     }
+  //   } finally {
+  //     this._stopDispatching();
+  //   }
+  // }
+
   waitFor(dispatchTokens: DispatchToken[]): void {
-    invariant(!this._isDispatching, "Dispatcher.waitFor(...): Must be invoked while dispatching.");
+    invariant(!this._isDispatching, 'Dispatcher.waitFor(...): Must be invoked while dispatching.');
     for (let ii = 0; ii < dispatchTokens.length; ii++) {
       const id = dispatchTokens[ii];
       if (this._isPending[id]) {
         invariant(this._isHandled[id], `Dispatcher.waitFor(...): Circular dependency detected while waiting for ${id}`);
         continue;
       }
-      invariant(this._callbacks[id] === undefined, `Dispatcher.waitFor(...): ${id} does not map to a registered callback.`);
+      invariant(
+        this._callbacks[id] === undefined,
+        `Dispatcher.waitFor(...): ${id} does not map to a registered callback.`,
+      );
       this._invokeCallback(id);
     }
   }
@@ -98,7 +130,6 @@ class ActionDispatcher implements IActionDispatcher<TriciAction>{
 const instance: IActionDispatcher<TriciAction> = new ActionDispatcher();
 
 export default instance;
-
 
 function dispatchWithLog(action: TriciAction): void {
   console.log(`dispatching action ${JSON.stringify(action.type)}`);
