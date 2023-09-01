@@ -12,7 +12,7 @@ console.log('isProdBuild:', isProdBuild);
 async function buildJs() {
   await esbuild.build({
     entryPoints: [path.join(ROOT_DIR, 'src', 'preload.ts')],
-    bundle: true,
+    bundle: false,
     outfile: path.join(ROOT_DIR, 'dist', 'preload.js'),
     sourcemap: !isProdBuild,
     minify: isProdBuild,
