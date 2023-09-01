@@ -1,10 +1,9 @@
 /**
  * All the entities that are used in the application.
  */
-import * as Immutable from "immutable";
-import { Constants } from "./Constants";
-import { SESSION_STARTED_BY } from "./enums";
-
+import * as Immutable from 'immutable';
+import { Constants } from './Constants';
+import { SESSION_STARTED_BY, SESSION_STARTED_FROM } from './enums';
 
 interface IFocusSessionType {
   _id: string;
@@ -18,10 +17,11 @@ interface IFocusSessionType {
   shouldHaveRecording: boolean;
   activities: any[];
   startedBy: SESSION_STARTED_BY;
+  startedFrom: SESSION_STARTED_FROM;
 }
 
 const FocusSessionSchema: IFocusSessionType = {
-  _id: "uninintialized",
+  _id: 'uninintialized',
   startTime: 0,
   endTime: 0,
   name: Constants.EMPTY_STRING,
@@ -32,19 +32,19 @@ const FocusSessionSchema: IFocusSessionType = {
   shouldHaveRecording: true,
   activities: [],
   startedBy: SESSION_STARTED_BY.NOT_SET,
+  startedFrom: SESSION_STARTED_FROM.NOT_SET,
 };
 
 const FocusSessionRecord = Immutable.Record(FocusSessionSchema);
 
-
 export class FocusSession extends FocusSessionRecord {
-    constructor(focusSession?: IFocusSessionType) {
-      if (typeof focusSession === 'undefined' || focusSession === null) {
+  constructor(focusSession?: IFocusSessionType) {
+    if (typeof focusSession === 'undefined' || focusSession === null) {
       super({
         _id: Constants.UNINITIALIZED_ID,
         startTime: 0,
         endTime: 0,
-        name: "",
+        name: '',
         idleTimeProfile: [],
         sessionDidStart: false,
         recordingProcessCrashedOnStart: false,
@@ -52,6 +52,7 @@ export class FocusSession extends FocusSessionRecord {
         shouldHaveRecording: false,
         activities: [],
         startedBy: SESSION_STARTED_BY.NOT_SET,
+        startedFrom: SESSION_STARTED_FROM.NOT_SET,
       });
     } else {
       super({
@@ -66,7 +67,8 @@ export class FocusSession extends FocusSessionRecord {
         shouldHaveRecording: focusSession.shouldHaveRecording,
         activities: focusSession.activities,
         startedBy: focusSession.startedBy,
-      })
+        startedFrom: focusSession.startedFrom,
+      });
     }
   }
 }

@@ -1,3 +1,4 @@
+import { SESSION_STARTED_BY, SESSION_STARTED_FROM } from '@trici/models';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
 
 export type TriciAction =
@@ -7,6 +8,8 @@ export type TriciAction =
     }
   | {
       type: 'START_FOCUS_SESSION';
+      startedBy: SESSION_STARTED_BY;
+      startedFrom: SESSION_STARTED_FROM;
     }
   | {
       type: 'END_FOCUS_SESSION';
@@ -19,7 +22,7 @@ export type TriciAction =
     }
   | {
       type: 'SHOW_ALERT_WINDOW';
-      args: { alertType: AlertType; quitAppOnClose: boolean };
+      args: { alertType: AlertType; quitAppOnClose: boolean; message?: string };
     }
   | {
       type: 'CLOSE_ALERT_WINDOW';

@@ -7,7 +7,7 @@
  */
 
 import { app, Menu, Tray } from 'electron';
-import { TrayState } from '@trici/models';
+import { SESSION_STARTED_BY, SESSION_STARTED_FROM, TrayState } from '@trici/models';
 import type { Logger } from '@trici/logger';
 import { dispatch } from './ActionDispatcher';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
@@ -38,7 +38,11 @@ class TrayService implements ITrayService {
         {
           label: 'Start Focus Session',
           click: () => {
-            dispatch({ type: 'START_FOCUS_SESSION' });
+            dispatch({
+              type: 'START_FOCUS_SESSION',
+              startedBy: SESSION_STARTED_BY.USER,
+              startedFrom: SESSION_STARTED_FROM.TRAY,
+            });
           },
         },
         {

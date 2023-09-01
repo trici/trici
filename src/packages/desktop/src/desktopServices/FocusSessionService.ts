@@ -5,16 +5,17 @@ import {
   KEY_PARTS,
   TRICI_APP_EVENT,
   DisplayNotSelectedError,
+  SESSION_STARTED_FROM,
 } from '@trici/models';
 import { generateNewTriciId, generateUpdatedTriciId } from '@trici/utils';
 import { screen } from 'electron';
 import { ITriciRepository } from '@trici/dal';
 import { AppEventEmitter } from './AppEventEmitter';
 import { TriciAction } from '../typedefs/TriciAction';
-import { IActionDispatcher } from './ActionDispatcher';
+import { IActionDispatcher, dispatch } from './ActionDispatcher';
 export interface IFocusSessionService {
   registerActionHandlers(): void;
-  startFocusSession(startedBy: SESSION_STARTED_BY): Promise<FocusSession>;
+  startFocusSession(startedBy: SESSION_STARTED_BY, startedFrom: SESSION_STARTED_FROM): Promise<FocusSession>;
   endFocusSession(): Promise<FocusSession>;
   isFocusSessionInProgress(): boolean;
   getCurrentFocusSession(): FocusSession | null;
@@ -40,7 +41,7 @@ export class FocusSessionService implements IFocusSessionService {
     this.actionDispatcher = actionDispatcher;
   }
 
-  static #createNewFocusSession = (startedBy: SESSION_STARTED_BY): FocusSession => {
+  static #createNewFocusSession = (startedBy: SESSION_STARTED_BY, startedFrom: SESSION_STARTED_FROM): FocusSession => {
     return new FocusSession({
       _id: generateNewTriciId(installationId, KEY_PARTS.FOCUS_SESSION),
       startTime: Date.now(),
@@ -53,6 +54,7 @@ export class FocusSessionService implements IFocusSessionService {
       shouldHaveRecording: true,
       activities: [],
       startedBy: startedBy,
+      startedFrom: startedFrom,
     });
   };
 
@@ -61,7 +63,7 @@ export class FocusSessionService implements IFocusSessionService {
       this.actionDispatcher.register((action: TriciAction) => {
         switch (action.type) {
           case 'START_FOCUS_SESSION':
-            this._handleStartFocusSession(SESSION_STARTED_BY.USER);
+            this._handleStartFocusSession(action.startedBy, action.startedFrom);
             break;
           case 'END_FOCUS_SESSION':
             this._handleEndFocusSession();
@@ -74,9 +76,12 @@ export class FocusSessionService implements IFocusSessionService {
     this.actionHandlersRegistered = true;
   }
 
-  private _handleStartFocusSession = async (startedBy: SESSION_STARTED_BY): Promise<void> => {
+  private _handleStartFocusSession = async (
+    startedBy: SESSION_STARTED_BY,
+    startedFrom: SESSION_STARTED_FROM,
+  ): Promise<void> => {
     try {
-      const focusSession = await this.startFocusSession(startedBy);
+      const focusSession = await this.startFocusSession(startedBy, startedFrom);
       console.log('Focus session started: ', focusSession.toJS());
     } catch (error: any) {
       let response;
@@ -86,9 +91,27 @@ export class FocusSessionService implements IFocusSessionService {
           message:
             'Error starting focus session: Multiple monitors detected. Please set the default screen to record in the settings.',
         };
+        if (startedBy === SESSION_STARTED_BY.TRICI_ACTIVITY) {
+          dispatch({
+            type: 'SHOW_ALERT_WINDOW',
+            args: { alertType: 'SCREEN_TO_RECORD_NOT_SET_AUTO_SESSION_START', quitAppOnClose: false },
+          });
+        } else {
+          dispatch({
+            type: 'SHOW_ALERT_WINDOW',
+            args: { alertType: 'SCREEN_TO_RECORD_NOT_SET', quitAppOnClose: false },
+          });
+        }
+        // this.appEventEmitter.emit(TRICI_APP_EVENT.SESSION_STARTED_WITH_DISPLAY_TO_RECORD_NOT_SET, startedBy);
       } else {
         response = { success: false, message: `Error starting focus session: ${error.message}` };
+        dispatch({
+          type: 'SHOW_ALERT_WINDOW',
+          args: { alertType: 'ALERT_ERROR_MESSAGE', quitAppOnClose: false, message: response.message },
+        });
       }
+
+      console.log(response);
     }
   };
 
@@ -102,7 +125,10 @@ export class FocusSessionService implements IFocusSessionService {
     }
   };
 
-  public async startFocusSession(startedBy: SESSION_STARTED_BY): Promise<FocusSession> {
+  public async startFocusSession(
+    startedBy: SESSION_STARTED_BY,
+    startedFrom: SESSION_STARTED_FROM,
+  ): Promise<FocusSession> {
     if (this.isFocusSessionInProgress()) {
       throw new Error('Focus session already in progress');
     }
@@ -110,11 +136,10 @@ export class FocusSessionService implements IFocusSessionService {
     // If there are multiple monitors, then the user should have preselcted the monitor on which the focus session should be recorded
     const displays = screen.getAllDisplays();
     if (displays.length > 1 && userPreferences.defaultScreenToRecord === Constants.UNINITIALIZED_NUMBER) {
-      this.appEventEmitter.emit(TRICI_APP_EVENT.SESSION_STARTED_WITH_DISPLAY_TO_RECORD_NOT_SET, startedBy);
       throw new DisplayNotSelectedError();
     } else {
       try {
-        this.#currentFocusSession = FocusSessionService.#createNewFocusSession(startedBy);
+        this.#currentFocusSession = FocusSessionService.#createNewFocusSession(startedBy, startedFrom);
         this.#repository.save(this.#currentFocusSession.toJS(), Constants.UNINITIALIZED_ID);
         this.#focusSessionTimer = setInterval(() => {}, 1000);
         this.appEventEmitter.emit(TRICI_APP_EVENT.FOCUS_SESSION_STARTED, this.#currentFocusSession);

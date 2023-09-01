@@ -1,4 +1,4 @@
-import { CLI_MESSAGE_TYPE, DisplayNotSelectedError, SESSION_STARTED_BY } from '@trici/models';
+import { CLI_MESSAGE_TYPE, DisplayNotSelectedError, SESSION_STARTED_BY, SESSION_STARTED_FROM } from '@trici/models';
 import { IProcessManager } from '@trici/pm';
 import { IFocusSessionService } from './FocusSessionService';
 
@@ -17,7 +17,10 @@ export class CliMessageHandlerService implements ICliMessageHandlerService {
 
   async handleStartFocusSession(data, socket): Promise<void> {
     try {
-      const focusSession = await this.focusSessionService.startFocusSession(SESSION_STARTED_BY.CLI);
+      const focusSession = await this.focusSessionService.startFocusSession(
+        SESSION_STARTED_BY.USER,
+        SESSION_STARTED_FROM.CLI,
+      );
       console.log('Focus session started: ', focusSession.toJS());
       const data = { success: true, message: 'Focus session started' };
       this.processManager.sendCliMessageResponse(data, socket);

@@ -7,6 +7,11 @@ export enum SESSION_STARTED_BY {
   NOT_SET = 'NOT_SET',
   USER = 'USER',
   TRICI_ACTIVITY = 'TRICI_ACTIVITY',
+}
+
+export enum SESSION_STARTED_FROM {
+  NOT_SET = 'NOT_SET',
+  TRAY = 'TRAY',
   CLI = 'CLI',
 }
 
