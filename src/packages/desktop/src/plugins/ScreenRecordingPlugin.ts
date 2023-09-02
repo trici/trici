@@ -27,7 +27,6 @@ export class ScreenRecordingPlugin implements ITriciPlugin {
   }
 
   private handleFocusSessionStarted(data: FocusSession): void {
-    console.log('ScreenRecordingPlugin: Focus session started');
     // //Start the recording. Writing this here for Hackathon. Ideally an event will be emitted from here and the recording process will listen to it.
     const recordingFileName = data.get('startTime').toString();
     const includeWatermark = true;
@@ -35,7 +34,6 @@ export class ScreenRecordingPlugin implements ITriciPlugin {
     const watermarkImagePath = isRunningInAsar
       ? path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'resources', 'images', 'trici_watermark.png') + ''
       : app.getAppPath() + '/resources/images/trici_watermark.png';
-    console.log('watermarkImagePath: ' + watermarkImagePath);
     this.recorder.startLiveRecording(
       recordingFileName,
       recordingStorageLocation,
@@ -44,12 +42,12 @@ export class ScreenRecordingPlugin implements ITriciPlugin {
       watermarkImagePath,
     );
     this.recorder.on('recordingProcessExited', code => {
-      console.log('Recording process exited with code: ' + code);
+      logger.debug('Recording process exited with code: ' + code);
     });
   }
 
   private handleFocusSessionEnded(data: FocusSession): void {
-    console.log('ScreenRecordingPlugin: Focus session ended');
     console.log('EndedFocusSession: ' + JSON.stringify(data));
+    this.recorder.stopLiveRecording();
   }
 }
