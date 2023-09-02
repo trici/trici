@@ -5,6 +5,7 @@ import contextMenu from 'electron-context-menu';
 import { TriciAction } from '../typedefs/TriciAction';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
 import { openSystemPreferences } from 'mac-screen-capture-permissions';
+import path from 'path';
 
 export interface IWindowManager {
   registerActionHandlers(): void;
@@ -26,7 +27,7 @@ export class WindowManager implements IWindowManager {
     this.mainWindow = null;
     this.alertWindow = null;
     this.actionDispatcher = actionDispatcher;
-    this.preloadScriptPath = `${app.getAppPath()}/dist/preload.js`;
+    this.preloadScriptPath = path.join(app.getAppPath(), 'dist', 'preload.js');
   }
 
   registerActionHandlers(): void {
@@ -122,7 +123,7 @@ export class WindowManager implements IWindowManager {
       window: this.alertWindow,
       showInspectElement: true,
     });
-    this.alertWindow.loadFile(`dist/index.html?type=alert`);
+    this.alertWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), { query: { type: 'alert' } });
     this.alertWindow.webContents.send('messageFromMain', {
       success: true,
       handler: 'showAlertType',
@@ -150,6 +151,9 @@ export class WindowManager implements IWindowManager {
       return;
     }
     const preloadScriptPath = this.preloadScriptPath;
+    console.log('Preload script path: ', preloadScriptPath);
+    console.log('Dirname: ', __dirname);
+    console.log('AppPath:', app.getAppPath());
     this.settingsWindow = new BrowserWindow({
       width: 800,
       height: 600,
@@ -159,7 +163,7 @@ export class WindowManager implements IWindowManager {
         contextIsolation: true,
       },
     });
-    this.settingsWindow.loadFile(`dist/index.html?type=settings`);
+    this.settingsWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), { query: { type: 'settings' } });
     contextMenu({
       window: this.settingsWindow,
       showInspectElement: true,

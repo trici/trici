@@ -1,7 +1,8 @@
-import { FocusSession, TRICI_APP_EVENT } from "@trici/models";
-import { ITriciPlugin } from "../typedefs/ITriciPlugin";
-import { TriciRecorder } from "@trici/recorder";
-import { app } from "electron";
+import { FocusSession, TRICI_APP_EVENT } from '@trici/models';
+import { ITriciPlugin } from '../typedefs/ITriciPlugin';
+import { TriciRecorder } from '@trici/recorder';
+import { app } from 'electron';
+import path from 'path';
 export class ScreenRecordingPlugin implements ITriciPlugin {
   public name: string = 'ScreenRecordingPlugin';
   public version: string = '1.0.0';
@@ -27,19 +28,28 @@ export class ScreenRecordingPlugin implements ITriciPlugin {
 
   private handleFocusSessionStarted(data: FocusSession): void {
     console.log('ScreenRecordingPlugin: Focus session started');
-      // //Start the recording. Writing this here for Hackathon. Ideally an event will be emitted from here and the recording process will listen to it.
-      const recordingFileName = data.get("startTime").toString();
-      const includeWatermark = true;
-      const recordingStorageLocation = global.userDataDirectoryCheckResult.recordingsDir.path;
-      const watermarkImagePath = app.getAppPath() + "/resources/images/trici_watermark.png";
-      this.recorder.startLiveRecording(recordingFileName, recordingStorageLocation, 3, includeWatermark, watermarkImagePath)
-      this.recorder.on("recordingProcessExited", (code) => {
-        console.log("Recording process exited with code: " + code);
-      });
+    // //Start the recording. Writing this here for Hackathon. Ideally an event will be emitted from here and the recording process will listen to it.
+    const recordingFileName = data.get('startTime').toString();
+    const includeWatermark = true;
+    const recordingStorageLocation = global.userDataDirectoryCheckResult.recordingsDir.path;
+    const watermarkImagePath = isRunningInAsar
+      ? path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'resources', 'images', 'trici_watermark.png') + ''
+      : app.getAppPath() + '/resources/images/trici_watermark.png';
+    console.log('watermarkImagePath: ' + watermarkImagePath);
+    this.recorder.startLiveRecording(
+      recordingFileName,
+      recordingStorageLocation,
+      3,
+      includeWatermark,
+      watermarkImagePath,
+    );
+    this.recorder.on('recordingProcessExited', code => {
+      console.log('Recording process exited with code: ' + code);
+    });
   }
 
   private handleFocusSessionEnded(data: FocusSession): void {
     console.log('ScreenRecordingPlugin: Focus session ended');
-    console.log("EndedFocusSession: " + JSON.stringify(data));
+    console.log('EndedFocusSession: ' + JSON.stringify(data));
   }
 }

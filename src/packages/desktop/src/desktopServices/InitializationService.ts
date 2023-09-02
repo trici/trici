@@ -25,6 +25,7 @@ import { GlobalShortcutService } from './GlobalShortcutService';
 import { MainProcessDataAccessService } from './MainProcessDataAccessService';
 import { MainProcessIpcMessageHandlerService } from './MainProcessIpcMessageHandler';
 import { ChangeTrayStatePlugin } from '../plugins/ChangeTrayStatePlugin';
+import path from 'path';
 
 let logger: Logger;
 let appJsonStorageService: IAppJsonStorageService;
@@ -94,7 +95,9 @@ export const InitializationService = {
       // Initialize the CLI message handler
       repo = new TriciRepository(logger);
       repo.init(global.userDataDirectoryCheckResult.dataDir.path);
-      const ffmpegPath = app.getAppPath() + '/bin/ffmpeg';
+      const ffmpegPath = isRunningInAsar
+        ? path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'bin', 'ffmpeg')
+        : app.getAppPath() + '/bin/ffmpeg';
       const triciRecorder = new TriciRecorder(ffmpegPath, logger);
       const appEventEmitter = AppEventEmitter.getInstance();
 
