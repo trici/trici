@@ -1,11 +1,17 @@
-import type { Logger } from "@trici/logger";
-import { IConsoleLogger } from "@trici/logger";
-const child_process = require("child_process");
-import fs from "fs";
-import EventEmitter from "events";
+import type { Logger } from '@trici/logger';
+import { IConsoleLogger } from '@trici/logger';
+const child_process = require('child_process');
+import fs from 'fs';
+import EventEmitter from 'events';
 
 export interface ITriciRecorder {
-  startLiveRecording(recordingFileName: string, recordingStorageLocation: string, screenToRecord: number, includeWatermark: boolean, waterMarkImagePath: string): void;
+  startLiveRecording(
+    recordingFileName: string,
+    recordingStorageLocation: string,
+    screenToRecord: number,
+    includeWatermark: boolean,
+    waterMarkImagePath: string,
+  ): void;
   stopLiveRecording(): void;
 }
 
@@ -24,68 +30,79 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     this.recordingProcess = null;
   }
 
-  startLiveRecording(recordingFileName: string, recordingStorageLocation: string, screenToRecord:  number, includeWatermark: boolean, waterMarkImagePath: string): void {
+  startLiveRecording(
+    recordingFileName: string,
+    recordingStorageLocation: string,
+    screenToRecord: number,
+    includeWatermark: boolean,
+    waterMarkImagePath: string,
+  ): void {
     const self = this;
     const recordingFileNameWithPath = `${recordingStorageLocation}/${recordingFileName}`;
     const recordingCommandStdOutStdErrFileNameWithPath = `${recordingStorageLocation}/${recordingFileName}.log`;
-    const recordingCommandStdOutStdErrFileStream = fs.createWriteStream(recordingCommandStdOutStdErrFileNameWithPath, { flags: "a" });
+    const recordingCommandStdOutStdErrFileStream = fs.createWriteStream(recordingCommandStdOutStdErrFileNameWithPath, {
+      flags: 'a',
+    });
     const screenToRecordParam = `${screenToRecord}:none`;
     const waterMarkImagePathParam = `${waterMarkImagePath}`;
     const args = [
-      "-hide_banner",
-      "-pixel_format",
-      "nv12",
-      "-r",
-      "7",
-      "-f",
-      "avfoundation",
-      "-i",
+      '-hide_banner',
+      '-pixel_format',
+      'nv12',
+      '-r',
+      '7',
+      '-f',
+      'avfoundation',
+      '-i',
       screenToRecordParam,
-      "-i",
+      '-i',
       waterMarkImagePathParam,
-      "-filter_complex",
-      "scale=-2:2160,setsar=1,overlay=W-w-5:H-h-5",
-      "-c:v",
-      "h264_videotoolbox",
-      "-b:v",
-      "1526K",
-      "-profile:v",
-      "high",
-      "-f",
-      "segment",
-      "-segment_time",
-      "5",
-      "-segment_list_flags",
-      "live",
-      "-segment_list_size",
-      "0",
-      "-max_muxing_queue_size",
-      "1024",
-      "-reset_timestamps",
-      "1",
+      '-filter_complex',
+      'scale=-2:2160,setsar=1,overlay=W-w-5:H-h-5',
+      '-c:v',
+      'h264_videotoolbox',
+      '-b:v',
+      '1526K',
+      '-profile:v',
+      'high',
+      '-f',
+      'segment',
+      '-segment_time',
+      '5',
+      '-segment_list_flags',
+      'live',
+      '-segment_list_size',
+      '0',
+      '-max_muxing_queue_size',
+      '1024',
+      '-reset_timestamps',
+      '1',
       `${recordingFileNameWithPath}-%04d.mp4`,
     ];
 
-    this.logger.info("args:", args);
+    this.logger.info('args:', args);
     try {
       this.recordingProcess = child_process.spawn(this.#ffmpegBinPath, args, {
-        stdio: ["ignore", "pipe", "pipe"],
+        stdio: ['ignore', 'pipe', 'pipe'],
       });
       this.logger.info(`TriciRecorder startLiveRecording: ${recordingFileName}`);
 
       this.recordingProcess.stdout.pipe(recordingCommandStdOutStdErrFileStream);
       this.recordingProcess.stderr.pipe(recordingCommandStdOutStdErrFileStream);
-      this.recordingProcess.on("exit", (code: number) => {
+      this.recordingProcess.on('exit', (code: number) => {
         this.logger.info(`TriciRecorder exit: ${code}`);
-        self.emit("recordingProcessExited", code);
+        self.emit('recordingProcessExited', code);
       });
+      console.log('Recording process pid:', this.recordingProcess.pid);
     } catch (error) {
       this.logger.error(`TriciRecorder error: ${error}`);
     }
   }
 
   stopLiveRecording(): void {
-    if (this.recordingProcess){
+    console.log('Stopping live recording');
+    console.log('Recording process id:', this.recordingProcess.pid);
+    if (this.recordingProcess) {
       this.logger.info(`TriciRecorder stopLiveRecording: ${this.recordingProcess.pid}`);
       this.recordingProcess.kill();
     }
