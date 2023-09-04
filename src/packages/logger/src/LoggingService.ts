@@ -1,7 +1,7 @@
-import EventEmitter from "events";
-import winston, { transport } from "winston";
-import winstonDailyRotateFile from "winston-daily-rotate-file";
-const config = require("@trici/config");
+import EventEmitter from 'events';
+import winston, { transport } from 'winston';
+import winstonDailyRotateFile from 'winston-daily-rotate-file';
+const config = require('@trici/config');
 const { format } = winston;
 const { combine, timestamp, label, printf, errors } = format;
 
@@ -21,14 +21,14 @@ export class LoggingService extends EventEmitter implements ILoggingService {
   private logFileNameFormat: string;
   private defaultMeta: any;
   private httpLogFormat: any;
-  private remoteApiEndPoint: string = "api.gettrici.com";
+  private remoteApiEndPoint: string = 'api.gettrici.com';
   private loggerDefaultMetaUsesInstallationId: boolean = false;
 
   constructor() {
     super();
     this.logger = null;
-    this.logsDirectoryPath = "./logs";
-    this.logFileNameFormat = "";
+    this.logsDirectoryPath = './logs';
+    this.logFileNameFormat = '';
 
     this.defaultMeta = {};
     this.logFileFormat = printf(({ level, message, label, timestamp, installationId, appDetails }) => {
@@ -36,12 +36,12 @@ export class LoggingService extends EventEmitter implements ILoggingService {
     });
     this.httpLogFormat = printf(
       ({ level, message, appDetails, timestamp, installationId }) =>
-        `${timestamp} [${appDetails}] ${installationId} ${level}: ${message}`
+        `${timestamp} [${appDetails}] ${installationId} ${level}: ${message}`,
     );
-    this.remoteApiEndPoint = "api.gettrici.com";
+    this.remoteApiEndPoint = 'api.gettrici.com';
     this.loggerDefaultMetaUsesInstallationId = false;
     this.transports = {
-      console: new winston.transports.Console({ level: "info" }),
+      console: new winston.transports.Console({ level: 'info' }),
       file: this._getDailyRotateFileTransport('trici-%DATE%.log'),
       remote: new winston.transports.Http(),
     };
@@ -56,12 +56,12 @@ export class LoggingService extends EventEmitter implements ILoggingService {
     return new winstonDailyRotateFile({
       filename: logFileNameFormat,
       dirname: `${this.logsDirectoryPath}`,
-      datePattern: "YYYY-MM-DD-HH",
+      datePattern: 'YYYY-MM-DD-HH',
       zippedArchive: true,
-      maxSize: "20m",
-      maxFiles: "7d",
-      level: "info",
-      format: combine(errors({ stack: true }), label({ label: "trici" }), timestamp(), this.logFileFormat),
+      maxSize: '20m',
+      maxFiles: '7d',
+      level: 'info',
+      format: combine(errors({ stack: true }), label({ label: 'trici' }), timestamp(), this.logFileFormat),
     });
   }
 
@@ -73,10 +73,10 @@ export class LoggingService extends EventEmitter implements ILoggingService {
     return new winston.transports.Http({
       host: this.remoteApiEndPoint,
       port: 443,
-      path: "/logClientEvent",
+      path: '/logClientEvent',
       ssl: true,
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `V291bmRzTXlIZWFydFdpdGhBTW9ub3Rvbm91c0xhbmdvdXJKb2huSGFzQUxvbmdNb3VzdGFjaGU=`,
       },
       format: combine(errors({ stack: true }), timestamp(), this.httpLogFormat),
@@ -91,15 +91,15 @@ export class LoggingService extends EventEmitter implements ILoggingService {
    * @example
    * const transportsConfig = _getTransportsConfig();
    * // transportsConfig = [DailyRotateFileTransport, HttpTransport]
-  */
+   */
   private _getTransportsConfig(): any[] {
     if (!this.transports) {
-      throw new Error("Transports not initialized");
+      throw new Error('Transports not initialized');
     }
     let transportsConfig = [];
-    if (config.builtFor === "prod") {
+    if (config.builtFor === 'prod') {
       transportsConfig = [this.transports.file, this.transports.remote];
-    } else if (config.builtFor === "test") {
+    } else if (config.builtFor === 'test') {
       transportsConfig = [this.transports.file, this.transports.console];
     } else {
       transportsConfig = [this.transports.file, this.transports.console, this.transports.remote];
@@ -113,10 +113,10 @@ export class LoggingService extends EventEmitter implements ILoggingService {
    */
   private _getExceptionHandlersTransportsConfig(): any[] {
     if (!this.transports) {
-      throw new Error("Transports not initialized");
+      throw new Error('Transports not initialized');
     }
     let exceptionHandlerTransports = [];
-    if (config.builtFor === "test") {
+    if (config.builtFor === 'test') {
       exceptionHandlerTransports = [this.transports.file];
     } else {
       exceptionHandlerTransports = [this.transports.file, this.transports.remote];
@@ -136,10 +136,10 @@ export class LoggingService extends EventEmitter implements ILoggingService {
    * // 2019-01-01T00:00:00.000Z [trici] [1234] [trici] info: Hello world
    */
   public init(logsDirectoryPath: string, logFileNameFormat: string, defaultMeta: any): winston.Logger {
-    console.log("Initializing logger with Config.builtFor: ", config.builtFor);
+    console.log('Initializing logger with Config.builtFor: ', config.builtFor);
     if (this.logger) {
       this.logger.info(
-        `Logger already initialized for logsDirectoryPath: ${logsDirectoryPath} and defaultMeta: ${defaultMeta}`
+        `Logger already initialized for logsDirectoryPath: ${logsDirectoryPath} and defaultMeta: ${defaultMeta}`,
       );
       return this.logger;
     }
@@ -148,27 +148,25 @@ export class LoggingService extends EventEmitter implements ILoggingService {
     this.defaultMeta = defaultMeta;
 
     this.transports = {
-      console: new winston.transports.Console({ level: "info" }),
+      console: new winston.transports.Console({ level: 'info' }),
       file: this._getDailyRotateFileTransport(logFileNameFormat),
       remote: this._getHttpTransport(),
     };
 
-
-
     this.logger = winston.createLogger({
-      level: "info",
+      level: 'info',
       transports: this._getTransportsConfig(),
       exceptionHandlers: this._getExceptionHandlersTransportsConfig(),
       exitOnError: false,
       defaultMeta: defaultMeta,
     });
-    this.logger.info("Logger initialized");
+    this.logger.info('Logger initialized');
     return this.logger;
   }
 
   public getLogger(): winston.Logger {
     if (!this.logger) {
-      throw new Error("Logger not initialized");
+      throw new Error('Logger not initialized');
     }
 
     return this.logger;
@@ -176,7 +174,7 @@ export class LoggingService extends EventEmitter implements ILoggingService {
 
   public updateLogLevel(logLevel: string): void {
     if (!this.logger) {
-      throw new Error("Logger not initialized");
+      throw new Error('Logger not initialized');
     }
 
     this.logger.level = logLevel;
@@ -184,13 +182,13 @@ export class LoggingService extends EventEmitter implements ILoggingService {
 
   public changeLoggerDefaultMeta(defaultMeta: any): void {
     if (!this.logger) {
-      throw new Error("Logger not initialized");
+      throw new Error('Logger not initialized');
     }
     if (!this.loggerDefaultMetaUsesInstallationId) {
       // update logger config based on installationId
       this.logger.info(`Changing logger default meta to: ${JSON.stringify(defaultMeta)}`);
       this.logger = winston.createLogger({
-        level: "info",
+        level: 'info',
         transports: this._getTransportsConfig(),
         exceptionHandlers: this._getExceptionHandlersTransportsConfig(),
         exitOnError: false,
@@ -203,7 +201,7 @@ export class LoggingService extends EventEmitter implements ILoggingService {
 
   public close(): void {
     if (!this.logger) {
-      throw new Error("Logger not initialized");
+      throw new Error('Logger not initialized');
     }
     this.logger.end();
   }
