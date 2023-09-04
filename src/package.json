@@ -8,6 +8,8 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.60.0",
     "@typescript-eslint/parser": "^5.60.0",
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0",
     "esbuild": "^0.17.12",
     "eslint": "^8.43.0",
     "eslint-config-prettier": "^8.8.0",
@@ -18,12 +20,17 @@
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-react": "^7.32.2",
     "lerna": "^6.5.1",
+    "nx": "16.6.0",
     "prettier": "^2.8.8",
     "sharp": "^0.32.1",
-    "typescript": "^4.9.5",
-    "nx": "16.6.0"
+    "typescript": "^4.9.5"
   },
   "dependencies": {
     "esbuild-plugin-ignore": "^1.1.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }
