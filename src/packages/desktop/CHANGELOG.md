@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.4.0](https://github.com/trici/trici/compare/@trici/desktop@0.3.0...@trici/desktop@0.4.0) (2023-09-05)
+
+### Features
+
+- **version:** Create a VERSION file when publishing the desktop build to builds ([e8d1b5e](https://github.com/trici/trici/commit/e8d1b5e5da83ba6bd9a5fd8c4025b1f5379875ff))
+
 # [0.3.0](https://github.com/trici/trici/compare/@trici/desktop@0.2.0...@trici/desktop@0.3.0) (2023-09-05)
 
 ### Bug Fixes
