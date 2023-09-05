@@ -36,3 +36,8 @@ fs.copySync(
 console.log(`Copied @trici/config to build ${path.join(buildPath, 'node_modules', '@trici', 'config')}`);
 const resourcesPath = path.join(__dirname, 'resources');
 fs.copySync(resourcesPath, path.join(buildPath, 'resources'));
+
+console.log(`Copied resources ${resourcesPath} to build ${path.join(buildPath, 'resources')}`);
+
+const versionFile = path.join(__dirname, 'VERSION');
+fs.copySync(versionFile, path.join(buildPath, 'VERSION'));

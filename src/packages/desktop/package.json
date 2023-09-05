@@ -34,10 +34,11 @@
     "build-prod": "cross-env NODE_ENV=production pnpm run esbuild-main && cross-env NODE_ENV=production pnpm run esbuild-renderer && pnpm run build-config-prod && pnpm run build-copy-unbundled",
     "build-config-dev": "cross-env NODE_ENV=development node buildConfig.js",
     "build-config-prod": "cross-env NODE_ENV=production node buildConfig.js",
+    "create-version-file": "node createVersionFile.js",
     "test": "cross-env NODE_ENV=test npx playwright test",
     "updbin": "node updbin.js",
     "publish": "run-script-os",
-    "publish:darwin": "nx affected --target=build-prod && cross-env NODE_ENV=production node updbin.js && pnpm run build-prod && cross-env NODE_ENV=production node publishToBuild.js"
+    "publish:darwin": "nx affected --target=build-prod && cross-env NODE_ENV=production node updbin.js && pnpm run build-prod && pnpm run create-version-file && cross-env NODE_ENV=production node publishToBuild.js"
   },
   "bugs": {
     "url": "https://github.com/trici/trici/issues"
