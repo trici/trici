@@ -7,6 +7,7 @@ const options = {
   executableName: 'TriciTest',
   asar: {
     unpackDir: 'bin',
+    unpack: 'trici_watermark.png',
   },
   overwrite: true,
   icon: './resources/images/trici_icon.icns',
