@@ -76,6 +76,7 @@ export class AppService implements IAppService {
         evt.preventDefault();
         console.log('app.on.before-quit');
         try {
+          dispatch({ type: 'CLEANUP_BEFORE_SHUTDOWN' });
           this.#processManager.killPrimaryProcess();
           // kill any running child processes
           // TriciShell.stopRecordingKaalSession();

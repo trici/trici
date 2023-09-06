@@ -28,5 +28,8 @@ export type TriciAction =
       type: 'CLOSE_ALERT_WINDOW';
     }
   | {
+      type: 'CLEANUP_BEFORE_SHUTDOWN';
+    }
+  | {
       type: 'OPEN_SYSTEM_PREFERENCES';
     };

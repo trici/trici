@@ -24,12 +24,11 @@ import { IWindowManager } from './WindowManager';
 import { GlobalShortcutService } from './GlobalShortcutService';
 import { MainProcessDataAccessService } from './MainProcessDataAccessService';
 import { MainProcessIpcMessageHandlerService } from './MainProcessIpcMessageHandler';
-import { ChangeTrayStatePlugin } from '../plugins/ChangeTrayStatePlugin';
 import path from 'path';
 
 let logger: Logger;
 let appJsonStorageService: IAppJsonStorageService;
-let trayService: ITrayService;
+let trayService: TrayService;
 let processManager: IProcessManager;
 let triciApp: IAppService;
 let repo: TriciRepository;
@@ -62,8 +61,6 @@ function regiserCorePlugins(pluginManager: PluginManager, recorder: TriciRecorde
   pluginManager.register(screenRecordingPlugin);
   const askWhichScreenToRecordPlugin = new AskWhichScreenToRecordPlugin(windowManager);
   pluginManager.register(askWhichScreenToRecordPlugin);
-  const changeTrayStatePlugin = new ChangeTrayStatePlugin(trayService);
-  pluginManager.register(changeTrayStatePlugin);
 }
 
 export const InitializationService = {
@@ -79,12 +76,18 @@ export const InitializationService = {
   async startApp(): Promise<void> {
     try {
       appJsonStorageService = AppJsonStorageService;
-      trayService = TrayService;
+      const appEventEmitter = AppEventEmitter.getInstance();
+
+      trayService = new TrayService(actionDispatcher, appEventEmitter);
+      trayService.initService();
       const shortcutService = new GlobalShortcutService();
       shortcutService.initService();
       processManager = ProcessManagerSingleton.getInstance(logger);
       const windowManager = new WindowManager(logger, actionDispatcher);
       windowManager.registerActionHandlers();
+
+      // Instantiate the AppObserver service. It is started inside UserActivityMonitorService
+      const appObserverService = new AppObserverService(logger, app.getAppPath());
 
       triciApp = new AppService(processManager, trayService, appJsonStorageService);
       await triciApp.start();
@@ -99,7 +102,6 @@ export const InitializationService = {
         ? path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'bin', 'ffmpeg')
         : app.getAppPath() + '/bin/ffmpeg';
       const triciRecorder = new TriciRecorder(ffmpegPath, logger);
-      const appEventEmitter = AppEventEmitter.getInstance();
 
       // Get the UserPreferences and set it in the global object
       const lastSavedEntityIds = await appJsonStorageService.getLastSavedEntityIds();
@@ -127,11 +129,6 @@ export const InitializationService = {
       pluginManager.initialize();
       regiserCorePlugins(pluginManager, triciRecorder, windowManager);
 
-      // Instantiate the AppObserver service. It is started inside UserActivityMonitorService
-      const appRoot = app.getAppPath();
-      // console.log('appRoot: ', appRoot);
-      const appObserverService = new AppObserverService(logger, app.getAppPath());
-
       // Start the UserActivityMonitor service
       const userActivityMonitorService = new UserActivityMonitorService(
         logger,
@@ -142,6 +139,8 @@ export const InitializationService = {
         appEventEmitter,
       );
       userActivityMonitorService.start();
+
+      // Register
 
       // Start the Idletime service
     } catch (error) {
