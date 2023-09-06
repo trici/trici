@@ -39,7 +39,6 @@ class TrayService implements ITriciDesktopService, ITrayService {
   tray?: Tray;
   trayState: TrayState;
   actionDispatcher: IActionDispatcher<TriciAction>;
-  actionHandlersRegistered: boolean = false;
   eventBus: AppEventEmitter;
   isServiceInitialized: boolean = false;
 
@@ -47,7 +46,6 @@ class TrayService implements ITriciDesktopService, ITrayService {
     this.tray = undefined;
     this.trayState = TrayState.DEFAULT;
     this.actionDispatcher = actionDispatcher;
-    this.actionHandlersRegistered = false;
     this.eventBus = eventBus;
     this.isServiceInitialized = false;
   }
@@ -106,18 +104,15 @@ class TrayService implements ITriciDesktopService, ITrayService {
   }
 
   private registerActionHandlers(): void {
-    if (!this.actionHandlersRegistered) {
-      this.actionDispatcher.register((action: TriciAction) => {
-        switch (action.type) {
-          case 'CLEANUP_BEFORE_SHUTDOWN':
-            this.destroyTrayInstance();
-            break;
-          default:
-            break;
-        }
-      });
-      this.actionHandlersRegistered = true;
-    }
+    this.actionDispatcher.register((action: TriciAction) => {
+      switch (action.type) {
+        case 'CLEANUP_BEFORE_SHUTDOWN':
+          this.destroyTrayInstance();
+          break;
+        default:
+          break;
+      }
+    });
   }
 
   private registerAppEventHandlers(): void {
