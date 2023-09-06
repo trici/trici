@@ -58,7 +58,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
           self.logger.error('Error: ' + data.toString('utf8'));
         });
         this.child.on('exit', function (code: number) {
-          self.logger.info('Child process exited with code ' + code.toString());
+          self.logger.info('AppObserver child process exited with code ' + code);
         });
       }
     } catch (error) {
@@ -78,4 +78,4 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
   }
 }
 
-export type AppObserverServiceInstance = InstanceType<typeof AppObserverService>;
+// export type AppObserverServiceInstance = InstanceType<typeof AppObserverService>;
