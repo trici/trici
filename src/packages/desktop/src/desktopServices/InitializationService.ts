@@ -137,7 +137,9 @@ export const InitializationService = {
         repo,
         appJsonStorageService,
         appEventEmitter,
+        actionDispatcher,
       );
+      userActivityMonitorService.initService();
       userActivityMonitorService.start();
 
       // Register

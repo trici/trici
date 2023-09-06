@@ -1,20 +1,23 @@
 import { IdleTimeServiceInstance } from './IdleTimeService';
-import type { AppObserverServiceInstance } from '@trici/app-observer';
+import { AppObserverService } from '@trici/app-observer';
 import { ITriciRepository } from '@trici/dal';
 import type { Logger } from '@trici/logger';
 import { Constants, DailyUserActivity, KEY_PARTS, TRICI_APP_EVENT } from '@trici/models';
 import { generateNewTriciId, generateUpdatedTriciId, isTriciIdValidForToday } from '@trici/utils';
 import { IAppJsonStorageService } from './AppJsonStorageService';
 import { AppEventEmitter } from './AppEventEmitter';
+import { ITriciDesktopService } from '../typedefs/ITriciDesktopService';
+import { IActionDispatcher } from './ActionDispatcher';
+import { TriciAction } from '../typedefs/TriciAction';
 
 export interface IUserActivityMonitorService {
   start(): Promise<void>;
   stop(): Promise<void>;
 }
 
-export class UserActivityMonitorService implements IUserActivityMonitorService {
+export class UserActivityMonitorService implements ITriciDesktopService, IUserActivityMonitorService {
   idleTimeServiceInstance: IdleTimeServiceInstance;
-  appObserverServiceInstance: AppObserverServiceInstance;
+  appObserverServiceInstance: AppObserverService;
   logger: Logger;
   lastIdleTime: number;
   userWentAwayAt: number;
@@ -28,14 +31,17 @@ export class UserActivityMonitorService implements IUserActivityMonitorService {
   todaysUserActitivity: DailyUserActivity | null;
   appJsonStorageService: IAppJsonStorageService;
   appEventEmitter: AppEventEmitter;
+  isServiceInitialized: boolean = false;
+  actionDispatcher: IActionDispatcher<TriciAction>;
 
   constructor(
     logger: Logger,
     idleTimeServiceInstance: IdleTimeServiceInstance,
-    appObserverServiceInstance: AppObserverServiceInstance,
+    appObserverServiceInstance: AppObserverService,
     repository: ITriciRepository,
     appJsonStorageService: IAppJsonStorageService,
     appEventEmitter: AppEventEmitter,
+    actionDispatcher: IActionDispatcher<TriciAction>,
   ) {
     this.logger = logger;
     this.idleTimeServiceInstance = idleTimeServiceInstance;
@@ -52,6 +58,8 @@ export class UserActivityMonitorService implements IUserActivityMonitorService {
     this.todaysUserActitivity = null;
     this.appJsonStorageService = appJsonStorageService;
     this.appEventEmitter = appEventEmitter;
+    this.isServiceInitialized = false;
+    this.actionDispatcher = actionDispatcher;
   }
 
   updateLastSavedTodayUserActivityId = async (udpatedId: string) => {
@@ -138,6 +146,31 @@ export class UserActivityMonitorService implements IUserActivityMonitorService {
     }
     this.lastIdleTime = idleTime;
   };
+
+  registerActionHandlers(): void {
+    // TODO: Register any action handlers that this service needs to handle
+    this.actionDispatcher.register((action: TriciAction) => {
+      switch (action.type) {
+        case 'CLEANUP_BEFORE_SHUTDOWN':
+          this.stop();
+          break;
+        default:
+          break;
+      }
+    });
+  }
+
+  registerAppEventHandlers(): void {
+    // TODO: Register any app event handlers that this service needs to handle
+  }
+
+  public initService(): void {
+    if (!this.isServiceInitialized) {
+      this.registerActionHandlers();
+      this.registerAppEventHandlers();
+      this.isServiceInitialized = true;
+    }
+  }
 
   async start(): Promise<void> {
     //Register event handlers to handle events from the services.
