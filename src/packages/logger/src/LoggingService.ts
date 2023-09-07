@@ -40,11 +40,11 @@ export class LoggingService extends EventEmitter implements ILoggingService {
     );
     this.remoteApiEndPoint = 'api.gettrici.com';
     this.loggerDefaultMetaUsesInstallationId = false;
-    this.transports = {
-      console: new winston.transports.Console({ level: 'info' }),
-      file: this._getDailyRotateFileTransport('trici-%DATE%.log'),
-      remote: new winston.transports.Http(),
-    };
+    /**
+     *  Should be undefined and set when service is initialized. Otherwise app does not work when
+     * packaged as asar since logsDirectory before initialization is './logs' and that cannot be created.
+     */
+    this.transports = undefined;
   }
 
   /**
@@ -94,8 +94,13 @@ export class LoggingService extends EventEmitter implements ILoggingService {
    */
   private _getTransportsConfig(): any[] {
     if (!this.transports) {
-      throw new Error('Transports not initialized');
+      this.transports = {
+        console: new winston.transports.Console({ level: 'info' }),
+        file: this._getDailyRotateFileTransport('trici-%DATE%.log'),
+        remote: new winston.transports.Http(),
+      };
     }
+
     let transportsConfig = [];
     if (config.builtFor === 'prod') {
       transportsConfig = [this.transports.file, this.transports.remote];
