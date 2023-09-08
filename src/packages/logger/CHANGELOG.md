@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.1](https://github.com/trici/trici/compare/@trici/logger@1.2.0...@trici/logger@1.2.1) (2023-09-08)
+
+### Bug Fixes
+
+- **LoggingService:** logging service failed to initialize when app was packaged as asar ([321d94c](https://github.com/trici/trici/commit/321d94c244718a107be208d53316008af19e4bf4))
+
 # [1.2.0](https://github.com/trici/trici/compare/@trici/logger@1.1.0...@trici/logger@1.2.0) (2023-09-05)
 
 ### Features

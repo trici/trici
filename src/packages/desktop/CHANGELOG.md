@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.5.0](https://github.com/trici/trici/compare/@trici/desktop@0.4.0...@trici/desktop@0.5.0) (2023-09-08)
+
+### Bug Fixes
+
+- **TrayService:** Destroy the tray icon when shutting down ([df6e8d5](https://github.com/trici/trici/commit/df6e8d5de8d59b9f7a342a36b68e0fc164eb9850))
+- use the correct device index from screenToRecord ([065081a](https://github.com/trici/trici/commit/065081ae84c4e3561fdc5b8ff1f2e9a08b8b87f9))
+- **UserActivityMonitorService:** stop the service when the app is quitting ([86b04bc](https://github.com/trici/trici/commit/86b04bcba2a79147bf36138403ec6a6c6a5440b1))
+
+### Features
+
+- Cpature which screen is being recorded in the FocusSession entity ([caf8e2e](https://github.com/trici/trici/commit/caf8e2e353d73eba4f877ecdd775f8efda5815f7))
+
 # [0.4.0](https://github.com/trici/trici/compare/@trici/desktop@0.3.0...@trici/desktop@0.4.0) (2023-09-05)
 
 ### Features

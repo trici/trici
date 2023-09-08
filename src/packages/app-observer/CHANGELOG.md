@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.3.1](https://github.com/trici/trici/compare/@trici/app-observer@1.3.0...@trici/app-observer@1.3.1) (2023-09-08)
+
+### Bug Fixes
+
+- **AppObserverService:** an unhandled exception was thrown on child process exit ([8585fb5](https://github.com/trici/trici/commit/8585fb55cf7d559a34c7057aad6ebb6c296707db))
+
 # [1.3.0](https://github.com/trici/trici/compare/@trici/app-observer@1.2.0...@trici/app-observer@1.3.0) (2023-09-05)
 
 ### Bug Fixes

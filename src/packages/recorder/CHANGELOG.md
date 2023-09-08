@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.1](https://github.com/trici/trici/compare/@trici/recorder@1.2.0...@trici/recorder@1.2.1) (2023-09-08)
+
+### Bug Fixes
+
+- use the correct device index from screenToRecord ([065081a](https://github.com/trici/trici/commit/065081ae84c4e3561fdc5b8ff1f2e9a08b8b87f9))
+
 # [1.2.0](https://github.com/trici/trici/compare/@trici/recorder@1.1.0...@trici/recorder@1.2.0) (2023-09-05)
 
 ### Features

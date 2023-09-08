@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.3.0](https://github.com/trici/trici/compare/@trici/models@1.2.0...@trici/models@1.3.0) (2023-09-08)
+
+### Features
+
+- Cpature which screen is being recorded in the FocusSession entity ([caf8e2e](https://github.com/trici/trici/commit/caf8e2e353d73eba4f877ecdd775f8efda5815f7))
+
 # [1.2.0](https://github.com/trici/trici/compare/@trici/models@1.1.0...@trici/models@1.2.0) (2023-09-05)
 
 ### Bug Fixes
