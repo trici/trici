@@ -13,31 +13,32 @@ export class ScreenRecordingPlugin implements ITriciPlugin {
     this.recorder = recorder;
   }
 
-  public handleEvent(event: TRICI_APP_EVENT, data: any): void {
+  public handleEvent(event: TRICI_APP_EVENT, ...data: any[]): void {
+    const [focusSession] = data;
     switch (event) {
       case TRICI_APP_EVENT.FOCUS_SESSION_STARTED:
-        this.handleFocusSessionStarted(data as FocusSession);
+        this.handleFocusSessionStarted(focusSession as FocusSession);
         break;
       case TRICI_APP_EVENT.FOCUS_SESSION_ENDED:
-        this.handleFocusSessionEnded(data as FocusSession);
+        this.handleFocusSessionEnded(focusSession as FocusSession);
         break;
       default:
         break;
     }
   }
 
-  private handleFocusSessionStarted(data: FocusSession): void {
-    // //Start the recording. Writing this here for Hackathon. Ideally an event will be emitted from here and the recording process will listen to it.
-    const recordingFileName = data.get('startTime').toString();
+  private handleFocusSessionStarted(focusSession: FocusSession): void {
+    const recordingFileName = focusSession.get('startTime').toString();
     const includeWatermark = true;
     const recordingStorageLocation = global.userDataDirectoryCheckResult.recordingsDir.path;
     const watermarkImagePath = isRunningInAsar
       ? path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'resources', 'images', 'trici_watermark.png') + ''
       : app.getAppPath() + '/resources/images/trici_watermark.png';
+    const screenToRecord = focusSession.get('screenToRecord');
     this.recorder.startLiveRecording(
       recordingFileName,
       recordingStorageLocation,
-      3,
+      screenToRecord,
       includeWatermark,
       watermarkImagePath,
     );

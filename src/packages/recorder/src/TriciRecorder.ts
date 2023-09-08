@@ -30,6 +30,12 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     this.recordingProcess = null;
   }
 
+  private fetchDeviceIndex(screenToRecord: number): number {
+    const command = `ffmpeg -hide_banner -f avfoundation -list_devices true -i "" 2>&1 | grep "screen ${screenToRecord}" | awk -F "]" '{print $2}' | grep -o -E '[0-9]+'`;
+    const output = child_process.execSync(command).toString().trim();
+    return parseInt(output);
+  }
+
   startLiveRecording(
     recordingFileName: string,
     recordingStorageLocation: string,
@@ -43,7 +49,9 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     const recordingCommandStdOutStdErrFileStream = fs.createWriteStream(recordingCommandStdOutStdErrFileNameWithPath, {
       flags: 'a',
     });
-    const screenToRecordParam = `${screenToRecord}:none`;
+    const screenDeviceIndex = this.fetchDeviceIndex(screenToRecord);
+    console.log('screenDeviceIndex:', screenDeviceIndex);
+    const screenToRecordParam = `${screenDeviceIndex}:none`;
     const waterMarkImagePathParam = `${waterMarkImagePath}`;
     const args = [
       '-hide_banner',
