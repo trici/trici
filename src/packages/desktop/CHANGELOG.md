@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.1](https://github.com/trici/trici/compare/@trici/desktop@0.5.0...@trici/desktop@0.5.1) (2023-09-08)
+
+### Bug Fixes
+
+- **@trici/desktop:** select screen to record was not showing selected value ([7b83660](https://github.com/trici/trici/commit/7b8366030392cf610dc21f7ede0c7be0734bbfb0))
+
 # [0.5.0](https://github.com/trici/trici/compare/@trici/desktop@0.4.0...@trici/desktop@0.5.0) (2023-09-08)
 
 ### Bug Fixes
