@@ -33,8 +33,13 @@ export function SelectScreenToRecord({ userPreferences, onSave }: ISettingsItemC
       text: `${displayUnit.label} | ${displayUnit.size.width} x ${displayUnit.size.height} @ ${primaryDisplayLabel}`,
     });
   });
-  const screenToRecord = userPreferences?.defaultScreenToRecord;
-  const selectedDisplay = displayUnits.length > 1 ? screenToRecord && screenToRecord.toString() : '0';
+
+  if (userPreferences === undefined) {
+    return <div>Loading...</div>;
+  }
+
+  const screenToRecord = userPreferences.defaultScreenToRecord;
+  const selectedDisplay = displayUnits.length > 1 ? screenToRecord.toString() : '0';
 
   return (
     <div>
