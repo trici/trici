@@ -42,6 +42,8 @@ export class FocusSessionService implements IFocusSessionService {
   }
 
   static #createNewFocusSession = (startedBy: SESSION_STARTED_BY, startedFrom: SESSION_STARTED_FROM): FocusSession => {
+    const displayUnits = screen.getAllDisplays();
+    const screenToRecord = displayUnits.length > 1 ? userPreferences.defaultScreenToRecord : 0;
     return new FocusSession({
       _id: generateNewTriciId(installationId, KEY_PARTS.FOCUS_SESSION),
       startTime: Date.now(),
@@ -50,7 +52,8 @@ export class FocusSessionService implements IFocusSessionService {
       idleTimeProfile: [],
       sessionDidStart: true,
       recordingProcessCrashedOnStart: false,
-      displayUnits: screen.getAllDisplays(),
+      displayUnits: displayUnits,
+      screenToRecord: screenToRecord,
       shouldHaveRecording: true,
       activities: [],
       startedBy: startedBy,
