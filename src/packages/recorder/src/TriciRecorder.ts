@@ -31,7 +31,9 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   }
 
   private fetchDeviceIndex(screenToRecord: number): number {
-    const command = `ffmpeg -hide_banner -f avfoundation -list_devices true -i "" 2>&1 | grep "screen ${screenToRecord}" | awk -F "]" '{print $2}' | grep -o -E '[0-9]+'`;
+    const command = `${
+      this.#ffmpegBinPath
+    } -hide_banner -f avfoundation -list_devices true -i "" 2>&1 | grep "screen ${screenToRecord}" | awk -F "]" '{print $2}' | grep -o -E '[0-9]+'`;
     const output = child_process.execSync(command).toString().trim();
     return parseInt(output);
   }
@@ -51,6 +53,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     });
     const screenDeviceIndex = this.fetchDeviceIndex(screenToRecord);
     console.log('screenDeviceIndex:', screenDeviceIndex);
+    console.log('this.#ffmpegBinPath:', this.#ffmpegBinPath);
     const screenToRecordParam = `${screenDeviceIndex}:none`;
     const waterMarkImagePathParam = `${waterMarkImagePath}`;
     const args = [
@@ -88,7 +91,9 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       `${recordingFileNameWithPath}-%04d.mp4`,
     ];
 
-    this.logger.info('args:', args);
+    this.logger.info(`recordingProcess args: ${JSON.stringify(args)}`);
+    console.log('args:', args);
+
     try {
       this.recordingProcess = child_process.spawn(this.#ffmpegBinPath, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -101,6 +106,9 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
         this.logger.info(`TriciRecorder exit: ${code}`);
         self.emit('recordingProcessExited', code);
       });
+      this.recordingProcess.on('error', (error: any) => {
+        this.logger.error(`TriciRecorder  recording process error: ${error}`);
+      });
       console.log('Recording process pid:', this.recordingProcess.pid);
     } catch (error) {
       this.logger.error(`TriciRecorder error: ${error}`);
@@ -109,8 +117,8 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
 
   stopLiveRecording(): void {
     console.log('Stopping live recording');
-    console.log('Recording process id:', this.recordingProcess.pid);
     if (this.recordingProcess) {
+      console.log('Killing recording process with pid:', this.recordingProcess.pid);
       this.logger.info(`TriciRecorder stopLiveRecording: ${this.recordingProcess.pid}`);
       this.recordingProcess.kill();
     }
