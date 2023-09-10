@@ -50,7 +50,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
         this.logger.info(`AppObserverService started:${this.child.pid}`);
         this.child.stdout.on('data', function (data: Buffer) {
           const appChangeData = JSON.parse(data.toString('utf8'));
-          self.logger.info(`appChangeData:${JSON.stringify(appChangeData)}`);
+          // self.logger.info(`appChangeData:${JSON.stringify(appChangeData)}`);
           self.currentApp = appChangeData.frontmostApp;
           self.emit('frontmostAppChanged', appChangeData);
         });

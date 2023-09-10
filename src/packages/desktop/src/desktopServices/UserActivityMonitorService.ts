@@ -177,8 +177,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.idleTimeServiceInstance.on('triciping', idleTime => this.handleTriciPing(idleTime));
 
     this.appObserverServiceInstance.on('frontmostAppChanged', (frontmostAppChangeData: any) => {
-      this.logger.info(`UserActivityMonitorService frontmostAppChanged:${frontmostAppChangeData}`);
-      // TODO: Save the data to the db. I am wondering whether there should be a BLL.
+      // this.logger.info(`UserActivityMonitorService frontmostAppChanged:${frontmostAppChangeData}`);
       if (this.todaysUserActitivity !== null) {
         try {
           const frontmostAppChanges = this.todaysUserActitivity.get('frontmostAppChanges');

@@ -59,17 +59,13 @@ class ActionDispatcher implements IActionDispatcher<TriciAction> {
 
   _processQueue(): void {
     this._isDispatching = true;
-    console.log(`processing queue of length ${this._dispatchQueue.length}`);
     while (this._dispatchQueue.length > 0) {
       const action = this._dispatchQueue.shift();
-      console.log(`dispatch queue length: ${this._dispatchQueue.length}`);
-      console.log(`dispatching action ${JSON.stringify(action.type)}`);
       for (const id in this._callbacks) {
         // console.log(`processing action ${JSON.stringify(action.type)}`);
         this._callbacks[id](action);
       }
     }
-    console.log(`done processing queue of length ${this._dispatchQueue.length}`);
     this._isDispatching = false;
   }
 
