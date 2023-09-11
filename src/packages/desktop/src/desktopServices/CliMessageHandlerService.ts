@@ -1,3 +1,7 @@
+/**
+ * CliMessageHandlerService.ts
+ *
+ */
 import { CLI_MESSAGE_TYPE, DisplayNotSelectedError, SESSION_STARTED_BY, SESSION_STARTED_FROM } from '@trici/models';
 import { IProcessManager } from '@trici/pm';
 import { IFocusSessionService } from './FocusSessionService';
@@ -10,12 +14,23 @@ export class CliMessageHandlerService implements ICliMessageHandlerService {
   processManager: IProcessManager;
   focusSessionService: IFocusSessionService;
 
+  /**
+   * Creates an instance of CliMessageHandlerService.
+   * @param {IProcessManager} processManager
+   * @param {IFocusSessionService} focusSessionService
+   */
   constructor(processManager: IProcessManager, focusSessionService: IFocusSessionService) {
     this.processManager = processManager;
     this.focusSessionService = focusSessionService;
   }
 
   async handleStartFocusSession(data, socket): Promise<void> {
+    /**
+     * Here we are not dispatching an action to start the Focus Session but calling the FocusSessionService directly.
+     * This is because to send a response to the cli, we need the socket on which the message was received.
+     * This is a special case for a desktop service where the pattern of dispatching an action as well as
+     * handling AppEvents is not followed.
+     */
     try {
       const focusSession = await this.focusSessionService.startFocusSession(
         SESSION_STARTED_BY.USER,
