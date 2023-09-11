@@ -13,21 +13,21 @@ import { ITriciRepository } from '@trici/dal';
 import { AppEventEmitter } from './AppEventEmitter';
 import { TriciAction } from '../typedefs/TriciAction';
 import { IActionDispatcher, dispatch } from './ActionDispatcher';
+import { ITriciDesktopService } from '../typedefs/ITriciDesktopService';
 export interface IFocusSessionService {
-  registerActionHandlers(): void;
   startFocusSession(startedBy: SESSION_STARTED_BY, startedFrom: SESSION_STARTED_FROM): Promise<FocusSession>;
   endFocusSession(): Promise<FocusSession>;
   isFocusSessionInProgress(): boolean;
   getCurrentFocusSession(): FocusSession | null;
 }
 
-export class FocusSessionService implements IFocusSessionService {
+export class FocusSessionService implements ITriciDesktopService, IFocusSessionService {
   #currentFocusSession: FocusSession | null;
   #focusSessionTimer: NodeJS.Timeout | null;
   #repository: ITriciRepository;
   appEventEmitter: AppEventEmitter;
   actionDispatcher: IActionDispatcher<TriciAction>;
-  actionHandlersRegistered: boolean = false;
+  isServiceInitialized: boolean = false;
 
   constructor(
     repository: ITriciRepository,
@@ -39,6 +39,7 @@ export class FocusSessionService implements IFocusSessionService {
     this.#focusSessionTimer = null;
     this.appEventEmitter = appEventEmitter;
     this.actionDispatcher = actionDispatcher;
+    this.isServiceInitialized = false;
   }
 
   static #createNewFocusSession = (startedBy: SESSION_STARTED_BY, startedFrom: SESSION_STARTED_FROM): FocusSession => {
@@ -61,25 +62,38 @@ export class FocusSessionService implements IFocusSessionService {
     });
   };
 
-  registerActionHandlers(): void {
-    if (!this.actionHandlersRegistered) {
-      this.actionDispatcher.register((action: TriciAction) => {
-        switch (action.type) {
-          case 'START_FOCUS_SESSION':
-            this._handleStartFocusSession(action.startedBy, action.startedFrom);
-            break;
-          case 'END_FOCUS_SESSION':
-            this._handleEndFocusSession();
-            break;
-          default:
-            break;
-        }
-      });
+  #registerActionHandlers = (): void => {
+    this.actionDispatcher.register((action: TriciAction) => {
+      switch (action.type) {
+        case 'START_FOCUS_SESSION':
+          this.#handleStartFocusSession(action.startedBy, action.startedFrom);
+          break;
+        case 'END_FOCUS_SESSION':
+          this.#handleEndFocusSession();
+          break;
+        default:
+          break;
+      }
+    });
+  };
+
+  #registerAppEventHandlers = (): void => {
+    this.appEventEmitter.on(TRICI_APP_EVENT.USER_INACTIVE, () => {
+      if (this.isFocusSessionInProgress()) {
+        dispatch({ type: 'END_FOCUS_SESSION' });
+      }
+    });
+  };
+
+  initService(): void {
+    if (!this.isServiceInitialized) {
+      this.#registerActionHandlers();
+      this.#registerAppEventHandlers();
     }
-    this.actionHandlersRegistered = true;
+    this.isServiceInitialized = true;
   }
 
-  private _handleStartFocusSession = async (
+  #handleStartFocusSession = async (
     startedBy: SESSION_STARTED_BY,
     startedFrom: SESSION_STARTED_FROM,
   ): Promise<void> => {
@@ -118,7 +132,7 @@ export class FocusSessionService implements IFocusSessionService {
     }
   };
 
-  private _handleEndFocusSession = async (): Promise<void> => {
+  #handleEndFocusSession = async (): Promise<void> => {
     try {
       const focusSession = await this.endFocusSession();
       console.log('Focus session ended: ', focusSession.toJS());

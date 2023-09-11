@@ -111,7 +111,7 @@ export const InitializationService = {
       global.userPreferences = userPreferences;
 
       focusSessionService = new FocusSessionService(repo, appEventEmitter, actionDispatcher);
-      focusSessionService.registerActionHandlers();
+      focusSessionService.initService();
       cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
       cliMessageHandlerService.registerCliMessageHandlers();
 
