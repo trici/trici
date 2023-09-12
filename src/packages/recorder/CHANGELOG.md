@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.2](https://github.com/trici/trici/compare/@trici/recorder@1.2.1...@trici/recorder@1.2.2) (2023-09-12)
+
+### Bug Fixes
+
+- **recorder:** recording process was crashing when using asar ([92e2a13](https://github.com/trici/trici/commit/92e2a13167772446b571baab5928f2692a3b22b0))
+
 ## [1.2.1](https://github.com/trici/trici/compare/@trici/recorder@1.2.0...@trici/recorder@1.2.1) (2023-09-08)
 
 ### Bug Fixes

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/trici/trici/compare/@trici/desktop@0.5.1...@trici/desktop@0.6.0) (2023-09-12)
+
+### Features
+
+- **FocusSessionService:** end a focus session if a user becomes inactive ([642dae6](https://github.com/trici/trici/commit/642dae617411693c1e74448f900deef7d2364e22))
+
 ## [0.5.1](https://github.com/trici/trici/compare/@trici/desktop@0.5.0...@trici/desktop@0.5.1) (2023-09-08)
 
 ### Bug Fixes
