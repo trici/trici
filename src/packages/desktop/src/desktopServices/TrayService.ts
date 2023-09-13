@@ -57,7 +57,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
         {
           label: 'Show/Hide Trici',
           click: () => {
-            console.log('Show/Hide Trici');
+            dispatch({ type: 'SHOW_HIDE_TRICI' });
           },
         },
         {

@@ -48,25 +48,39 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
     return null;
   }
 
+  const config = window.bridgeApi.triciConfig;
+  const defaultGlobalShowHideShortcut =
+    config.builtFor === 'dev'
+      ? Constants.DEFAULT_GLOBAL_SHOW_HIDE_SHORTCUT_DEV
+      : Constants.DEFAULT_GLOBAL_SHOW_HIDE_SHORTCUT_PROD;
+  const defaultGlobalStartFocusSessionShortcut =
+    config.builtFor === 'dev'
+      ? Constants.DEFAULT_GLOBAL_START_FOCUS_SESSION_SHORTCUT_DEV
+      : Constants.DEFAULT_GLOBAL_START_FOCUS_SESSION_SHORTCUT_PROD;
+  const defaultGlobalStopFocusSessionShortcut =
+    config.builtFor === 'dev'
+      ? Constants.DEFAULT_GLOBAL_STOP_FOCUS_SESSION_SHORTCUT_DEV
+      : Constants.DEFAULT_GLOBAL_STOP_FOCUS_SESSION_SHORTCUT_PROD;
+
   return (
     <div>
       <p>Shortcuts</p>
       <ConfigureGlobalShortcut
         label="Show/Hide Trici"
         currentShortcut={userPreferences.globalShowHideShortcut}
-        defaultShortcut={Constants.DEFAULT_GLOBAL_SHOW_HIDE_SHORTCUT}
+        defaultShortcut={defaultGlobalShowHideShortcut}
         onShortcutChange={_onChangeGlobalShowHideShortcut}
       />
       <ConfigureGlobalShortcut
         label="Start a Focus Session"
         currentShortcut={userPreferences.globalStartFocusSessionShortcut}
-        defaultShortcut={Constants.DEFAULT_START_FOCUS_SESSION_SHORTCUT}
+        defaultShortcut={defaultGlobalStartFocusSessionShortcut}
         onShortcutChange={_onChangeGlobalStartFocusSessionShortcut}
       />
       <ConfigureGlobalShortcut
         label="Stop a Focus Session"
         currentShortcut={userPreferences.globalStopFocusSessionShortcut}
-        defaultShortcut={Constants.DEFAUL_STOP_FOCUS_SESSION_SHORTCUT}
+        defaultShortcut={defaultGlobalStopFocusSessionShortcut}
         onShortcutChange={_onChangeGlobalStopFocusSessionShortcut}
       />
     </div>

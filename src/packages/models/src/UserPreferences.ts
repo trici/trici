@@ -4,17 +4,17 @@ import { Constants } from './Constants';
 export interface IUserPreferences {
   _id: string;
   defaultScreenToRecord: number;
-  globalShowHideShortcut: string;
-  globalStartFocusSessionShortcut: string;
-  globalStopFocusSessionShortcut: string;
-};
+  globalShowHideShortcut: string | undefined;
+  globalStartFocusSessionShortcut: string | undefined;
+  globalStopFocusSessionShortcut: string | undefined;
+}
 
 const UserPreferencesSchema: IUserPreferences = {
   _id: Constants.UNINITIALIZED_ID,
   defaultScreenToRecord: Constants.UNINITIALIZED_NUMBER,
-  globalShowHideShortcut: Constants.EMPTY_STRING,
-  globalStartFocusSessionShortcut: Constants.EMPTY_STRING,
-  globalStopFocusSessionShortcut: Constants.EMPTY_STRING,
+  globalShowHideShortcut: undefined,
+  globalStartFocusSessionShortcut: undefined,
+  globalStopFocusSessionShortcut: undefined,
 };
 
 const UserPreferencesRecord = Immutable.Record(UserPreferencesSchema);
@@ -25,9 +25,9 @@ export class UserPreferences extends UserPreferencesRecord {
       super({
         _id: Constants.UNINITIALIZED_ID,
         defaultScreenToRecord: Constants.UNINITIALIZED_NUMBER,
-        globalShowHideShortcut: Constants.EMPTY_STRING,
-        globalStartFocusSessionShortcut: Constants.EMPTY_STRING,
-        globalStopFocusSessionShortcut: Constants.EMPTY_STRING,
+        globalShowHideShortcut: undefined,
+        globalStartFocusSessionShortcut: undefined,
+        globalStopFocusSessionShortcut: undefined,
       });
     } else {
       super({
