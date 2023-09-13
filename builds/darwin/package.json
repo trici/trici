@@ -1,5 +1,5 @@
 {
-  "name": "trici-test",
+  "name": "trici",
   "version": "1.0.0",
   "description": "AI assistant for developers",
   "main": "dist/main.js",
@@ -15,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@electron-forge/cli": "^6.2.1",
+    "@electron-forge/cli": "^6.4.2",
     "@electron-forge/maker-dmg": "^6.3.0",
     "@electron-forge/maker-zip": "^6.4.1",
     "electron": "^23.1.4",
