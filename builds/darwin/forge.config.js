@@ -14,7 +14,11 @@ const config = {
   packagerConfig: {
     name: isTestBuild ? 'TriciTest' : 'Trici',
     executableName: isTestBuild ? 'TriciTest' : 'Trici',
-    asar: false,
+    asar: {
+      unpackDir: 'bin',
+      unpack: '{trici_watermark.png,*.node}',
+    },
+    overwrite: true,
     icon: path.resolve(__dirname, 'resources', 'images', 'trici_icon'),
     quiet: false,
     appBundleId: 'com.gettrici.trici',
@@ -49,6 +53,7 @@ const config = {
       'prepackage.js',
       'out',
       'package-lock.json',
+      'testBuild',
     ],
   },
   makers: [
