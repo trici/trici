@@ -80,8 +80,7 @@ export const InitializationService = {
 
       trayService = new TrayService(actionDispatcher, appEventEmitter);
       trayService.initService();
-      const shortcutService = new GlobalShortcutService();
-      shortcutService.initService();
+
       processManager = ProcessManagerSingleton.getInstance(logger);
       const windowManager = new WindowManager(logger, actionDispatcher);
       windowManager.registerActionHandlers();
@@ -109,6 +108,10 @@ export const InitializationService = {
       const userPreferencesResult = await repo.get(userPreferencesId);
       const userPreferences = new UserPreferences(userPreferencesResult);
       global.userPreferences = userPreferences;
+
+      // This should be called after the app is started
+      const shortcutService = new GlobalShortcutService();
+      shortcutService.initService();
 
       focusSessionService = new FocusSessionService(repo, appEventEmitter, actionDispatcher);
       focusSessionService.initService();

@@ -49,6 +49,9 @@ export class WindowManager implements IWindowManager {
           case 'CLOSE_ALERT_WINDOW':
             this._closeAlertWindow();
             break;
+          case 'SHOW_HIDE_TRICI':
+            console.log('Show/Hide Trici');
+            break;
           default:
             break;
         }
