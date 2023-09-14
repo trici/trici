@@ -6,16 +6,41 @@ import { Constants, SESSION_STARTED_BY, SESSION_STARTED_FROM } from '@trici/mode
 
 export interface IGlobalShortcutService {
   initService(): void;
+  getRegisteredShortcuts(): shortcutRegisteredResult[];
 }
 
-type shortcutRegisteredResult = { isRegistered: boolean; shortcut: string };
+export enum shortcutType {
+  SHOW_HIDE_TRICI_SHORTCUT = 'SHOW_HIDE_TRICI_SHORTCUT',
+  START_FOCUS_SESSION_SHORTCUT = 'START_FOCUS_SESSION_SHORTCUT',
+  STOP_FOCUS_SESSION_SHORTCUT = 'STOP_FOCUS_SESSION_SHORTCUT',
+  RELOAD_OPEN_WINDOWS_SHORTCUT = 'RELOAD_OPEN_WINDOWS_SHORTCUT',
+}
+
+export type shortcutRegisteredResult = { isRegistered: boolean; shortcut: string; type: string };
 
 export class GlobalShortcutService implements IGlobalShortcutService {
   private initialized = false;
-  private globalShowHideShortcutRegistered: shortcutRegisteredResult = { isRegistered: false, shortcut: '' };
-  private globalStartFocusSessionShortcutRegistered: shortcutRegisteredResult = { isRegistered: false, shortcut: '' };
-  private globalStopFocusSessionShortcutRegistered: shortcutRegisteredResult = { isRegistered: false, shortcut: '' };
-  private reloadOpenWindowsShortcutRegistered: shortcutRegisteredResult = { isRegistered: false, shortcut: '' };
+  private globalShowHideShortcutRegistered: shortcutRegisteredResult = {
+    isRegistered: false,
+    shortcut: '',
+    type: shortcutType.SHOW_HIDE_TRICI_SHORTCUT,
+  };
+  private globalStartFocusSessionShortcutRegistered: shortcutRegisteredResult = {
+    isRegistered: false,
+    shortcut: '',
+    type: shortcutType.START_FOCUS_SESSION_SHORTCUT,
+  };
+  private globalStopFocusSessionShortcutRegistered: shortcutRegisteredResult = {
+    isRegistered: false,
+    shortcut: '',
+    type: shortcutType.STOP_FOCUS_SESSION_SHORTCUT,
+  };
+  private reloadOpenWindowsShortcutRegistered: shortcutRegisteredResult = {
+    isRegistered: false,
+    shortcut: '',
+    type: shortcutType.RELOAD_OPEN_WINDOWS_SHORTCUT,
+  };
+
   private determineShortcut(
     shortcut: string,
     userPreferenceKey: string,
@@ -41,7 +66,7 @@ export class GlobalShortcutService implements IGlobalShortcutService {
       defaultDevShortcut,
       defaultProdShortcut,
     );
-    let result = { isRegistered: false, shortcut: shortcutToRegister };
+    let result = { isRegistered: false, shortcut: shortcutToRegister, type: existingShortcutRegisteredResult.type };
     result.isRegistered = this.#registerShortcut(shortcutToRegister, existingShortcutRegisteredResult, shortcutHandler);
     return result;
   }
@@ -94,26 +119,17 @@ export class GlobalShortcutService implements IGlobalShortcutService {
           dispatch({ type: 'END_FOCUS_SESSION' });
         },
       );
-
-      console.log(
-        'GlobalShortcutService: initService: globalShowHideShortcutRegistered: ',
-        this.globalShowHideShortcutRegistered,
-      );
-      console.log(
-        'GlobalShortcutService: initService: globalStartFocusSessionShortcutRegistered: ',
-        this.globalStartFocusSessionShortcutRegistered,
-      );
-      console.log(
-        'GlobalShortcutService: initService: globalStopFocusSessionShortcutRegistered: ',
-        this.globalStopFocusSessionShortcutRegistered,
-      );
-      console.log(
-        'GlobalShortcutService: initService: reloadOpenWindowsShortcutRegistered: ',
-        this.reloadOpenWindowsShortcutRegistered,
-      );
-
       this.initialized = true;
     }
+  }
+
+  getRegisteredShortcuts(): shortcutRegisteredResult[] {
+    return [
+      this.globalShowHideShortcutRegistered,
+      this.globalStartFocusSessionShortcutRegistered,
+      this.globalStopFocusSessionShortcutRegistered,
+      this.reloadOpenWindowsShortcutRegistered,
+    ];
   }
 
   #registerShortcut(

@@ -113,6 +113,10 @@ export const InitializationService = {
       const shortcutService = new GlobalShortcutService();
       shortcutService.initService();
 
+      // let the tray service know about the shortcuts
+      const registeredShortcuts = shortcutService.getRegisteredShortcuts();
+      trayService.addRegisteredShortcuts(registeredShortcuts);
+
       focusSessionService = new FocusSessionService(repo, appEventEmitter, actionDispatcher);
       focusSessionService.initService();
       cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
