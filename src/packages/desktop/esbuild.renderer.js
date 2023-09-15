@@ -50,6 +50,20 @@ async function buildJs() {
   });
 
   console.log('Alert Window build finished!!');
+
+  await esbuild.build({
+    entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'main', 'mainBundleEntry.js')],
+    bundle: true,
+    outfile: !isProdBuild
+      ? path.join(ROOT_DIR, 'dist', 'dev', 'main.app.js')
+      : path.join(ROOT_DIR, 'dist', 'main.app.js'),
+    sourcemap: !isProdBuild,
+    minify: isProdBuild,
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+    target: ['chrome94'],
+  });
+
+  console.log('Main Window build finished!!');
 }
 
 async function build(args) {
