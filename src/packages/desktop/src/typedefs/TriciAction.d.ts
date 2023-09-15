@@ -15,7 +15,10 @@ export type TriciAction =
       type: 'END_FOCUS_SESSION';
     }
   | {
-      type: 'SHOW_HIDE_TRICI';
+      type: 'SHOW_TRICI';
+    }
+  | {
+      type: 'HIDE_TRICI';
     }
   | {
       type: 'OPEN_FOCUS_SESSION_WINDOW';

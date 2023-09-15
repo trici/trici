@@ -35,13 +35,13 @@ export class WindowManager implements IWindowManager {
       this.actionDispatcher.register((action: TriciAction) => {
         switch (action.type) {
           case 'OPEN_SETTINGS_WINDOW':
-            this._createAndShowSettingsWindow(action.args.section);
+            this._showSettingsWindow(action.args.section);
             break;
           case 'RELOAD_OPEN_WINDOWS':
             this._reloadOpenWindows();
             break;
           case 'SHOW_ALERT_WINDOW':
-            this._createAndShowAlertWindow(action.args.alertType, action.args.quitAppOnClose);
+            this._showAlertWindow(action.args.alertType, action.args.quitAppOnClose);
             break;
           case 'OPEN_SYSTEM_PREFERENCES':
             this._openSystemPreferences();
@@ -49,8 +49,12 @@ export class WindowManager implements IWindowManager {
           case 'CLOSE_ALERT_WINDOW':
             this._closeAlertWindow();
             break;
-          case 'SHOW_HIDE_TRICI':
+          case 'SHOW_TRICI':
             console.log('Show/Hide Trici');
+            this._showMainWindow();
+            break;
+          case 'HIDE_TRICI':
+            this._hideMainWindow();
             break;
           default:
             break;
@@ -79,14 +83,40 @@ export class WindowManager implements IWindowManager {
   }
 
   private _showMainWindow(): void {
-    throw new Error('Method not implemented.');
+    if (this.mainWindow) {
+      this.mainWindow.show();
+      return;
+    }
+    const preloadScriptPath = this.preloadScriptPath;
+    this.mainWindow = new BrowserWindow({
+      width: 1024,
+      height: 768,
+      transparent: true,
+      frame: false,
+      webPreferences: {
+        nodeIntegration: false,
+        preload: preloadScriptPath,
+        contextIsolation: true,
+      },
+    });
+    this.mainWindow.maximize();
+    this.mainWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), { query: { type: 'main' } });
+    contextMenu({
+      window: this.mainWindow,
+      showInspectElement: true,
+    });
+    this.mainWindow.on('closed', () => {
+      this.mainWindow = null;
+    });
   }
 
   private _hideMainWindow(): void {
-    throw new Error('Method not implemented.');
+    if (this.mainWindow) {
+      this.mainWindow.hide();
+    }
   }
 
-  private _createAndShowAlertWindow(alertType: string, quitAppOnClose: boolean): void {
+  private _showAlertWindow(alertType: string, quitAppOnClose: boolean): void {
     // throw new Error('Method not implemented.');
     if (this.alertWindow) {
       this.alertWindow.show();
@@ -142,7 +172,7 @@ export class WindowManager implements IWindowManager {
     }
   }
 
-  private _createAndShowSettingsWindow(settingKey: SettingsKey): void {
+  private _showSettingsWindow(settingKey: SettingsKey): void {
     if (this.settingsWindow) {
       this.settingsWindow.show();
       this.settingsWindow.webContents.send('messageFromMain', {
@@ -154,9 +184,6 @@ export class WindowManager implements IWindowManager {
       return;
     }
     const preloadScriptPath = this.preloadScriptPath;
-    console.log('Preload script path: ', preloadScriptPath);
-    console.log('Dirname: ', __dirname);
-    console.log('AppPath:', app.getAppPath());
     this.settingsWindow = new BrowserWindow({
       width: 800,
       height: 600,

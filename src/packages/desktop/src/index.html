@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Settings
+  <title>Trici
   </title>
 </head>
-<body>
+<body id="triciwindow">
   <div id="root"></div>
   <script>
     function getScriptUrlByEnv(type) {
@@ -21,6 +21,14 @@
     }
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get('type');
+    if (type === 'main') {
+      document.getElementById('triciwindow').style.backgroundColor = 'rgb(255, 255, 255, 0.5)';
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          bridgeApi.sendMessage({handler: 'hideMainWindow', args: {}});
+        }
+      });
+    }
     let scriptUrl = getScriptUrlByEnv(type);
     (function() {
       console.log("Inside IIFE");

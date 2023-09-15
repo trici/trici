@@ -85,6 +85,11 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
       initValue: false,
     };
     switch (msg.handler) {
+      case 'hideMainWindow': {
+        dispatch({ type: 'HIDE_TRICI' });
+        response = successResponseForVoidFunctions;
+        break;
+      }
       case 'openSystemPreferencesAndCloseAlert': {
         dispatch({ type: 'OPEN_SYSTEM_PREFERENCES' });
         dispatch({ type: 'CLOSE_ALERT_WINDOW' });

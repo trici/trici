@@ -10,7 +10,7 @@ export interface IGlobalShortcutService {
 }
 
 export enum shortcutType {
-  SHOW_HIDE_TRICI_SHORTCUT = 'SHOW_HIDE_TRICI_SHORTCUT',
+  SHOW_TRICI_SHORTCUT = 'SHOW_TRICI_SHORTCUT',
   START_FOCUS_SESSION_SHORTCUT = 'START_FOCUS_SESSION_SHORTCUT',
   STOP_FOCUS_SESSION_SHORTCUT = 'STOP_FOCUS_SESSION_SHORTCUT',
   RELOAD_OPEN_WINDOWS_SHORTCUT = 'RELOAD_OPEN_WINDOWS_SHORTCUT',
@@ -23,7 +23,7 @@ export class GlobalShortcutService implements IGlobalShortcutService {
   private globalShowHideShortcutRegistered: shortcutRegisteredResult = {
     isRegistered: false,
     shortcut: '',
-    type: shortcutType.SHOW_HIDE_TRICI_SHORTCUT,
+    type: shortcutType.SHOW_TRICI_SHORTCUT,
   };
   private globalStartFocusSessionShortcutRegistered: shortcutRegisteredResult = {
     isRegistered: false,
@@ -90,7 +90,7 @@ export class GlobalShortcutService implements IGlobalShortcutService {
         Constants.DEFAULT_GLOBAL_SHOW_HIDE_SHORTCUT_PROD,
         this.globalShowHideShortcutRegistered,
         () => {
-          dispatch({ type: 'SHOW_HIDE_TRICI' });
+          dispatch({ type: 'SHOW_TRICI' });
         },
       );
 
