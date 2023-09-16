@@ -12,11 +12,19 @@ export interface IAppObserverService {
   getCurrentApp(): string;
 }
 
+export type IAppChangeData = {
+  timestamp: number;
+  frontmostApp: string;
+  previousApp: string;
+  previousAppActiveTime: number;
+};
+
 export class AppObserverService extends EventEmitter implements IAppObserverService {
   child: any;
   logger: Logger | IConsoleLogger;
   appRoot: string;
   currentApp: string;
+  currentAppActiveStartTime: number;
 
   constructor(logger: Logger, appRoot: string) {
     super();
@@ -24,6 +32,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
     this.logger = logger ? logger : getConsoleLogger();
     this.appRoot = appRoot;
     this.currentApp = '';
+    this.currentAppActiveStartTime = 0;
   }
 
   start(isRunningInAsar = false): void {
@@ -49,9 +58,13 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
         this.child = child_process.spawn(pathToExecutable);
         this.logger.info(`AppObserverService started:${this.child.pid}`);
         this.child.stdout.on('data', function (data: Buffer) {
-          const appChangeData = JSON.parse(data.toString('utf8'));
+          const appChangeData: IAppChangeData = JSON.parse(data.toString('utf8'));
+          appChangeData.previousApp = self.currentApp;
+          appChangeData.previousAppActiveTime =
+            self.currentAppActiveStartTime > 0 ? appChangeData.timestamp - self.currentAppActiveStartTime : 0;
           // self.logger.info(`appChangeData:${JSON.stringify(appChangeData)}`);
           self.currentApp = appChangeData.frontmostApp;
+          self.currentAppActiveStartTime = appChangeData.timestamp;
           self.emit('frontmostAppChanged', appChangeData);
         });
         this.child.stderr.on('data', function (data: Buffer) {
