@@ -13,6 +13,7 @@ export enum SESSION_STARTED_FROM {
   NOT_SET = 'NOT_SET',
   TRAY = 'TRAY',
   CLI = 'CLI',
+  SHORTCUT = 'SHORTCUT',
 }
 
 export enum CLI_MESSAGE_TYPE {
