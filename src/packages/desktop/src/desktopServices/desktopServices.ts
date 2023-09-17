@@ -1,4 +1,3 @@
 import { InitializationService } from './InitializationService';
 
-
-export const initService = InitializationService;
+export const initializationService = InitializationService;

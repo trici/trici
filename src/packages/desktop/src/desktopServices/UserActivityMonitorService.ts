@@ -63,9 +63,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   }
 
   updateLastSavedTodayUserActivityId = async (udpatedId: string) => {
-    let lastSavedEntityIds = await this.appJsonStorageService.getLastSavedEntityIds();
-    lastSavedEntityIds = lastSavedEntityIds.set('todayUserActivityId', udpatedId);
-    await this.appJsonStorageService.setLastSavedEntityIds(lastSavedEntityIds);
+    await this.appJsonStorageService.updateLastSavedEntityIds('todayUserActivityId', udpatedId);
   };
 
   handleTriciPing = (idleTime: number) => {
@@ -177,7 +175,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.idleTimeServiceInstance.on('triciping', idleTime => this.handleTriciPing(idleTime));
 
     this.appObserverServiceInstance.on('frontmostAppChanged', (frontmostAppChangeData: any) => {
-      // this.logger.info(`UserActivityMonitorService frontmostAppChanged:${frontmostAppChangeData}`);
+      this.logger.info(`UserActivityMonitorService frontmostAppChanged:${JSON.stringify(frontmostAppChangeData)}`);
       if (this.todaysUserActitivity !== null) {
         try {
           const frontmostAppChanges = this.todaysUserActitivity.get('frontmostAppChanges');

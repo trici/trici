@@ -22,10 +22,10 @@ global.isRunningInAsar = isRunningInAsar;
 const referencePath = config.mainProcessBuiltModuleReferencePath;
 
 performance.mark('Before require referencePath');
-const { initService } = require(referencePath);
+const { initializationService } = require(referencePath);
 performance.mark('After require referencePath');
 
-const logger = initService.initLogger();
+const logger = initializationService.initLogger();
 
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -43,5 +43,5 @@ ipcMain.on('getConfig', (event, arg) => {
 });
 
 app.once('ready', () => {
-  initService.startApp();
+  initializationService.startApp();
 });

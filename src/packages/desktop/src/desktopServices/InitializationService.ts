@@ -24,6 +24,7 @@ import { IWindowManager } from './WindowManager';
 import { GlobalShortcutService } from './GlobalShortcutService';
 import { MainProcessDataAccessService } from './MainProcessDataAccessService';
 import { MainProcessIpcMessageHandlerService } from './MainProcessIpcMessageHandler';
+import UsedApplicationsService from './UsedApplicationsService';
 import path from 'path';
 
 let logger: Logger;
@@ -63,7 +64,12 @@ function regiserCorePlugins(pluginManager: PluginManager, recorder: TriciRecorde
   pluginManager.register(askWhichScreenToRecordPlugin);
 }
 
-export const InitializationService = {
+export interface IInitializationService {
+  initLogger(): Logger;
+  startApp(): Promise<void>;
+}
+
+export const InitializationService: IInitializationService = {
   // This is the main entry point for the desktop app.
   // It is called from main.ts
   // It is responsible for initializing all the services.
@@ -132,6 +138,8 @@ export const InitializationService = {
       pluginManager.initialize();
       regiserCorePlugins(pluginManager, triciRecorder, windowManager);
 
+      const usedApplicationsService = new UsedApplicationsService(appObserverService, appJsonStorageService, repo);
+      usedApplicationsService.initService();
       // Start the UserActivityMonitor service
       const userActivityMonitorService = new UserActivityMonitorService(
         logger,
