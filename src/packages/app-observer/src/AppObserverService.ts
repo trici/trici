@@ -61,7 +61,9 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
           const appChangeData: IAppChangeData = JSON.parse(data.toString('utf8'));
           appChangeData.previousApp = self.currentApp;
           appChangeData.previousAppActiveTime =
-            self.currentAppActiveStartTime > 0 ? appChangeData.timestamp - self.currentAppActiveStartTime : 0;
+            self.currentAppActiveStartTime > 0
+              ? Math.round(appChangeData.timestamp - self.currentAppActiveStartTime)
+              : 0;
           // self.logger.info(`appChangeData:${JSON.stringify(appChangeData)}`);
           self.currentApp = appChangeData.frontmostApp;
           self.currentAppActiveStartTime = appChangeData.timestamp;
