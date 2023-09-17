@@ -1,5 +1,5 @@
 import storage from 'electron-json-storage';
-import { TriciApp, LastSavedEntityIds } from '@trici/models';
+import { TriciApp, LastSavedEntityIds, ILastSavedEntityIdsType } from '@trici/models';
 import { Constants } from '@trici/models';
 import { app } from 'electron';
 
@@ -9,6 +9,7 @@ export interface IAppJsonStorageService {
   setTriciAppObject(triciApp: TriciApp): Promise<void>;
   getLastSavedEntityIds(): Promise<LastSavedEntityIds>;
   setLastSavedEntityIds(lastSavedEntityIds: LastSavedEntityIds): Promise<void>;
+  updateLastSavedEntityIds(fieldToUpdate: keyof ILastSavedEntityIdsType, value: string): Promise<void>;
 }
 
 class AppJsonStorageService implements IAppJsonStorageService {
@@ -28,7 +29,7 @@ class AppJsonStorageService implements IAppJsonStorageService {
         if (error) {
           reject(error);
         }
-        console.log("data: ", data);
+        console.log('data: ', data);
         let triciApp;
         if (Object.keys(data).length === 0) {
           triciApp = new TriciApp();
@@ -47,7 +48,7 @@ class AppJsonStorageService implements IAppJsonStorageService {
    */
   public async setTriciAppObject(triciApp: TriciApp): Promise<void> {
     return new Promise((resolve, reject) => {
-      storage.set('triciApp', triciApp.toJS(), (error) => {
+      storage.set('triciApp', triciApp.toJS(), error => {
         if (error) {
           reject(error);
         }
@@ -76,14 +77,20 @@ class AppJsonStorageService implements IAppJsonStorageService {
 
   public async setLastSavedEntityIds(lastSavedEntityIds: LastSavedEntityIds): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log(" saving lastSavedEntityIds: ", lastSavedEntityIds.toJS());
-      storage.set('lastSavedEntityIds', lastSavedEntityIds.toJS(), (error) => {
+      console.log(' saving lastSavedEntityIds: ', lastSavedEntityIds.toJS());
+      storage.set('lastSavedEntityIds', lastSavedEntityIds.toJS(), error => {
         if (error) {
           reject(error);
         }
         resolve();
       });
     });
+  }
+
+  public async updateLastSavedEntityIds(fieldToUpdate: keyof ILastSavedEntityIdsType, value: string): Promise<void> {
+    const lastSavedEntityIds = await this.getLastSavedEntityIds();
+    const updatedLastSavedEntityIds = lastSavedEntityIds.set(fieldToUpdate, value);
+    await this.setLastSavedEntityIds(updatedLastSavedEntityIds);
   }
 }
 
