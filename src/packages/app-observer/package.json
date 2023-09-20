@@ -22,12 +22,12 @@
     "url": "git+https://github.com/trici/trici.git"
   },
   "scripts": {
-    "start": "node start.js",
+    "start": "cross-env NODE_ENV=development node start.js",
     "build": "run-script-os",
     "build-dev": "run-script-os",
     "build-prod": "run-script-os",
     "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
-    "esbuild-dev": "cross-env NODE_ENV=developement node esbuild.js",
+    "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
     "build-types": "tsc && node ../../scripts/flatten-types.js .",
     "build-prod:darwin": "pnpm run buildBinary-prod:darwin && pnpm run esbuild-prod",
     "build-dev:darwin": "pnpm run buildBinary-dev:darwin && pnpm run esbuild-dev && pnpm run build-types",

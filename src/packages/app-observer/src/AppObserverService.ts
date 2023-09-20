@@ -10,13 +10,13 @@ export interface IAppObserverService {
   start(isRunningInAsar: boolean): void;
   stop(): void;
   getCurrentApp(): string;
+  getInstalledApps(): Promise<[{ name: string; iconPath: string }]>;
 }
 
-export type IAppChangeData = {
+export type AppObserverResponse = {
+  type: string;
   timestamp: number;
-  frontmostApp: string;
-  previousApp: string;
-  previousAppActiveTime: number;
+  response: any;
 };
 
 export class AppObserverService extends EventEmitter implements IAppObserverService {
@@ -58,16 +58,21 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
         this.child = child_process.spawn(pathToExecutable);
         this.logger.info(`AppObserverService started:${this.child.pid}`);
         this.child.stdout.on('data', function (data: Buffer) {
-          const appChangeData: IAppChangeData = JSON.parse(data.toString('utf8'));
-          appChangeData.previousApp = self.currentApp;
-          appChangeData.previousAppActiveTime =
-            self.currentAppActiveStartTime > 0
-              ? Math.round(appChangeData.timestamp - self.currentAppActiveStartTime)
-              : 0;
-          // self.logger.info(`appChangeData:${JSON.stringify(appChangeData)}`);
-          self.currentApp = appChangeData.frontmostApp;
-          self.currentAppActiveStartTime = appChangeData.timestamp;
-          self.emit('frontmostAppChanged', appChangeData);
+          const appObserverResponse: AppObserverResponse = JSON.parse(data.toString('utf8'));
+          let appChangeData: any = {};
+          if (appObserverResponse.type === 'frontmostApp') {
+            appChangeData.timestamp = appObserverResponse.timestamp;
+            appChangeData.frontmostApp = appObserverResponse.response;
+            appChangeData.previousApp = self.currentApp;
+            appChangeData.previousAppActiveTime =
+              self.currentAppActiveStartTime > 0
+                ? Math.round(appChangeData.timestamp - self.currentAppActiveStartTime)
+                : 0;
+            // self.logger.info(`appChangeData:${JSON.stringify(appChangeData)}`);
+            self.currentApp = appObserverResponse.response;
+            self.currentAppActiveStartTime = appObserverResponse.timestamp;
+            self.emit('frontmostAppChanged', appChangeData);
+          }
         });
         this.child.stderr.on('data', function (data: Buffer) {
           self.logger.error('Error: ' + data.toString('utf8'));
@@ -90,6 +95,43 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
 
   getCurrentApp(): string {
     return this.currentApp;
+  }
+
+  async getInstalledApps(): Promise<[{ name: string; iconPath: string }]> {
+    if (!this.child || !this.child.stdin || !this.child.stdout) {
+      throw new Error('Child process not initialized.');
+    }
+
+    return new Promise<[{ name: string; iconPath: string }]>((resolve, reject) => {
+      // Create a listener for stdout to handle the installed apps response.
+      const responseHandler = (data: Buffer) => {
+        try {
+          const appObserverResponse: AppObserverResponse = JSON.parse(data.toString('utf8'));
+          console.log('getInstalledApps response:', appObserverResponse);
+          if (appObserverResponse.type === 'installedApps') {
+            // Remove the listener once we've received the response.
+            this.child.stdout.off('data', responseHandler);
+
+            if (appObserverResponse.response.length > 0) {
+              // iterate through the response and pick name and iconPath properties.
+              const appsList = appObserverResponse.response.map((app: any) => {
+                return { name: app.name, iconPath: app.iconPath };
+              });
+              resolve(appsList);
+            } else {
+              reject(new Error('No apps found.'));
+            }
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      this.child.stdout.on('data', responseHandler);
+
+      // Send the command to the Swift app to get installed apps.
+      this.child.stdin.write('getInstalledApps\n');
+    });
   }
 }
 
