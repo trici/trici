@@ -1,5 +1,5 @@
 import { IConsoleLogger, Logger } from '@trici/logger';
-import { app, BrowserWindow } from 'electron';
+import { app, screen, BrowserWindow } from 'electron';
 import { IActionDispatcher } from './ActionDispatcher';
 import contextMenu from 'electron-context-menu';
 import { TriciAction } from '../typedefs/TriciAction';
@@ -17,6 +17,7 @@ export class WindowManager implements IWindowManager {
   settingsWindow: BrowserWindow | null;
   alertWindow: BrowserWindow | null;
   mainWindow: BrowserWindow | null;
+  onboardingWindow: BrowserWindow | null;
   actionHandlersRegistered: boolean = false;
   actionDispatcher: IActionDispatcher<TriciAction>;
   preloadScriptPath: string;
@@ -26,6 +27,7 @@ export class WindowManager implements IWindowManager {
     this.settingsWindow = null;
     this.mainWindow = null;
     this.alertWindow = null;
+    this.onboardingWindow = null;
     this.actionDispatcher = actionDispatcher;
     this.preloadScriptPath = path.join(app.getAppPath(), 'dist', 'preload.js');
   }
@@ -52,12 +54,73 @@ export class WindowManager implements IWindowManager {
           case 'SHOW_HIDE_TRICI':
             console.log('Show/Hide Trici');
             break;
+          case 'OPEN_ONBOARDING_WINDOW':
+            console.log('Open Onboarding Window');
+            this._openOnboardingWindow();
+            break;
           default:
             break;
         }
       });
       this.actionHandlersRegistered = true;
     }
+  }
+
+  /**
+   *  Checks whether multiple diplays are available and if so then return x and y coordinates for the window being created.
+   *  The x and y coordinates are calculated based on the display size and the window size.
+   *  The window is placed in the center of the display.
+   *  @returns {x: number, y: number}
+   */
+  private _getWindowCoordinates(windowWidth: number, windowHeight: number): { x: number; y: number } {
+    const displays = screen.getAllDisplays();
+    // choose the display that the user has selected for recording.
+    // else choose the display that has the largest area.
+    let displayToPlaceWindow;
+    if (displays.length > 1) {
+      // TODO: get the display that the user has selected for recording.
+      displayToPlaceWindow = displays.reduce((prev, current) => {
+        return prev.size.width * prev.size.height > current.size.width * current.size.height ? prev : current;
+      });
+    } else {
+      displayToPlaceWindow = displays[0];
+    }
+    const x = displayToPlaceWindow.bounds.x + Math.floor((displayToPlaceWindow.size.width - windowWidth) / 2);
+    const y = displayToPlaceWindow.bounds.y + Math.floor((displayToPlaceWindow.size.height - windowHeight) / 2);
+    return { x, y };
+  }
+
+  private _openOnboardingWindow(): void {
+    if (this.onboardingWindow) {
+      this.onboardingWindow.show();
+      return;
+    }
+    const preloadScriptPath = this.preloadScriptPath;
+    const { x, y } = this._getWindowCoordinates(800, 600);
+    this.onboardingWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      x,
+      y,
+      maximizable: false,
+      minimizable: false,
+      titleBarStyle: 'hidden',
+      webPreferences: {
+        nodeIntegration: false,
+        preload: preloadScriptPath,
+        contextIsolation: true,
+      },
+    });
+    this.onboardingWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), {
+      query: { type: 'onboarding' },
+    });
+    contextMenu({
+      window: this.onboardingWindow,
+      showInspectElement: true,
+    });
+    this.onboardingWindow.on('closed', () => {
+      this.onboardingWindow = null;
+    });
   }
 
   private _openSystemPreferences(): void {
@@ -75,6 +138,9 @@ export class WindowManager implements IWindowManager {
     }
     if (this.alertWindow) {
       this.alertWindow.reload();
+    }
+    if (this.onboardingWindow) {
+      this.onboardingWindow.reload();
     }
   }
 
