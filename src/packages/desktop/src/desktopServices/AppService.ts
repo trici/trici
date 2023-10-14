@@ -139,9 +139,9 @@ export class AppService implements IAppService {
 
       // }
 
-      logger.debug('AppService.startApp');
+      logger.info('AppService.startApp');
       if (process.platform === 'darwin') {
-        app.commandLine.appendSwitch('--disable-acclereated-video-decode');
+        app.commandLine.appendSwitch('--disable-accelerated-video-decode');
       }
 
       logger.info('Load the TriciApp object as a global');
