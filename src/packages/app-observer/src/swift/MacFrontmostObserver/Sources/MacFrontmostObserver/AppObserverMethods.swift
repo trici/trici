@@ -50,17 +50,12 @@ public class AppObserverMethods {
       for app in contents where app.hasSuffix(".app") {
         let appPath = "\(applicationsDirectory)/\(app)"
         let infoPlistPath = "\(appPath)/Contents/Info.plist"
-        if let infoPlist = NSDictionary(contentsOfFile: infoPlistPath),
-           let iconName = infoPlist["CFBundleIconFile"] as? String
-        {
-          let iconPath = "\(appPath)/Contents/Resources/\(iconName)"
 
-          // Grab the app's icon using the NSWorkspace shared instance
+        if let infoPlist = NSDictionary(contentsOfFile: infoPlistPath) {
+          let appName = infoPlist["CFBundleName"] as? String ?? app.replacingOccurrences(of: ".app", with: "")
+
           let icon = NSWorkspace.shared.icon(forFile: appPath)
-
-          // Convert icon to PNG
           if let pngData = convertIconToPNGData(icon) {
-            let appName = app.replacingOccurrences(of: ".app", with: "")
             let tempIconPath = "\(NSTemporaryDirectory())/\(appName).png"
 
             do {
@@ -72,7 +67,6 @@ public class AppObserverMethods {
             } catch {
               print("Error saving PNG for app \(appName): \(error)")
             }
-
           } else {
             print("Failed to get PNG representation for app \(app)")
           }
@@ -93,4 +87,59 @@ public class AppObserverMethods {
       print("Error reading from Applications directory: \(error)")
     }
   }
+
+  // func outputInstalledApps() {
+  //   var apps: [[String: Any]] = []
+
+  //   let fileManager = FileManager.default
+  //   let applicationsDirectory = "/Applications"
+
+  //   do {
+  //     let contents = try fileManager.contentsOfDirectory(atPath: applicationsDirectory)
+  //     for app in contents where app.hasSuffix(".app") {
+  //       let appPath = "\(applicationsDirectory)/\(app)"
+  //       let infoPlistPath = "\(appPath)/Contents/Info.plist"
+  //       if let infoPlist = NSDictionary(contentsOfFile: infoPlistPath),
+  //          let iconName = infoPlist["CFBundleIconFile"] as? String
+  //       {
+  //         let iconPath = "\(appPath)/Contents/Resources/\(iconName)"
+
+  //         // Grab the app's icon using the NSWorkspace shared instance
+  //         let icon = NSWorkspace.shared.icon(forFile: appPath)
+
+  //         // Convert icon to PNG
+  //         if let pngData = convertIconToPNGData(icon) {
+  //           let appName = app.replacingOccurrences(of: ".app", with: "")
+  //           let tempIconPath = "\(NSTemporaryDirectory())/\(appName).png"
+
+  //           do {
+  //             try pngData.write(to: URL(fileURLWithPath: tempIconPath))
+  //             apps.append([
+  //               "name": appName,
+  //               "iconPath": tempIconPath,
+  //             ])
+  //           } catch {
+  //             print("Error saving PNG for app \(appName): \(error)")
+  //           }
+
+  //         } else {
+  //           print("Failed to get PNG representation for app \(app)")
+  //         }
+  //       }
+  //     }
+  //     let response: [String: Any] = [
+  //       "type": "installedApps",
+  //       "response": apps,
+  //       "timestamp": Date().timeIntervalSince1970,
+  //     ]
+
+  //     if let data = try? JSONSerialization.data(withJSONObject: response),
+  //        let jsonString = String(data: data, encoding: .utf8)
+  //     {
+  //       FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
+  //     }
+  //   } catch {
+  //     print("Error reading from Applications directory: \(error)")
+  //   }
+  // }
 }
