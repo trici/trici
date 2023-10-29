@@ -7,7 +7,11 @@
 		"esModuleInterop": true,
     "outDir": "dist",
     "jsx": "react-jsx",
-	},
+    "baseUrl": ".",
+    "paths": {
+      "proactive": ["./node_modules/proactive"],
+    },
+    	},
 	"include": [
 		"src/**/*.ts","src/**/*.tsx"
  ],
