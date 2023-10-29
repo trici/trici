@@ -1,7 +1,6 @@
 import storage from 'electron-json-storage';
-import { TriciApp, LastSavedEntityIds, ILastSavedEntityIdsType } from '@trici/models';
+import { TriciApp, LastSavedEntityIds, ILastSavedEntityIdsType, OnboardingState } from '@trici/models';
 import { Constants } from '@trici/models';
-import { app } from 'electron';
 
 export interface IAppJsonStorageService {
   init(): void;
@@ -10,6 +9,8 @@ export interface IAppJsonStorageService {
   getLastSavedEntityIds(): Promise<LastSavedEntityIds>;
   setLastSavedEntityIds(lastSavedEntityIds: LastSavedEntityIds): Promise<void>;
   updateLastSavedEntityIds(fieldToUpdate: keyof ILastSavedEntityIdsType, value: string): Promise<void>;
+  getOnboardingState(): Promise<OnboardingState>;
+  setOnboardingState(onboardingState: OnboardingState): Promise<void>;
 }
 
 class AppJsonStorageService implements IAppJsonStorageService {
@@ -25,6 +26,8 @@ class AppJsonStorageService implements IAppJsonStorageService {
 
   public async getTriciAppObject(): Promise<TriciApp> {
     return new Promise((resolve, reject) => {
+      console.log('getting triciApp');
+      console.log(storage);
       storage.get('triciApp', (error, data) => {
         if (error) {
           reject(error);
@@ -49,6 +52,43 @@ class AppJsonStorageService implements IAppJsonStorageService {
   public async setTriciAppObject(triciApp: TriciApp): Promise<void> {
     return new Promise((resolve, reject) => {
       storage.set('triciApp', triciApp.toJS(), error => {
+        if (error) {
+          reject(error);
+        }
+        resolve();
+      });
+    });
+  }
+
+  /**
+   * Get the onboarding state
+   * @returns Promise<OnboardingState>
+   */
+  public async getOnboardingState(): Promise<OnboardingState> {
+    return new Promise((resolve, reject) => {
+      storage.get('onboardingState', (error, data) => {
+        if (error) {
+          reject(error);
+        } else {
+          let onboardingState;
+          if (Object.keys(data).length === 0) {
+            onboardingState = new OnboardingState();
+          } else {
+            onboardingState = new OnboardingState(data);
+          }
+          resolve(onboardingState);
+        }
+      });
+    });
+  }
+
+  /**
+   *  Save the onboarding state
+   * @returns Promise<void>
+   */
+  public async setOnboardingState(onboardingState: OnboardingState): Promise<void> {
+    return new Promise((resolve, reject) => {
+      storage.set('onboardingState', onboardingState.toJS(), error => {
         if (error) {
           reject(error);
         }

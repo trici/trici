@@ -1,4 +1,4 @@
-import { SESSION_STARTED_BY, SESSION_STARTED_FROM } from '@trici/models';
+import { SESSION_STARTED_BY, SESSION_STARTED_FROM, UsedApplicationRecord } from '@trici/models';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
 
 export type TriciAction =
@@ -13,6 +13,13 @@ export type TriciAction =
     }
   | {
       type: 'END_FOCUS_SESSION';
+    }
+  | {
+      type: 'UPDATE_USED_APPLICATIONS';
+      args: { usedApplications: Array<UsedApplicationRecord> };
+    }
+  | {
+      type: 'ONBOARDING_FINISHED';
     }
   | {
       type: 'SHOW_HIDE_TRICI';
@@ -35,4 +42,13 @@ export type TriciAction =
     }
   | {
       type: 'OPEN_SYSTEM_PREFERENCES';
+    }
+  | {
+      type: 'OPEN_ONBOARDING_WINDOW';
+    }
+  | {
+      type: 'CLOSE_ONBOARDING_WINDOW';
+    }
+  | {
+      type: 'ASK_FOR_SCREEN_RECORDING_PERMISSIONS';
     };

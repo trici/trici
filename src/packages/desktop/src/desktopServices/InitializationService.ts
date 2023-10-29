@@ -24,14 +24,18 @@ import { IWindowManager } from './WindowManager';
 import { GlobalShortcutService } from './GlobalShortcutService';
 import { MainProcessDataAccessService } from './MainProcessDataAccessService';
 import { MainProcessIpcMessageHandlerService } from './MainProcessIpcMessageHandler';
+import { PermissionsService } from './PermissionsService';
 import UsedApplicationsService from './UsedApplicationsService';
+import { MainProcessIpcMessageSender } from './MainProcessIpcMessageSender';
 import path from 'path';
 
 let logger: Logger;
 let appJsonStorageService: IAppJsonStorageService;
 let trayService: TrayService;
 let processManager: IProcessManager;
-let triciApp: IAppService;
+let appService: IAppService;
+let permissionsService: PermissionsService;
+
 let repo: TriciRepository;
 let cliMessageHandlerService: CliMessageHandlerService;
 let focusSessionService: FocusSessionService;
@@ -81,9 +85,19 @@ export const InitializationService: IInitializationService = {
   },
   async startApp(): Promise<void> {
     try {
+      logger.info('startingApp');
       appJsonStorageService = AppJsonStorageService;
       const appEventEmitter = AppEventEmitter.getInstance();
 
+      logger.info('Load the TriciApp object as a global');
+      // Get the UserPreferences and set it in the global object
+      const lastSavedEntityIds = await appJsonStorageService.getLastSavedEntityIds();
+      const userPreferencesId = lastSavedEntityIds.userPreferencesId;
+
+      const onboardingState = await appJsonStorageService.getOnboardingState();
+      global.onboardingState = onboardingState;
+
+      logger.info('Initialize the TrayService');
       trayService = new TrayService(actionDispatcher, appEventEmitter);
       trayService.initService();
 
@@ -91,41 +105,54 @@ export const InitializationService: IInitializationService = {
       const windowManager = new WindowManager(logger, actionDispatcher);
       windowManager.registerActionHandlers();
 
+      const mainProcessIpcMessageSender = new MainProcessIpcMessageSender(windowManager);
       // Instantiate the AppObserver service. It is started inside UserActivityMonitorService
       const appObserverService = new AppObserverService(logger, app.getAppPath());
 
-      triciApp = new AppService(processManager, trayService, appJsonStorageService);
-      await triciApp.start();
+      permissionsService = new PermissionsService(
+        appJsonStorageService,
+        actionDispatcher,
+        appEventEmitter,
+        mainProcessIpcMessageSender,
+      );
+      permissionsService.initService();
 
-      // console.log('global.userDataDirectoryCheckResult: ', global.userDataDirectoryCheckResult);
-      // console.log(global.userDataDirectoryCheckResult.dataDir.path);
+      appService = new AppService(processManager, trayService, appJsonStorageService);
+      await appService.checkUserDataDirectory();
 
-      // Initialize the CLI message handler
       repo = new TriciRepository(logger);
       repo.init(global.userDataDirectoryCheckResult.dataDir.path);
+
+      const userPreferencesResult = await repo.get(userPreferencesId);
+      const userPreferences = new UserPreferences(userPreferencesResult);
+      global.userPreferences = userPreferences;
+
+      // Now start the app
+      await appService.start();
+
+      const triciApp = global.triciApp;
+
+      const usedApplicationsService = new UsedApplicationsService(
+        appObserverService,
+        appJsonStorageService,
+        repo,
+        actionDispatcher,
+      );
+      usedApplicationsService.initService();
+
+      if (!triciApp.hasCompletedOnboarding) {
+        // start the app observer service
+        console.log('isRunningInAsar: ', isRunningInAsar);
+        appObserverService.start(isRunningInAsar);
+      }
+
       const ffmpegPath = isRunningInAsar
         ? path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'bin', 'ffmpeg')
         : app.getAppPath() + '/bin/ffmpeg';
       const triciRecorder = new TriciRecorder(ffmpegPath, logger);
 
-      // Get the UserPreferences and set it in the global object
-      const lastSavedEntityIds = await appJsonStorageService.getLastSavedEntityIds();
-      const userPreferencesId = lastSavedEntityIds.userPreferencesId;
-      const userPreferencesResult = await repo.get(userPreferencesId);
-      const userPreferences = new UserPreferences(userPreferencesResult);
-      global.userPreferences = userPreferences;
-
-      // This should be called after the app is started
-      const shortcutService = new GlobalShortcutService();
-      shortcutService.initService();
-
-      focusSessionService = new FocusSessionService(repo, appEventEmitter, actionDispatcher);
-      focusSessionService.initService();
-      cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
-      cliMessageHandlerService.registerCliMessageHandlers();
-
       // Initialize the infra to listen to queries from the renderer process
-      const mainProcessDataAccessService = MainProcessDataAccessService.getInstance(repo);
+      const mainProcessDataAccessService = MainProcessDataAccessService.getInstance(repo, appObserverService, logger);
       const mainProcessIpcMessageHandlerService = new MainProcessIpcMessageHandlerService(
         logger,
         mainProcessDataAccessService,
@@ -134,24 +161,37 @@ export const InitializationService: IInitializationService = {
 
       mainProcessIpcMessageHandlerService.initialize();
 
-      const pluginManager = PluginManager.getInstance(logger, appEventEmitter);
-      pluginManager.initialize();
-      regiserCorePlugins(pluginManager, triciRecorder, windowManager);
+      if (triciApp.hasCompletedOnboarding) {
+        // This should be called after the app is started
+        const shortcutService = new GlobalShortcutService();
+        shortcutService.initService();
 
-      const usedApplicationsService = new UsedApplicationsService(appObserverService, appJsonStorageService, repo);
-      usedApplicationsService.initService();
-      // Start the UserActivityMonitor service
-      const userActivityMonitorService = new UserActivityMonitorService(
-        logger,
-        IdleTimeService,
-        appObserverService,
-        repo,
-        appJsonStorageService,
-        appEventEmitter,
-        actionDispatcher,
-      );
-      userActivityMonitorService.initService();
-      userActivityMonitorService.start();
+        focusSessionService = new FocusSessionService(repo, appEventEmitter, actionDispatcher);
+        focusSessionService.initService();
+        cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
+        cliMessageHandlerService.registerCliMessageHandlers();
+
+        const pluginManager = PluginManager.getInstance(logger, appEventEmitter);
+        pluginManager.initialize();
+        regiserCorePlugins(pluginManager, triciRecorder, windowManager);
+
+        // Start the UserActivityMonitor service
+        const userActivityMonitorService = new UserActivityMonitorService(
+          logger,
+          IdleTimeService,
+          appObserverService,
+          repo,
+          appJsonStorageService,
+          appEventEmitter,
+          actionDispatcher,
+        );
+        userActivityMonitorService.initService();
+        userActivityMonitorService.start();
+      } else {
+      }
+
+      // console.log('global.userDataDirectoryCheckResult: ', global.userDataDirectoryCheckResult);
+      // console.log(global.userDataDirectoryCheckResult.dataDir.path);
 
       // Register
 

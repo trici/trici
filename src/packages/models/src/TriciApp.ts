@@ -5,6 +5,7 @@ export interface ITriciApp {
   installationId: string;
   lastLaunchTime: number;
   lastQuitTime: number;
+  hasCompletedOnboarding: boolean;
   setInstallationId(installationId: string): TriciApp;
   setCleanShutdownValues(): TriciApp;
   setLastLaunchTime(): TriciApp;
@@ -14,6 +15,7 @@ const TriciAppRecord = Immutable.Record({
   installationId: Constants.UNINITIALIZED_ID,
   lastLaunchTime: Date.now(),
   lastQuitTime: -1,
+  hasCompletedOnboarding: false,
 });
 
 /**
@@ -21,19 +23,21 @@ const TriciAppRecord = Immutable.Record({
  * @description The TriciApp model is used to track the installation of the app. It is saved not in the database, but in a JSON file.
  * It is saved using AppJsonStorageService.
  */
-export class TriciApp extends TriciAppRecord implements ITriciApp{
+export class TriciApp extends TriciAppRecord implements ITriciApp {
   constructor(triciApp?: TriciApp) {
     if (typeof triciApp === 'undefined' || triciApp === null) {
       super({
         installationId: Constants.UNINITIALIZED_ID,
         lastLaunchTime: Date.now(),
         lastQuitTime: -1,
+        hasCompletedOnboarding: false,
       });
     } else {
       super({
         installationId: triciApp.installationId,
         lastLaunchTime: triciApp.lastLaunchTime,
         lastQuitTime: triciApp.lastQuitTime,
+        hasCompletedOnboarding: triciApp.hasCompletedOnboarding,
       });
     }
   }
@@ -51,8 +55,12 @@ export class TriciApp extends TriciAppRecord implements ITriciApp{
     return this.get('lastLaunchTime') < this.get('lastQuitTime');
   }
 
+  get hasCompletedOnboarding(): boolean {
+    return this.get('hasCompletedOnboarding');
+  }
+
   public setInstallationId(installationId: string): TriciApp {
-    console.log("generatedInstallationId: ", installationId);
+    console.log('generatedInstallationId: ', installationId);
     return this.set('installationId', installationId);
   }
 

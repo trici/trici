@@ -10,6 +10,7 @@ import { IAppJsonStorageService } from './AppJsonStorageService';
 import { screen } from 'electron';
 import { dispatch } from './ActionDispatcher';
 import { IMessageFromMain, IMessageFromRenderer } from '../typedefs/preload';
+import { OnboardingState } from '@trici/models';
 
 export interface IMainProcessIpcMessageHandlerService {
   initialize(): void;
@@ -85,6 +86,12 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
       initValue: false,
     };
     switch (msg.handler) {
+      case 'askForScreenRecordingPermissions': {
+        console.log("dispatching 'ASK_FOR_SCREEN_RECORDING_PERMISSIONS' action");
+        dispatch({ type: 'ASK_FOR_SCREEN_RECORDING_PERMISSIONS' });
+        response = successResponseForVoidFunctions;
+        break;
+      }
       case 'openSystemPreferencesAndCloseAlert': {
         dispatch({ type: 'OPEN_SYSTEM_PREFERENCES' });
         dispatch({ type: 'CLOSE_ALERT_WINDOW' });
@@ -97,6 +104,50 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
         response = successResponseForVoidFunctions;
         break;
       }
+      case 'updateOnboardingState': {
+        const updatedOnboardingStatePlainJSObj = msg.args.onboardingState;
+        const prevOnboardingState = global.onboardingState;
+        const updatedOnboardingState = new OnboardingState(updatedOnboardingStatePlainJSObj);
+        await this.appJsonStorageService.setOnboardingState(updatedOnboardingState);
+        global.onboardingState = updatedOnboardingState;
+        if (!prevOnboardingState.onboardingFinished && updatedOnboardingState.onboardingFinished) {
+          let triciApp = global.triciApp;
+          triciApp = triciApp.set('hasCompletedOnboarding', true);
+          await this.appJsonStorageService.setTriciAppObject(triciApp);
+          global.triciApp = triciApp;
+          dispatch({ type: 'ONBOARDING_FINISHED' });
+        }
+        response = {
+          success: true,
+          handler: 'onboardingStateUpdated',
+          data: { onboardingState: global.onboardingState.toJS() },
+          initValue: false,
+        };
+        break;
+      }
+      case 'updateUsedApplications': {
+        const usedApplications = msg.args.usedApplications;
+        dispatch({ type: 'UPDATE_USED_APPLICATIONS', args: { usedApplications: usedApplications } });
+        response = successResponseForVoidFunctions;
+        break;
+      }
+      case 'fetchInstalledApps': {
+        console.log("MainProcessIpcMessageHandlerService._handleMessage: 'fetchInstalledApps'");
+        try {
+          const installedApps = await this.dataAccessService.getInstalledApplications();
+          response = {
+            success: true,
+            handler: 'installedAppsReceived',
+            data: { installedApps: installedApps },
+            initValue: false,
+          };
+        } catch (error) {
+          console.log('error in fetchInstalledApps', error);
+          response = { success: false, handler: 'installedAppsReceived', data: error, initValue: false };
+        }
+
+        break;
+      }
     }
 
     return response;
@@ -107,6 +158,7 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
   private _registerMessageHandlers(): void {
     ipcMain.on('messageFromRenderer', async (event, msg) => {
       try {
+        console.log(`handling messageFromRenderer:${JSON.stringify(msg)} `);
         const response = await this._handleMessage(msg);
         if (response.success && response.handler !== '') {
           event.sender.send('messageFromMain', response);

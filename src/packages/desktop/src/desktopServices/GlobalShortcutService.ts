@@ -48,10 +48,9 @@ export class GlobalShortcutService implements IGlobalShortcutService {
 
   initService(): void {
     if (!this.initialized) {
-      if (config.builtFor === 'dev') {
-        this.reloadOpenWindowsShortcutRegistered.isRegistered = this.#registerShortcut(
+      if (config.builtFor === 'dev' || config.builtFor === 'livedev') {
+        this.reloadOpenWindowsShortcutRegistered.isRegistered = globalShortcut.register(
           'CommandOrControl+shift+R',
-          this.reloadOpenWindowsShortcutRegistered,
           () => {
             dispatch({ type: 'RELOAD_OPEN_WINDOWS' });
           },

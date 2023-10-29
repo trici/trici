@@ -6,6 +6,7 @@ export type UsedApplicationRecord = {
   applicationName: string;
   appCategory: UsedAppCategory;
   durationUsed: number;
+  iconPath?: string;
 };
 
 // const UsedApplicationRecordSchema: IUsedApplicationRecord = {

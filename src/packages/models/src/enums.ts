@@ -46,6 +46,7 @@ export enum TRICI_APP_EVENT {
   USER_HYPER_ACTIVE = 'user-hyper-active',
   USER_BECOMING_HYPER_ACTIVE = 'user-becoming-hyper-active',
   SESSION_STARTED_WITH_DISPLAY_TO_RECORD_NOT_SET = 'session-started-with-display-to-record-not-set',
+  SCREEN_RECORDING_PERMISSION_GRANTED = 'screen-recording-permission-granted',
 }
 
 export enum NODE_ENV {

@@ -7,8 +7,11 @@ import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowType
 import { openSystemPreferences } from 'mac-screen-capture-permissions';
 import path from 'path';
 
+export type WindowName = 'settings' | 'main' | 'alert' | 'onboarding';
+
 export interface IWindowManager {
   registerActionHandlers(): void;
+  getWindow(windowName: WindowName): BrowserWindow | null;
   // getMainWindow(): BrowserWindow | null;
 }
 
@@ -58,11 +61,25 @@ export class WindowManager implements IWindowManager {
             console.log('Open Onboarding Window');
             this._openOnboardingWindow();
             break;
+          case 'CLOSE_ONBOARDING_WINDOW':
+            console.log('Close Onboarding Window');
+            this._closeOnboardingWindow();
+            break;
+          case 'ONBOARDING_FINISHED':
+            console.log('Onboarding Finished. Closing Onboarding Window');
+            this._closeOnboardingWindow();
+            break;
           default:
             break;
         }
       });
       this.actionHandlersRegistered = true;
+    }
+  }
+  private _closeOnboardingWindow() {
+    if (this.onboardingWindow) {
+      this.onboardingWindow.close();
+      this.onboardingWindow = null;
     }
   }
 
@@ -105,6 +122,7 @@ export class WindowManager implements IWindowManager {
       maximizable: false,
       minimizable: false,
       titleBarStyle: 'hidden',
+      // alwaysOnTop: false,
       webPreferences: {
         nodeIntegration: false,
         preload: preloadScriptPath,
@@ -114,12 +132,27 @@ export class WindowManager implements IWindowManager {
     this.onboardingWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), {
       query: { type: 'onboarding' },
     });
+    this.onboardingWindow.webContents.send('messageFromMain', {
+      success: true,
+      handler: 'onboardingStateInit',
+      data: { onboardingState: global.onboardingState.toJS() },
+      initValue: true,
+    });
     contextMenu({
       window: this.onboardingWindow,
       showInspectElement: true,
     });
     this.onboardingWindow.on('closed', () => {
+      const onboardingState = global.onboardingState;
       this.onboardingWindow = null;
+      if (!onboardingState.onboardingFinished) {
+        console.log('Closing the app as onboarding is not finished');
+        app.quit();
+      } else {
+        // restart the app as the onboarding is finished.
+        app.relaunch();
+        app.exit(0);
+      }
     });
   }
 
@@ -220,9 +253,6 @@ export class WindowManager implements IWindowManager {
       return;
     }
     const preloadScriptPath = this.preloadScriptPath;
-    console.log('Preload script path: ', preloadScriptPath);
-    console.log('Dirname: ', __dirname);
-    console.log('AppPath:', app.getAppPath());
     this.settingsWindow = new BrowserWindow({
       width: 800,
       height: 600,
@@ -248,5 +278,20 @@ export class WindowManager implements IWindowManager {
     this.settingsWindow.on('closed', () => {
       this.settingsWindow = null;
     });
+  }
+
+  public getWindow(windowName: WindowName): BrowserWindow | null {
+    switch (windowName) {
+      case 'settings':
+        return this.settingsWindow;
+      case 'main':
+        return this.mainWindow;
+      case 'alert':
+        return this.alertWindow;
+      case 'onboarding':
+        return this.onboardingWindow;
+      default:
+        return null;
+    }
   }
 }
