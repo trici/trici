@@ -46,24 +46,22 @@ class UsedApplicationsService implements ITriciDesktopService {
     });
   }
 
-  updateUsedApplications(usedApplicationRecords: Array<UsedApplicationRecord>): Promise<UsedApplications> {
-    return new Promise((resolve, reject) => {
-      if (this.isServiceInitialized === false) {
-        reject(new Error('Service not initialized'));
-      }
-      if (this.usedApplications) {
-        const idOfDocToDelete = this.usedApplications.get('_id');
-        const updatedId = generateUpdatedTriciId(idOfDocToDelete);
-        this.usedApplications = this.usedApplications.withMutations(ua => {
-          ua.set('_id', updatedId).set('records', usedApplicationRecords);
-        });
-        this.repo.save(this.usedApplications.toJS(), idOfDocToDelete);
-        this.appJsonStorageServiceInstance.updateLastSavedEntityIds('usedApplicationsId', updatedId);
-        resolve(this.usedApplications);
-      } else {
-        reject(new Error('usedApplications is null'));
-      }
-    });
+  async updateUsedApplications(usedApplicationRecords: Array<UsedApplicationRecord>): Promise<UsedApplications> {
+    if (this.isServiceInitialized === false) {
+      throw new Error('Service not initialized');
+    }
+    if (this.usedApplications) {
+      const idOfDocToDelete = this.usedApplications.get('_id');
+      const updatedId = generateUpdatedTriciId(idOfDocToDelete);
+      this.usedApplications = this.usedApplications.withMutations(ua => {
+        ua.set('_id', updatedId).set('records', usedApplicationRecords);
+      });
+      await this.repo.save(this.usedApplications.toJS(), idOfDocToDelete);
+      await this.appJsonStorageServiceInstance.updateLastSavedEntityIds('usedApplicationsId', updatedId);
+      return this.usedApplications;
+    } else {
+      throw new Error('usedApplications is null');
+    }
   }
 
   async initService(): Promise<void> {
@@ -76,11 +74,9 @@ class UsedApplicationsService implements ITriciDesktopService {
         this.usedApplications = new UsedApplications();
         const usedApplicationsDocId = generateNewTriciId(global.installationId, 'usedApplications');
         this.usedApplications = this.usedApplications.set('_id', usedApplicationsDocId);
-        console.log('UsedApplicationsService:usedApplications: ', this.usedApplications.toJS());
       } else {
         const usedApplicationsResult = await this.repo.get(usedApplicationsId);
         this.usedApplications = new UsedApplications(usedApplicationsResult);
-        console.log('UsedApplicationsService:usedApplications: ', this.usedApplications.toJS());
       }
 
       this.registerActionHandlers();

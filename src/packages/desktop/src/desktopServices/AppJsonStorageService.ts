@@ -117,7 +117,6 @@ class AppJsonStorageService implements IAppJsonStorageService {
 
   public async setLastSavedEntityIds(lastSavedEntityIds: LastSavedEntityIds): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log(' saving lastSavedEntityIds: ', lastSavedEntityIds.toJS());
       storage.set('lastSavedEntityIds', lastSavedEntityIds.toJS(), error => {
         if (error) {
           reject(error);
