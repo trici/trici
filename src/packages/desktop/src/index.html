@@ -15,6 +15,10 @@
       font-weight: normal;
       font-style: normal;
     }
+    #root {
+      height: 100vh;
+      width: 100vw;
+    }
   </style>
 </head>
 <body>
@@ -31,6 +35,9 @@
     }
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get('type');
+    if (type === 'settings') {
+      document.title = 'Trici Settings';
+    }
     let scriptUrl = getScriptUrlByEnv(type);
     (function() {
       console.log("Inside IIFE");
