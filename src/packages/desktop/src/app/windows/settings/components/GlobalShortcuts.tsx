@@ -63,26 +63,31 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
       : Constants.DEFAULT_GLOBAL_STOP_FOCUS_SESSION_SHORTCUT_PROD;
 
   return (
-    <div>
-      <p>Shortcuts</p>
-      <ConfigureGlobalShortcut
-        label="Show/Hide Trici"
-        currentShortcut={userPreferences.globalShowHideShortcut}
-        defaultShortcut={defaultGlobalShowHideShortcut}
-        onShortcutChange={_onChangeGlobalShowHideShortcut}
-      />
-      <ConfigureGlobalShortcut
-        label="Start a Focus Session"
-        currentShortcut={userPreferences.globalStartFocusSessionShortcut}
-        defaultShortcut={defaultGlobalStartFocusSessionShortcut}
-        onShortcutChange={_onChangeGlobalStartFocusSessionShortcut}
-      />
-      <ConfigureGlobalShortcut
-        label="Stop a Focus Session"
-        currentShortcut={userPreferences.globalStopFocusSessionShortcut}
-        defaultShortcut={defaultGlobalStopFocusSessionShortcut}
-        onShortcutChange={_onChangeGlobalStopFocusSessionShortcut}
-      />
+    <div className="flex h-full flex-col justify-start gap-5 py-4">
+      <div>
+        <ConfigureGlobalShortcut
+          label="Show/Hide Trici"
+          currentShortcut={userPreferences.globalShowHideShortcut}
+          defaultShortcut={defaultGlobalShowHideShortcut}
+          onShortcutChange={_onChangeGlobalShowHideShortcut}
+        />
+      </div>
+      <div>
+        <ConfigureGlobalShortcut
+          label="Start a Focus Session"
+          currentShortcut={userPreferences.globalStartFocusSessionShortcut}
+          defaultShortcut={defaultGlobalStartFocusSessionShortcut}
+          onShortcutChange={_onChangeGlobalStartFocusSessionShortcut}
+        />
+      </div>
+      <div>
+        <ConfigureGlobalShortcut
+          label="Stop a Focus Session"
+          currentShortcut={userPreferences.globalStopFocusSessionShortcut}
+          defaultShortcut={defaultGlobalStopFocusSessionShortcut}
+          onShortcutChange={_onChangeGlobalStopFocusSessionShortcut}
+        />
+      </div>
     </div>
   );
 }

@@ -1,23 +1,9 @@
 import React, { useState, useEffect } from 'react';
+
 import { IConfigureGlobalShortcutProps, IConfigureGlobalShortcutState } from '../typedefs/SettingsWindowTypes';
 import { Constants } from '@trici/models';
-import { Button, TextInput, createStyles } from '@mantine/core';
-import { IconDeviceFloppy } from '@tabler/icons-react';
 import isAccelerator from 'electron-is-accelerator';
-
-const useStyles = createStyles(theme => ({
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    width: '100%',
-    height: '110px',
-  },
-  item: {
-    width: '100%',
-  },
-}));
+import { Button, TextBox } from '@singhshashi/proactive';
 
 export function ConfigureGlobalShortcut({
   label,
@@ -26,9 +12,22 @@ export function ConfigureGlobalShortcut({
   onShortcutChange,
 }: IConfigureGlobalShortcutProps) {
   const [state, setState] = useState<IConfigureGlobalShortcutState>({
-    shortcut: currentShortcut === Constants.EMPTY_STRING ? defaultShortcut : currentShortcut,
+    shortcut: currentShortcut === undefined ? defaultShortcut : currentShortcut,
     isShortcutValid: true,
   });
+
+  const _isSaveButtonEnabled = () => {
+    console.log('isSaveButtonEnabled', state.isShortcutValid, currentShortcut, state.shortcut, defaultShortcut);
+    if (!state.isShortcutValid) {
+      return false;
+    }
+    if (currentShortcut === undefined) {
+      return state.shortcut !== defaultShortcut;
+    }
+    if (currentShortcut) {
+      return state.shortcut !== currentShortcut;
+    }
+  };
 
   // useEffect(() => {
   //   setState({
@@ -37,38 +36,37 @@ export function ConfigureGlobalShortcut({
   //   });
   // }, [currentShortcut]);
 
-  const _onShortcutChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const changedShortcut = event.target.value;
+  const _onShortcutChange = (newValue: string) => {
+    const changedShortcut = newValue.trim();
     const isValidAccelerator = isAccelerator(changedShortcut);
     setState({
       ...state,
-      shortcut: event.target.value,
+      shortcut: newValue.trim(),
       isShortcutValid: isValidAccelerator,
     });
   };
 
   const _onShortcutBlur = () => {
-    // if (state.shortcut === '') {
-    //   setState({
-    //     ...state,
-    //     shortcut: defaultShortcut,
-    //   });
-    // }
+    if (state.shortcut === '') {
+      setState({
+        ...state,
+        shortcut: defaultShortcut,
+      });
+    }
     // onShortcutChange(state.shortcut);
   };
 
   const _saveShortcut = () => {
-    onShortcutChange(state.shortcut);
+    if (state.isShortcutValid) {
+      onShortcutChange(state.shortcut);
+    }
   };
-
-  const { classes } = useStyles();
 
   const invalidShortcutMessage = state.isShortcutValid ? '' : 'Invalid shortcut';
   return (
-    <div className={classes.root}>
-      <div className={classes.item}>
-        <TextInput
-          className={classes.item}
+    <div className="align-start flex h-full w-full flex-col justify-between gap-2">
+      <div className="w-[350px]">
+        <TextBox
           label={label}
           value={state.shortcut}
           onChange={_onShortcutChange}
@@ -76,12 +74,12 @@ export function ConfigureGlobalShortcut({
           error={invalidShortcutMessage}
         />
       </div>
-      <div className={classes.item}>
+      <div className="w-[350px]">
         <Button
           onClick={_saveShortcut}
           variant="default"
-          leftIcon={<IconDeviceFloppy size="1rem" />}
-          disabled={!state.isShortcutValid}
+          // leftSection={<IconDeviceFloppy size="1rem" />}
+          disabled={!_isSaveButtonEnabled()}
         >
           Save
         </Button>

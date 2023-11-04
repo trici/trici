@@ -1,26 +1,26 @@
-import { UserPreferences } from "@trici/models";
+import { UserPreferences } from '@trici/models';
 
 export enum SettingsKey {
-  SHORTCUTS = "Shortcuts",
-  SCREEN_TO_RECORD = "Screen to Record",
+  SHORTCUTS = 'Shortcuts',
+  SCREEN_TO_RECORD = 'Screen to Record',
   FOCUS_SESSION = 'Focus Session',
-  WEBSITE_BLOCKING = "Website Blocking",
-  STORAGE = "Storage",
-  SOUNDS = "Sounds",
-  UPDATES = "Updates",
-  LOGGING = "Logging",
-  ABOUT = "About"
+  WEBSITE_BLOCKING = 'Website Blocking',
+  STORAGE = 'Storage',
+  SOUNDS = 'Sounds',
+  UPDATES = 'Updates',
+  LOGGING = 'Logging',
+  ABOUT = 'About',
 }
 
 export interface ISettingsItem {
   key: SettingsKey;
   label: string;
-  icon: React.ElementType;
+  icon: string;
   isActive: boolean;
-};
+}
 
 export interface ISettingsNavProps {
-  items: ISettingsItem[],
+  items: ISettingsItem[];
   onChangeNavItem: (key: SettingsKey) => void;
 }
 
@@ -29,10 +29,9 @@ export interface ISettingsItemComponentProps {
   onSave: (updatedUserPreferences: UserPreferences, idOfDocToDelete: string) => void;
 }
 
-
 export interface IConfigureGlobalShortcutProps {
   label: string;
-  currentShortcut: string;
+  currentShortcut: string | undefined;
   onShortcutChange: (shortcut: string) => void;
   defaultShortcut: string;
 }
