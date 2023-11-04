@@ -42,11 +42,13 @@ export function SelectScreenToRecord({ userPreferences, onSave }: ISettingsItemC
   const selectedDisplay = displayUnits.length > 1 ? screenToRecord.toString() : '0';
 
   return (
-    <div>
-      <p>Select screen to record:</p>
+    <div className="h-full w-full p-2">
+      <div className="mb-3">
+        <p>Select screen to record:</p>
+      </div>
       {displayUnits.map((displayUnit: any) => {
         return (
-          <div key={displayUnit.key}>
+          <div key={displayUnit.key} className=" flex flex-row items-center justify-normal gap-2">
             <input
               type="radio"
               id={displayUnit.key}

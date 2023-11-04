@@ -17,7 +17,6 @@ export function ConfigureGlobalShortcut({
   });
 
   const _isSaveButtonEnabled = () => {
-    console.log('isSaveButtonEnabled', state.isShortcutValid, currentShortcut, state.shortcut, defaultShortcut);
     if (!state.isShortcutValid) {
       return false;
     }
@@ -28,13 +27,6 @@ export function ConfigureGlobalShortcut({
       return state.shortcut !== currentShortcut;
     }
   };
-
-  // useEffect(() => {
-  //   setState({
-  //     ...state,
-  //     shortcut: currentShortcut,
-  //   });
-  // }, [currentShortcut]);
 
   const _onShortcutChange = (newValue: string) => {
     const changedShortcut = newValue.trim();
@@ -53,7 +45,6 @@ export function ConfigureGlobalShortcut({
         shortcut: defaultShortcut,
       });
     }
-    // onShortcutChange(state.shortcut);
   };
 
   const _saveShortcut = () => {
@@ -75,12 +66,7 @@ export function ConfigureGlobalShortcut({
         />
       </div>
       <div className="w-[350px]">
-        <Button
-          onClick={_saveShortcut}
-          variant="default"
-          // leftSection={<IconDeviceFloppy size="1rem" />}
-          disabled={!_isSaveButtonEnabled()}
-        >
+        <Button onClick={_saveShortcut} variant="default" disabled={!_isSaveButtonEnabled()}>
           Save
         </Button>
       </div>
