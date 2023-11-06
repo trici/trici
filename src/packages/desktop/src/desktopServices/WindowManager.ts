@@ -198,9 +198,12 @@ export class WindowManager implements IWindowManager {
       return;
     }
     const preloadScriptPath = this.preloadScriptPath;
+    const { x, y } = this._getWindowCoordinates(800, 600);
     this.alertWindow = new BrowserWindow({
       width: 800,
       height: 600,
+      x,
+      y,
       // frame: false,
       titleBarStyle: 'hidden',
       alwaysOnTop: true,
@@ -253,9 +256,12 @@ export class WindowManager implements IWindowManager {
       return;
     }
     const preloadScriptPath = this.preloadScriptPath;
+    const { x, y } = this._getWindowCoordinates(800, 600);
     this.settingsWindow = new BrowserWindow({
       width: 800,
       height: 600,
+      x,
+      y,
       webPreferences: {
         nodeIntegration: false,
         preload: preloadScriptPath,
