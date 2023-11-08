@@ -20,6 +20,7 @@ export interface IMainProcessDataAccessService {
   saveUserPreferences(userPreferences: UserPreferences, idOfDocToDelete: string): Promise<UserPreferences>;
   getInstalledApplications(): Promise<[{ name: string; iconPath: string }] | []>;
   saveUsedApplications(usedApplications: UsedApplications, idOfDocToDelete: string): Promise<UsedApplications>;
+  getUsedApplications(id: string): Promise<UsedApplications>;
 }
 
 export class MainProcessDataAccessService implements IMainProcessDataAccessService {
@@ -133,6 +134,21 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       throw error;
     }
     return installedApplications;
+  }
+
+  /**
+   * Gets the used applications from the database
+   * @param id The id of the used applications document
+   */
+  public async getUsedApplications(id: string): Promise<UsedApplications> {
+    try {
+      const result = await this._repository.get(id);
+      const usedApplications = new UsedApplications(result);
+      return usedApplications;
+    } catch (error) {
+      logger.error('Error in getUsedApplications', error);
+      throw error;
+    }
   }
 
   /**

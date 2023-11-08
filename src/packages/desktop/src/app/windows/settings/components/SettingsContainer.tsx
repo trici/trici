@@ -9,6 +9,7 @@ import { IBridgeAPIInterface } from '../../../../typedefs/preload';
 import { SelectScreenToRecord } from './SelectScreenToRecord';
 import { IMessageFromMain } from '../../../../typedefs/preload';
 import { Surface } from '@singhshashi/proactive';
+import { Applications } from './Applications';
 
 const bridgeApi: IBridgeAPIInterface = window.bridgeApi;
 
@@ -43,6 +44,12 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
         label: 'Screen to Record',
         icon: 'Display',
         isActive: isSettingsItemActive(SettingsKey.SCREEN_TO_RECORD),
+      },
+      {
+        key: SettingsKey.APPLICATIONS,
+        label: 'Applications',
+        icon: 'Window',
+        isActive: isSettingsItemActive(SettingsKey.APPLICATIONS),
       },
       {
         key: SettingsKey.FOCUS_SESSION,
@@ -85,16 +92,9 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
     return settingsItems;
   };
 
-  const [state, setState] = useState({
+  const [state, setState] = useState<SettingsContainerState>({
     settingsItems: _getSettingsItems(),
   });
-
-  // useEffect(() => {
-  //   console.log('SettingsContainer useEffect');
-  //   if (activeSettingsItem) {
-  //     _changeActiveSettingItem(activeSettingsItem);
-  //   }
-  // }, []);
 
   const queryClient = useQueryClient();
 
@@ -116,8 +116,6 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
   });
 
   const _updateUserPreferences = (userPreferences: UserPreferences, idOfDocToDelete: string) => {
-    // console.log('updatedUserPreferences', userPreferences.toJS());
-    // console.log('idOfDocToDelete', idOfDocToDelete);
     mutation.mutate({ userPreferences, idOfDocToDelete });
   };
 
@@ -152,7 +150,7 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
   return (
     <>
       <Surface shade="light" type="glossy">
-        <div className="flex h-full w-full flex-row justify-start gap-4 align-top">
+        <div className="flex h-full w-full flex-row justify-start align-top">
           <div className="h-full w-[300px]">
             <Surface shade="dark" type="translucent">
               <div className="px-4 py-4">
@@ -164,13 +162,14 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
               </div>
             </Surface>
           </div>
-          <div className="h-full w-full shadow-sm">
+          <div className="h-full w-full px-3 py-2 shadow-sm">
             {activeItem && activeItem.key === SettingsKey.SHORTCUTS && (
               <GlobalShortcuts userPreferences={userPreferencesQuery.data} onSave={_updateUserPreferences} />
             )}
             {activeItem && activeItem.key === SettingsKey.SCREEN_TO_RECORD && (
               <SelectScreenToRecord userPreferences={userPreferencesQuery.data} onSave={_updateUserPreferences} />
             )}
+            {activeItem && activeItem.key === SettingsKey.APPLICATIONS && <Applications />}
             {activeItem && activeItem.key === SettingsKey.FOCUS_SESSION && <div>Focus Session</div>}
             {activeItem && activeItem.key === SettingsKey.WEBSITE_BLOCKING && <div>Website Blocking</div>}
             {activeItem && activeItem.key === SettingsKey.STORAGE && <div>Storage</div>}

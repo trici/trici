@@ -61,6 +61,17 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
           await this.appJsonStorageService.setLastSavedEntityIds(lastSavedEntityIds);
           result = { success: true, handler: 'saveUserPreferences-Success', data: savedUserPreferences.toJS() };
           break;
+        case 'getUsedApplications':
+          try {
+            const lastSavedEntityIds = await this.appJsonStorageService.getLastSavedEntityIds();
+            const usedApplications = await this.dataAccessService.getUsedApplications(
+              lastSavedEntityIds.usedApplicationsId,
+            );
+            result = { success: true, handler: 'getUsedApplications-Success', data: usedApplications.toJS() };
+          } catch (error) {
+            result = { success: false, handler: 'getUsedApplications-Error', data: error };
+          }
+          break;
         default:
           break;
       }

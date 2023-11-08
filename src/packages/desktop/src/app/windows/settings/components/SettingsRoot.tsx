@@ -11,7 +11,7 @@ const queryClient = new QueryClient();
 
 function SettingsRoot() {
   const initValues = window.bridgeApi.getInitValues();
-  let activeSettingsItem = SettingsKey.SHORTCUTS;
+  let activeSettingsItem = SettingsKey.APPLICATIONS;
   if (initValues) {
     const openSettingsSectionMessage = initValues.find(
       (value: IMessageFromMain) => value.handler === 'openSettingsSection',

@@ -63,9 +63,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@fluentui/react-components": "^9.21.0",
-    "@mantine/core": "^7.0.0",
-    "@mantine/hooks": "^7.0.0",
-    "@singhshashi/proactive": "^0.7.3",
+    "@singhshashi/proactive": "^0.11.2",
     "@tabler/icons-react": "^2.22.0",
     "@tanstack/react-query": "^4.29.19",
     "@trici/app-observer": "workspace:^",

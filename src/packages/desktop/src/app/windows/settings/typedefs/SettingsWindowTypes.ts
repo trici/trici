@@ -3,6 +3,7 @@ import { UserPreferences } from '@trici/models';
 export enum SettingsKey {
   SHORTCUTS = 'Shortcuts',
   SCREEN_TO_RECORD = 'Screen to Record',
+  APPLICATIONS = 'Applications',
   FOCUS_SESSION = 'Focus Session',
   WEBSITE_BLOCKING = 'Website Blocking',
   STORAGE = 'Storage',

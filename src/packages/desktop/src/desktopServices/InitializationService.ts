@@ -17,7 +17,7 @@ import { TriciRecorder } from '@trici/recorder';
 import { PluginManager } from './PluginManager';
 import { AppEventEmitter } from './AppEventEmitter';
 import { ScreenRecordingPlugin } from '../plugins/ScreenRecordingPlugin';
-import actionDispatcher from './ActionDispatcher';
+import actionDispatcher, { dispatch } from './ActionDispatcher';
 import { UserPreferences } from '@trici/models';
 import { AskWhichScreenToRecordPlugin } from '../plugins/AskWhichScreenToRecordPlugin';
 import { IWindowManager } from './WindowManager';
