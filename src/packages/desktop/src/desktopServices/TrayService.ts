@@ -15,6 +15,7 @@ import { TriciAction } from '../typedefs/TriciAction';
 import { AppEventEmitter } from './AppEventEmitter';
 import { ITriciDesktopService } from '../typedefs/ITriciDesktopService';
 import { invariant } from '@trici/utils';
+import { shortcutRegisteredResult, shortcutType } from './GlobalShortcutService';
 
 /**
  */
@@ -24,6 +25,12 @@ export interface ITrayService {
    * @param logger
    */
   createTrayInstance(logger: Logger): void;
+
+  /**
+   * Adds accelerators to the tray icon context menu.
+   * @param accelerators
+   */
+  addRegisteredShortcuts(registeredShortcuts: shortcutRegisteredResult[]): void;
   /**
    * Changes the state of the tray icon.
    * @param newState
@@ -41,6 +48,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
   actionDispatcher: IActionDispatcher<TriciAction>;
   eventBus: AppEventEmitter;
   isServiceInitialized: boolean = false;
+  receivedRegisteredShortcuts: shortcutRegisteredResult[] | undefined;
 
   constructor(actionDispatcher: IActionDispatcher<TriciAction>, eventBus: AppEventEmitter) {
     this.tray = undefined;
@@ -48,20 +56,32 @@ class TrayService implements ITriciDesktopService, ITrayService {
     this.actionDispatcher = actionDispatcher;
     this.eventBus = eventBus;
     this.isServiceInitialized = false;
+    this.receivedRegisteredShortcuts = undefined;
   }
 
-  private _getTrayContextMenu(): Menu {
+  private _getMenuTemplate(trayState: TrayState): any[] {
     let template: any[] = [];
-    if (this.trayState === TrayState.DEFAULT) {
+    const shouldHaveAccelerator = this.receivedRegisteredShortcuts && this.receivedRegisteredShortcuts.length > 0;
+    if (trayState === TrayState.DEFAULT) {
       template = [
         {
           label: 'Show/Hide Trici',
+          accelerator: shouldHaveAccelerator
+            ? this.receivedRegisteredShortcuts?.find(
+                shresult => shresult.type === shortcutType.SHOW_HIDE_TRICI_SHORTCUT && shresult.isRegistered,
+              )?.shortcut
+            : undefined,
           click: () => {
             dispatch({ type: 'SHOW_HIDE_TRICI' });
           },
         },
         {
           label: 'Start Focus Session',
+          accelerator: shouldHaveAccelerator
+            ? this.receivedRegisteredShortcuts?.find(
+                shresult => shresult.type === shortcutType.START_FOCUS_SESSION_SHORTCUT && shresult.isRegistered,
+              )?.shortcut
+            : undefined,
           click: () => {
             dispatch({
               type: 'START_FOCUS_SESSION',
@@ -83,23 +103,37 @@ class TrayService implements ITriciDesktopService, ITrayService {
           },
         },
       ];
-    } else if (this.trayState === TrayState.SESSION_IN_PROGRESS) {
+    } else if (trayState === TrayState.SESSION_IN_PROGRESS) {
       template = [
         {
           label: 'Show/Hide Trici',
+          accelerator: shouldHaveAccelerator
+            ? this.receivedRegisteredShortcuts?.find(
+                shresult => shresult.type === shortcutType.SHOW_HIDE_TRICI_SHORTCUT && shresult.isRegistered,
+              )?.shortcut
+            : undefined,
           click: () => {
-            console.log('Show/Hide Trici');
+            dispatch({ type: 'SHOW_HIDE_TRICI' });
           },
         },
         {
           label: 'Stop Session',
+          accelerator: shouldHaveAccelerator
+            ? this.receivedRegisteredShortcuts?.find(
+                shresult => shresult.type === shortcutType.STOP_FOCUS_SESSION_SHORTCUT && shresult.isRegistered,
+              )?.shortcut
+            : undefined,
           click: () => {
-            console.log('Stop Session');
             dispatch({ type: 'END_FOCUS_SESSION' });
           },
         },
       ];
     }
+    return template;
+  }
+  private _getTrayContextMenu(): Menu {
+    let template = this._getMenuTemplate(this.trayState);
+    console.log('TrayService: Tray context menu template: ', template);
     return Menu.buildFromTemplate(template);
   }
 
@@ -126,6 +160,12 @@ class TrayService implements ITriciDesktopService, ITrayService {
     });
   }
 
+  private _refreshTrayContextMenu(): void {
+    console.log('TrayService: Refreshing tray context menu');
+    const contextMenu = this._getTrayContextMenu();
+    this.tray?.setContextMenu(contextMenu);
+  }
+
   public initService(): void {
     if (!this.isServiceInitialized) {
       this.registerActionHandlers();
@@ -133,6 +173,13 @@ class TrayService implements ITriciDesktopService, ITrayService {
       this.isServiceInitialized = true;
     }
   }
+
+  public addRegisteredShortcuts(registeredShortcuts: shortcutRegisteredResult[]): void {
+    invariant(this.isServiceInitialized, 'TrayService not initialized');
+    this.receivedRegisteredShortcuts = registeredShortcuts;
+    this._refreshTrayContextMenu();
+  }
+
   /**
    * Creates an instance of the tray icon.
    * @param logger
