@@ -1,4 +1,3 @@
-import { MantineProvider } from '@mantine/core';
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import log from 'loglevel';
@@ -9,7 +8,7 @@ import { AlertWindowMessageType } from '@trici/models';
 
 function AlertRoot() {
   const initValues = window.bridgeApi.getInitValues();
-  let messageType = AlertWindowMessageType.SCREEN_RECORDING_PERMISSION_REVOKED;
+  let messageType = AlertWindowMessageType.NONE;
   if (initValues) {
     const alertTypeMessage = initValues.find((value: IMessageFromMain) => value.handler === 'showAlertType');
     if (alertTypeMessage) {
@@ -17,10 +16,10 @@ function AlertRoot() {
     }
   }
   return (
-    <MantineProvider withGlobalStyles withNormalizeCSS>
+    <>
       <HiddenTitleBar />
       <AlertContainer alertType={messageType} />
-    </MantineProvider>
+    </>
   );
 }
 
