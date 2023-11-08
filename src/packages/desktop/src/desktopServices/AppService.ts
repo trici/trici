@@ -7,8 +7,9 @@ import type { IProcessManager } from '@trici/pm';
 import { checkUserDataDirectory, userDataDirectoryCheckResult } from '@trici/utils';
 import EventEmitter from 'events';
 import { generateUUIDv5 } from '@trici/utils';
-import { hasScreenCapturePermission, hasPromptedForPermission } from 'mac-screen-capture-permissions';
+// import { hasScreenCapturePermission, hasPromptedForPermission } from 'mac-screen-capture-permissions';
 import { dispatch } from './ActionDispatcher';
+import { IPermissionsService } from './PermissionsService';
 
 export interface IAppService {
   checkUserDataDirectory(): Promise<void>;
@@ -19,13 +20,20 @@ export class AppService implements IAppService {
   #cleanupInitiated: boolean = false;
   #trayService: ITrayService;
   #appJsonStorageService: IAppJsonStorageService;
+  permissionsService: IPermissionsService;
   #processManager: IProcessManager;
   #eventEmitter: EventEmitter;
 
-  constructor(pm: IProcessManager, trayService: ITrayService, appJsonStorageService: IAppJsonStorageService) {
+  constructor(
+    pm: IProcessManager,
+    trayService: ITrayService,
+    appJsonStorageService: IAppJsonStorageService,
+    permissionsService: IPermissionsService,
+  ) {
     this.#processManager = pm;
     this.#trayService = trayService;
     this.#appJsonStorageService = appJsonStorageService;
+    this.permissionsService = permissionsService;
     this.#eventEmitter = new EventEmitter();
   }
 
@@ -175,18 +183,14 @@ export class AppService implements IAppService {
         // Show the onboarding window
         dispatch({ type: 'OPEN_ONBOARDING_WINDOW' });
       } else {
-        // Ask for the user's permission to record the screen on Mac
+        // Check for screen recording permissions on startup
         if (process.platform === 'darwin') {
           // openSystemPreferences();
-          const promptForPermissionWillShow = !hasPromptedForPermission();
-          const screenCapturePermissionAtStartup = hasScreenCapturePermission();
+          const screenCapturePermissionAtStartup = this.permissionsService.hasScreenRecordingPermissions();
           if (screenCapturePermissionAtStartup) {
             logger.info('Screen capture permission already granted');
-
             // Initialize the tray
             this.#trayService.createTrayInstance(logger);
-          } else if (promptForPermissionWillShow) {
-            console.log('User should be seeing prompt for permission');
           } else {
             console.log('User should not be seeing prompt for permission');
             dispatch({

@@ -1,16 +1,10 @@
-import {
-  hasScreenCapturePermission,
-  hasPromptedForPermission,
-  openSystemPreferences,
-} from 'mac-screen-capture-permissions';
 import { IAppJsonStorageService } from './AppJsonStorageService';
 import { ITriciDesktopService } from 'src/typedefs/ITriciDesktopService';
 import { AppEventEmitter } from './AppEventEmitter';
 import { IActionDispatcher, dispatch } from './ActionDispatcher';
 import { TriciAction } from 'src/typedefs/TriciAction';
-import { TRICI_APP_EVENT } from '@trici/models';
 import { MainProcessIpcMessageSender } from './MainProcessIpcMessageSender';
-import { on } from 'events';
+import permissions from 'node-mac-permissions';
 
 export interface IPermissionsService {
   hasScreenRecordingPermissions(): boolean;
@@ -65,24 +59,23 @@ export class PermissionsService implements ITriciDesktopService, IPermissionsSer
   }
 
   hasScreenRecordingPermissions(): boolean {
-    return hasScreenCapturePermission();
+    return permissions.getAuthStatus('screen') === 'authorized';
   }
 
   hasAccessibilityPermissions(): boolean {
-    throw new Error('Method not implemented.');
+    return permissions.getAuthStatus('accessibility') === 'authorized';
   }
 
   async checkScreenRecordingPermissions(): Promise<void> {
     let onboardingState = await this.appJsonStorageService.getOnboardingState();
-    let promptForPermissionWillShow = false;
     if (!onboardingState.hasAskedForScreenRecordingPermissions) {
-      promptForPermissionWillShow = !hasPromptedForPermission();
       onboardingState = onboardingState.setHasAskedForScreenRecordingPermissions();
       await this.appJsonStorageService.setOnboardingState(onboardingState);
       global.onboardingState = onboardingState;
     }
     // this will trigger the dialog for asking for permission the first time.
-    const screenCapturePermission = hasScreenCapturePermission();
+    permissions.askForScreenCaptureAccess();
+    const screenCapturePermission = this.hasScreenRecordingPermissions();
     console.log('PermissionService.checkScreenRecordingPermissions', screenCapturePermission);
     if (screenCapturePermission) {
       onboardingState = onboardingState.setHasBeenGivenScreenRecordingPermissions();
@@ -94,8 +87,6 @@ export class PermissionsService implements ITriciDesktopService, IPermissionsSer
         data: { onboardingState: global.onboardingState.toJS() },
         initValue: false,
       });
-
-      // this.eventBus.emit(TRICI_APP_EVENT.SCREEN_RECORDING_PERMISSION_GRANTED, triciApp);
 
       return;
     } else {
@@ -109,6 +100,6 @@ export class PermissionsService implements ITriciDesktopService, IPermissionsSer
   }
 
   async requestAccessibilityPermissions(): Promise<void> {
-    throw new Error('Method not implemented.');
+    permissions.askForAccessibilityAccess();
   }
 }

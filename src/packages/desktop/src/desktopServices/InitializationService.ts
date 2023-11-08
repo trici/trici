@@ -117,7 +117,7 @@ export const InitializationService: IInitializationService = {
       );
       permissionsService.initService();
 
-      appService = new AppService(processManager, trayService, appJsonStorageService);
+      appService = new AppService(processManager, trayService, appJsonStorageService, permissionsService);
       await appService.checkUserDataDirectory();
 
       repo = new TriciRepository(logger);
