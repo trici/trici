@@ -2,13 +2,14 @@ import { IdleTimeServiceInstance } from './IdleTimeService';
 import { AppObserverService } from '@trici/app-observer';
 import { ITriciRepository } from '@trici/dal';
 import type { Logger } from '@trici/logger';
-import { Constants, DailyUserActivity, KEY_PARTS, TRICI_APP_EVENT } from '@trici/models';
+import { Constants, DailyUserActivity, KEY_PARTS, TRICI_APP_EVENT, UsedAppCategory } from '@trici/models';
 import { generateNewTriciId, generateUpdatedTriciId, isTriciIdValidForToday } from '@trici/utils';
 import { IAppJsonStorageService } from './AppJsonStorageService';
 import { AppEventEmitter } from './AppEventEmitter';
 import { ITriciDesktopService } from '../typedefs/ITriciDesktopService';
 import { IActionDispatcher } from './ActionDispatcher';
 import { TriciAction } from '../typedefs/TriciAction';
+import UsedApplicationsService from './UsedApplicationsService';
 
 export interface IUserActivityMonitorService {
   start(): Promise<void>;
@@ -33,6 +34,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   appEventEmitter: AppEventEmitter;
   isServiceInitialized: boolean = false;
   actionDispatcher: IActionDispatcher<TriciAction>;
+  usedApplicationsService: UsedApplicationsService;
 
   constructor(
     logger: Logger,
@@ -42,6 +44,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     appJsonStorageService: IAppJsonStorageService,
     appEventEmitter: AppEventEmitter,
     actionDispatcher: IActionDispatcher<TriciAction>,
+    usedApplicationsService: UsedApplicationsService,
   ) {
     this.logger = logger;
     this.idleTimeServiceInstance = idleTimeServiceInstance;
@@ -60,6 +63,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.appEventEmitter = appEventEmitter;
     this.isServiceInitialized = false;
     this.actionDispatcher = actionDispatcher;
+    this.usedApplicationsService = usedApplicationsService;
   }
 
   updateLastSavedTodayUserActivityId = async (udpatedId: string) => {
@@ -160,6 +164,17 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
   registerAppEventHandlers(): void {
     // TODO: Register any app event handlers that this service needs to handle
+    this.appEventEmitter.on(TRICI_APP_EVENT.USER_BECOMING_HYPER_ACTIVE, () => {
+      const currentApplication = this.appObserverServiceInstance.getCurrentApp();
+      console.log('UserHyperActive.currentApplication:', currentApplication);
+      const currentAppCategory = this.usedApplicationsService.getAppCategory(currentApplication);
+      console.log('UserHyperActive.currentAppCategory:', currentAppCategory);
+      if (currentAppCategory === UsedAppCategory.DEFINITELY_WORK) {
+        console.log('User started working');
+      } else if (currentAppCategory === UsedAppCategory.DEFINITELY_DISTRACT) {
+        console.log('User Fooling around');
+      }
+    });
   }
 
   public initService(): void {

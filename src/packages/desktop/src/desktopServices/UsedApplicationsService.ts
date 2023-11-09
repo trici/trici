@@ -120,6 +120,23 @@ class UsedApplicationsService implements ITriciDesktopService {
     }
     this.isServiceInitialized = true;
   }
+
+  getAppCategory(currentApplication: string) {
+    if (this.usedApplications !== null) {
+      const usedApplications = this.usedApplications.records;
+      if (usedApplications) {
+        const foundAppRecord = usedApplications.find(
+          usedApplication => usedApplication.applicationName === currentApplication,
+        );
+        if (foundAppRecord) {
+          return foundAppRecord.appCategory;
+        }
+      }
+      return UsedAppCategory.NOT_SET;
+    }
+
+    return UsedAppCategory.NOT_SET;
+  }
 }
 
 export default UsedApplicationsService;

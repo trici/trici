@@ -184,6 +184,7 @@ export const InitializationService: IInitializationService = {
           appJsonStorageService,
           appEventEmitter,
           actionDispatcher,
+          usedApplicationsService,
         );
         userActivityMonitorService.initService();
         userActivityMonitorService.start();
