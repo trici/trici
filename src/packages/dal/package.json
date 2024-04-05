@@ -42,7 +42,9 @@
   "dependencies": {
     "@trici/models": "workspace:^",
     "fast-json-patch": "^3.1.1",
+    "knex": "^3.1.0",
     "pouchdb": "^8.0.1",
+    "sqlite3": "^5.1.6",
     "uuid": "^9.0.0"
   }
 }
