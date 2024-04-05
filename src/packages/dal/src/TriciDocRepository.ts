@@ -1,19 +1,24 @@
-import jsonpatch from "fast-json-patch";
-import type { Logger } from "@trici/logger";
-import PouchDB from "pouchdb";
+import jsonpatch from 'fast-json-patch';
+import type { Logger } from '@trici/logger';
+import PouchDB from 'pouchdb';
+
+declare function emit(key: any, value?: any): void;
 
 export interface ITriciPouchDocument {
   _id: string;
 }
-export interface ITriciRepository {
+export interface ITriciDocRepository {
   init(dataDirectoryPath: string): void;
   get(id: string): Promise<PouchDB.Core.Document<any> | null>;
-  save(obj: ITriciPouchDocument & any , idOfDocToDelete: string): Promise<ITriciPouchDocument & any>;
+  save(obj: ITriciPouchDocument & any, idOfDocToDelete: string): Promise<ITriciPouchDocument & any>;
   remove(idOfDocToDelete: string): Promise<any>;
   query(queryOptions: any): Promise<any>;
+  queryAppEvents(queryOptions: any): Promise<any>;
 }
 
-export class TriciRepository implements ITriciRepository {
+const appEventsIndexViewName = `appEventsIndex_1`;
+
+export class TriciDocRepository implements ITriciDocRepository {
   #repoInitialized: boolean;
   #db: any;
   #logger: Logger;
@@ -39,9 +44,46 @@ export class TriciRepository implements ITriciRepository {
           this.#logger.info(JSON.stringify(info));
         });
         // Do other stuff such as building indexes, etc.
+        const appEventsIndexDesignDoc = {
+          _id: `_design/${appEventsIndexViewName}`,
+          views: {
+            appEventsByTimestampAndType: {
+              map: function (doc: any) {
+                if (doc._id && doc._id.startsWith('appevt_')) {
+                  emit([doc.timestamp, doc.type]);
+                }
+              }.toString(),
+            },
+          },
+        };
+        console.log('Building appEventsIndex');
+        this.#db
+          .put(appEventsIndexDesignDoc)
+          .then((result: PouchDB.Core.Response) => {
+            this.#logger.info(`Created appEventsIndexDesignDoc. Result: ${JSON.stringify(result)}`);
+          })
+          .catch((error: PouchDB.Core.Error) => {
+            this.#logger.error(`Error creating appEventsIndexDesignDoc. Error: ${JSON.stringify(error)}`);
+          });
+        // Run a blank query to make sure the index is built
+        console.log('Warming up index');
+        this.#db
+          .query(`${appEventsIndexViewName}/appEventsByTimestampAndType`, {
+            reduce: '_count',
+          })
+          .then((result: PouchDB.Query.Response<any>) => {
+            this.#logger.info(
+              `Ran blank query on appEventsIndex/appEventsByTimestampAndType. Result: ${JSON.stringify(result)}}`,
+            );
+          })
+          .catch((error: PouchDB.Core.Error) => {
+            this.#logger.error(
+              `Error running blank query appEventsIndex/appEventsByTimestampAndType. Error: ${JSON.stringify(error)}`,
+            );
+          });
         this.#repoInitialized = true;
       } catch (error) {
-        this.#logger.error("Error initializing repository. Error: ", error);
+        this.#logger.error('Error initializing repository. Error: ', error);
       }
     }
   }
@@ -61,7 +103,7 @@ export class TriciRepository implements ITriciRepository {
             objFromDb = null;
             fulfill(objFromDb);
           } else {
-            this.#logger.error("Error fetching objFromDb. Error: %o", err);
+            this.#logger.error('Error fetching objFromDb. Error: %o', err);
             reject(err);
           }
         });
@@ -88,14 +130,14 @@ export class TriciRepository implements ITriciRepository {
                 .then((resp: PouchDB.Core.Response) => {
                   this.#logger.debug(
                     `deleted doc from pouchDB with _id:${idOfDocToDelete} and rev:${revToDelete}. Resp:`,
-                    resp
+                    resp,
                   );
                 })
                 .catch((error: PouchDB.Core.Error) => {
                   this.#logger.error(
                     `Error deleting doc from pouchDB. _id:${idOfDocToDelete} and rev:${revToDelete} and error:${JSON.stringify(
-                      error
-                    )}`
+                      error,
+                    )}`,
                   );
                 });
               fulfill(updObjFromDb);
@@ -107,7 +149,7 @@ export class TriciRepository implements ITriciRepository {
         })
         .catch((error: PouchDB.Core.Error) => {
           this.#logger.error(
-            `Error fetching objFromDB with idOfDocToDelete: ${idOfDocToDelete}. Error:${JSON.stringify(error)}`
+            `Error fetching objFromDB with idOfDocToDelete: ${idOfDocToDelete}. Error:${JSON.stringify(error)}`,
           );
           if (error.status === 404) {
             this.#db
@@ -150,6 +192,21 @@ export class TriciRepository implements ITriciRepository {
         .allDocs(queryOptions)
         .then((result: PouchDB.Core.AllDocsResponse<any>) => {
           // logger.info('queryResult:%O', result);
+          fulfill(result);
+        })
+        .catch((error: PouchDB.Core.Error) => {
+          reject(error);
+        });
+    });
+  }
+
+  public queryAppEvents(queryOptions: any): Promise<any> {
+    return new Promise((fulfill, reject) => {
+      // logger.debug('queryOptions:%O', queryOptions);
+      this.#db
+        .query(`${appEventsIndexViewName}/appEventsByTimestampAndType`, queryOptions)
+        .then((result: PouchDB.Query.Response<any>) => {
+          this.#logger.info('queryResult:%O', result);
           fulfill(result);
         })
         .catch((error: PouchDB.Core.Error) => {

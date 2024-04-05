@@ -1,6 +1,5 @@
-import { TriciRepository } from '../src/TriciRepository';
+import { TriciDocRepository } from '../src/TriciDocRepository';
 import { Constants } from '@trici/models';
-import PouchDB from 'pouchdb';
 import { v4 as uuidv4 } from 'uuid';
 import type { Logger } from '@trici/logger';
 import LoggingService from '@trici/logger';
@@ -9,9 +8,9 @@ import path from 'path';
 
 // Mock the logger to silence the output during tests
 
-describe('TriciRepository', () => {
+describe('TriciDocRepository', () => {
   let logger: Logger;
-  let repository: TriciRepository;
+  let repository: TriciDocRepository;
 
   const appDataDirectory = path.join(__dirname, 'testAppData');
   const workspaceName = 'default';
@@ -36,7 +35,7 @@ describe('TriciRepository', () => {
         appDetails: 'darwin-dev-2.1.1',
       });
       console.log('Initialized logger');
-      repository = new TriciRepository(logger);
+      repository = new TriciDocRepository(logger);
       console.log('Initializing repository with appDataDirectory: ', appDataDirectory);
       repository.init(appDataDirectory);
       resolve(true);
@@ -44,6 +43,7 @@ describe('TriciRepository', () => {
   });
 
   afterAll(async () => {
+    console.log('Tear down of tests');
     // Clean up the test database
     // const db = new PouchDB(`${appDataDirectory}/trici/${workspaceName}/data/`);
     // await db.destroy();
