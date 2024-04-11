@@ -8,7 +8,7 @@ describe('SqliteDbManager', () => {
   let logger: Logger;
   let dbManager: SqliteDbManager | undefined;
 
-  const appDataDirectory = path.join(__dirname, 'testAppData', 'test.db');
+  const appDataDirectory = path.join(__dirname, 'testAppData');
   const workspaceName = 'default';
 
   beforeAll(async () => {

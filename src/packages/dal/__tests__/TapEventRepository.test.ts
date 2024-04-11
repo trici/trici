@@ -42,7 +42,7 @@ describe('TapEventRepository', () => {
 
     dbManager = new SqliteDbManager(logger);
 
-    const dbDirPath = path.join(__dirname, 'testAppData', 'test.db');
+    const dbDirPath = path.join(__dirname, 'testAppData');
 
     try {
       await dbManager.init(dbDirPath);

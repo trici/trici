@@ -3,6 +3,7 @@ import knex from 'knex';
 //@ts-ignore
 import knexfile from '../knex/knexfile';
 import sqlite3 from 'sqlite3';
+import path from 'path';
 
 export interface ISqliteDbManager {
   init(dataDirectoryPath: string): void;
@@ -33,10 +34,11 @@ export class SqliteDbManager implements ISqliteDbManager {
   public async init(dataDirectoryPath: string): Promise<void> {
     if (!this.#dbInitialized) {
       try {
-        this.db = new sqlite3.Database(dataDirectoryPath);
+        const dbPath = path.join(dataDirectoryPath, 'trici.db');
+        this.db = new sqlite3.Database(dbPath);
         this.#dbInitialized = true;
         const knexConfig = knexfile[process.env.NODE_ENV || 'development'];
-        knexConfig.connection.filename = dataDirectoryPath;
+        knexConfig.connection.filename = dbPath;
         console.log('knexConfig in init: ', knexConfig);
         this.knexInstance = knex(knexConfig);
         const [batchno, migrations] = await this.knexInstance.migrate.latest();
