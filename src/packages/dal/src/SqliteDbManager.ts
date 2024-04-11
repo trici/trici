@@ -1,12 +1,11 @@
 import { Logger } from '@trici/logger';
 import knex from 'knex';
 //@ts-ignore
-import knexfile from '../knex/knexfile';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 
 export interface ISqliteDbManager {
-  init(dataDirectoryPath: string): void;
+  init(dataDirectoryPath: string, knexfile: any): void;
   isInitialized(): boolean;
   getDb(): sqlite3.Database;
   close(): Promise<void>;
@@ -31,7 +30,7 @@ export class SqliteDbManager implements ISqliteDbManager {
    * @example dataDirectoryPath = /Users/username/Library/Application Support/Trici/MyWorkspace/data
    *
    */
-  public async init(dataDirectoryPath: string): Promise<void> {
+  public async init(dataDirectoryPath: string, knexfile: any): Promise<void> {
     if (!this.#dbInitialized) {
       try {
         const dbPath = path.join(dataDirectoryPath, 'trici.db');

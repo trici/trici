@@ -7,10 +7,10 @@ module.exports = {
     },
     useNullAsDefault: true,
     migrations: {
-      directory: './knex/migrations',
+      directory: './__tests__/knex/migrations',
     },
     seeds: {
-      directory: './knex/seeds',
+      directory: './__tests__/knex/seeds',
     },
   },
 };

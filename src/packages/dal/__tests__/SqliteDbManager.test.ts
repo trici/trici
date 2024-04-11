@@ -3,6 +3,7 @@ import { SqliteDbManager } from '../src/SqliteDbManager';
 import path from 'path';
 import { deleteDirectoryWithContents } from '@trici/utils';
 import LoggingService from '@trici/logger';
+import knexfile from './knex/knexfile';
 
 describe('SqliteDbManager', () => {
   let logger: Logger;
@@ -32,7 +33,7 @@ describe('SqliteDbManager', () => {
     console.log('Initializing with appDataDirectory:', appDataDirectory);
     // Init will create the db with tables
     try {
-      await dbManager.init(appDataDirectory);
+      await dbManager.init(appDataDirectory, knexfile);
       console.log('Initialized dbManager');
     } catch (err) {
       console.log('Error initializing dbManager: ', err);

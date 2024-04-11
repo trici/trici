@@ -8,6 +8,7 @@ import path from 'path';
 import { deleteDirectoryWithContents } from '@trici/utils';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
+import knexfile from './knex/knexfile';
 
 describe('TapEventRepository', () => {
   let repository: TapEventRepository;
@@ -45,7 +46,7 @@ describe('TapEventRepository', () => {
     const dbDirPath = path.join(__dirname, 'testAppData');
 
     try {
-      await dbManager.init(dbDirPath);
+      await dbManager.init(dbDirPath, knexfile);
     } catch (err) {
       console.log('Error initializing dbManager: ', err);
     }
