@@ -4,7 +4,7 @@ import { Logger } from '@trici/logger';
 
 export interface ITapEventRepository {
   save(tapEvent: ITapEvent): Promise<void>;
-  getTapEvents(from: number, to: number, type: TRICI_APP_EVENT): Promise<Array<ITapEvent>>;
+  getTapEvents(from: number, to: number, type: TRICI_APP_EVENT, count: number): Promise<Array<ITapEvent>>;
 }
 
 export class TapEventRepository implements ITapEventRepository {
@@ -37,14 +37,19 @@ export class TapEventRepository implements ITapEventRepository {
     });
   }
 
-  public async getTapEvents(from: number, to: number, type: TRICI_APP_EVENT): Promise<Array<ITapEvent>> {
+  public async getTapEvents(
+    from: number,
+    to: number,
+    type: TRICI_APP_EVENT,
+    count: number = 20,
+  ): Promise<Array<ITapEvent>> {
     if (!this.db) {
       this.logger?.error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
-    const selectQuery = `SELECT * FROM app_event WHERE timestamp BETWEEN ? AND ? AND type = ?`;
-    const params = [from, to, type];
+    const selectQuery = `SELECT * FROM app_event WHERE timestamp BETWEEN ? AND ? AND type = ? LIMIT ?`;
+    const params = [from, to, type, count];
 
     return new Promise((resolve, reject) => {
       this.db!.all(selectQuery, params, (err, rows: ITapEvent[]) => {
