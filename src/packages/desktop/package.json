@@ -27,6 +27,7 @@
     "start": "cross-env NODE_ENV=development electron .",
     "live-start": "cross-env NODE_ENV=livedev electron .",
     "esbuild-main": "node esbuild.main.js",
+    "check-types": "tsc --noEmit",
     "esbuild-renderer": "node esbuild.renderer.js",
     "build-copy-unbundled": "node copyunbundledfiles.js",
     "build-live": "concurrently \"cross-env NODE_ENV=livedev node esbuild.renderer.live.js\" \"pnpm run build-css-live\"",
