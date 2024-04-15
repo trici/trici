@@ -24,7 +24,7 @@ const TriciAppRecord = Immutable.Record({
  * It is saved using AppJsonStorageService.
  */
 export class TriciApp extends TriciAppRecord implements ITriciApp {
-  constructor(triciApp?: TriciApp) {
+  constructor(triciApp?: ITriciApp) {
     if (typeof triciApp === 'undefined' || triciApp === null) {
       super({
         installationId: Constants.UNINITIALIZED_ID,

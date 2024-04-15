@@ -8,3 +8,4 @@ export * from './LastSavedEntityIds';
 export * from './UserPreferences';
 export * from './UsedApplications';
 export * from './OnboardingState';
+export * from './AppEvent';

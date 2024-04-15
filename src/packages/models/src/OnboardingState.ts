@@ -22,7 +22,7 @@ const OnboardingStateRecord = Immutable.Record({
  * It is saved using AppJsonStorageService.
  */
 export class OnboardingState extends OnboardingStateRecord implements IOnboardingState {
-  constructor(onboardingState?: OnboardingState) {
+  constructor(onboardingState?: IOnboardingState) {
     if (typeof onboardingState === 'undefined' || onboardingState === null) {
       super({
         onboardingFinished: false,

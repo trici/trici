@@ -1,27 +1,21 @@
 /*
-* The daily user activity model.
-*/
+ * The daily user activity model.
+ */
 
 import * as Immutable from 'immutable';
 import { Constants } from './Constants';
-
-
-export interface IFrontmostAppData {
-  frontmostApp: string;
-  becameActiveAt: number;
-}
+import { AppEvent } from './AppEvent';
 
 interface IDailyUserActivityType {
   _id: string;
   date: number;
-  frontmostAppChanges: Array<IFrontmostAppData>;
+  appEvents: Array<AppEvent>;
 }
-
 
 const DailyUserActivitySchema: IDailyUserActivityType = {
   _id: Constants.UNINITIALIZED_ID,
   date: new Date().setHours(0, 0, 0, 0),
-  frontmostAppChanges: [],
+  appEvents: [],
 };
 
 const DailyUserActivityRecord = Immutable.Record(DailyUserActivitySchema);
@@ -32,13 +26,13 @@ export class DailyUserActivity extends DailyUserActivityRecord {
       super({
         _id: Constants.UNINITIALIZED_ID,
         date: new Date().setHours(0, 0, 0, 0),
-        frontmostAppChanges: [],
+        appEvents: [],
       });
     } else {
       super({
         _id: dailyUserActivity._id,
         date: dailyUserActivity.date,
-        frontmostAppChanges: dailyUserActivity.frontmostAppChanges,
+        appEvents: dailyUserActivity.appEvents,
       });
     }
   }
