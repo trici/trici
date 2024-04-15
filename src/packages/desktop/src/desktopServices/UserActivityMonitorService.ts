@@ -1,6 +1,5 @@
 import { IdleTimeServiceInstance } from './IdleTimeService';
 import { AppObserverService } from '@trici/app-observer';
-import { ITriciRepository } from '@trici/dal';
 import type { Logger } from '@trici/logger';
 import { Constants, DailyUserActivity, KEY_PARTS, TRICI_APP_EVENT, UsedAppCategory } from '@trici/models';
 import { generateNewTriciId, generateUpdatedTriciId, isTriciIdValidForToday } from '@trici/utils';
@@ -28,7 +27,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   userBecameHyperActiveAt: number;
   userHyperActiveForInSeconds: number;
   userBecameInactiveAt: number;
-  repository: ITriciRepository;
   todaysUserActitivity: DailyUserActivity | null;
   appJsonStorageService: IAppJsonStorageService;
   appEventEmitter: AppEventEmitter;
@@ -40,7 +38,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     logger: Logger,
     idleTimeServiceInstance: IdleTimeServiceInstance,
     appObserverServiceInstance: AppObserverService,
-    repository: ITriciRepository,
     appJsonStorageService: IAppJsonStorageService,
     appEventEmitter: AppEventEmitter,
     actionDispatcher: IActionDispatcher<TriciAction>,
@@ -57,7 +54,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.userBecameInactiveAt = 0;
     this.userWentAwayAt = 0;
     this.userCameBackAt = 0;
-    this.repository = repository;
     this.todaysUserActitivity = null;
     this.appJsonStorageService = appJsonStorageService;
     this.appEventEmitter = appEventEmitter;
@@ -191,53 +187,33 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
     this.appObserverServiceInstance.on('frontmostAppChanged', (frontmostAppChangeData: any) => {
       this.logger.info(`UserActivityMonitorService frontmostAppChanged:${JSON.stringify(frontmostAppChangeData)}`);
-      if (this.todaysUserActitivity !== null) {
-        try {
-          const frontmostAppChanges = this.todaysUserActitivity.get('frontmostAppChanges');
-          // const frontmostAppChangeDataObject = JSON.parse(frontmostAppChangeData);
-          frontmostAppChanges.push(frontmostAppChangeData);
-          const idOfDocToDelete = this.todaysUserActitivity.get('_id');
-
-          const updatedId =
-            idOfDocToDelete === Constants.UNINITIALIZED_ID
-              ? generateNewTriciId(installationId, KEY_PARTS.USER_PREFERENCES)
-              : generateUpdatedTriciId(idOfDocToDelete);
-
-          this.todaysUserActitivity = this.todaysUserActitivity.withMutations(obj => {
-            obj.set('_id', updatedId).set('frontmostAppChanges', frontmostAppChanges);
-          });
-          this.repository.save(this.todaysUserActitivity.toJS(), idOfDocToDelete);
-          this.updateLastSavedTodayUserActivityId(updatedId);
-        } catch (err) {
-          this.logger.error(`UserActivityMonitorService: Error while saving frontmostAppChanged: ${err}`);
-        }
-      }
+      this.appEventEmitter.emit(TRICI_APP_EVENT.FRONTMOST_APP_CHANGED, frontmostAppChangeData);
     });
 
-    try {
-      // Fetch the current user activity from the db.
-      // If there is no user activity for today, create one.
-      let lastSavedEntityIds = await this.appJsonStorageService.getLastSavedEntityIds();
-      let todayUserActivityId = lastSavedEntityIds.get('todayUserActivityId');
-      if (
-        todayUserActivityId === undefined ||
-        todayUserActivityId === Constants.UNINITIALIZED_ID ||
-        !isTriciIdValidForToday(todayUserActivityId)
-      ) {
-        todayUserActivityId = generateNewTriciId(installationId, KEY_PARTS.DAILY_USER_ACTIVITY);
-      }
+    // try {
+    //   // Fetch the current user activity from the db.
+    //   // If there is no user activity for today, create one.
+    //   let lastSavedEntityIds = await this.appJsonStorageService.getLastSavedEntityIds();
+    //   let todayUserActivityId = lastSavedEntityIds.get('todayUserActivityId');
+    //   if (
+    //     todayUserActivityId === undefined ||
+    //     todayUserActivityId === Constants.UNINITIALIZED_ID ||
+    //     !isTriciIdValidForToday(todayUserActivityId)
+    //   ) {
+    //     todayUserActivityId = generateNewTriciId(installationId, KEY_PARTS.DAILY_USER_ACTIVITY);
+    //   }
 
-      let result = await this.repository.get(todayUserActivityId);
-      if (result === null) {
-        this.todaysUserActitivity = new DailyUserActivity();
-        this.todaysUserActitivity = this.todaysUserActitivity.set('_id', todayUserActivityId);
-        this.repository.save(this.todaysUserActitivity.toJS(), Constants.UNINITIALIZED_ID);
-        this.updateLastSavedTodayUserActivityId(todayUserActivityId);
-      }
-      this.todaysUserActitivity = new DailyUserActivity(result);
-    } catch (err) {
-      this.logger.error(`UserActivityMonitorService: Error while fetching today's user activity: ${err}`);
-    }
+    //   let result = await this.repository.get(todayUserActivityId);
+    //   if (result === null) {
+    //     this.todaysUserActitivity = new DailyUserActivity();
+    //     this.todaysUserActitivity = this.todaysUserActitivity.set('_id', todayUserActivityId);
+    //     this.repository.save(this.todaysUserActitivity.toJS(), Constants.UNINITIALIZED_ID);
+    //     this.updateLastSavedTodayUserActivityId(todayUserActivityId);
+    //   }
+    //   this.todaysUserActitivity = new DailyUserActivity(result);
+    // } catch (err) {
+    //   this.logger.error(`UserActivityMonitorService: Error while fetching today's user activity: ${err}`);
+    // }
     this.idleTimeServiceInstance.start();
     this.appObserverServiceInstance.start(isRunningInAsar);
   }
