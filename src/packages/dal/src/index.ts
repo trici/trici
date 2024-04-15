@@ -1,4 +1,4 @@
 export { TriciDocRepository, ITriciDocRepository } from './TriciDocRepository';
 export { SqliteDbManager, ISqliteDbManager } from './SqliteDbManager';
 // This is named TapEvent till the time I remove the AppEventRepo which is using the same name
-export { TapEventRepository, ITapEventRepository } from './TapEventRepository';
+export { AppEventRepository, IAppEventRepository } from './AppEventRepository';

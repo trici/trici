@@ -43,44 +43,6 @@ export class TriciDocRepository implements ITriciDocRepository {
         this.#db.info().then((info: PouchDB.Core.DatabaseInfo) => {
           this.#logger.info(JSON.stringify(info));
         });
-        // Do other stuff such as building indexes, etc.
-        const appEventsIndexDesignDoc = {
-          _id: `_design/${appEventsIndexViewName}`,
-          views: {
-            appEventsByTimestampAndType: {
-              map: function (doc: any) {
-                if (doc._id && doc._id.startsWith('appevt_')) {
-                  emit([doc.timestamp, doc.type]);
-                }
-              }.toString(),
-            },
-          },
-        };
-        console.log('Building appEventsIndex');
-        this.#db
-          .put(appEventsIndexDesignDoc)
-          .then((result: PouchDB.Core.Response) => {
-            this.#logger.info(`Created appEventsIndexDesignDoc. Result: ${JSON.stringify(result)}`);
-          })
-          .catch((error: PouchDB.Core.Error) => {
-            this.#logger.error(`Error creating appEventsIndexDesignDoc. Error: ${JSON.stringify(error)}`);
-          });
-        // Run a blank query to make sure the index is built
-        console.log('Warming up index');
-        this.#db
-          .query(`${appEventsIndexViewName}/appEventsByTimestampAndType`, {
-            reduce: '_count',
-          })
-          .then((result: PouchDB.Query.Response<any>) => {
-            this.#logger.info(
-              `Ran blank query on appEventsIndex/appEventsByTimestampAndType. Result: ${JSON.stringify(result)}}`,
-            );
-          })
-          .catch((error: PouchDB.Core.Error) => {
-            this.#logger.error(
-              `Error running blank query appEventsIndex/appEventsByTimestampAndType. Error: ${JSON.stringify(error)}`,
-            );
-          });
         this.#repoInitialized = true;
       } catch (error) {
         this.#logger.error('Error initializing repository. Error: ', error);

@@ -1,17 +1,17 @@
-import { TapEventRepository } from '../src/TapEventRepository';
+import { AppEventRepository } from '../src/AppEventRepository';
 import { SqliteDbManager } from '../src/SqliteDbManager';
 import sqlite3 from 'sqlite3';
 import type { Logger } from '@trici/logger';
 import LoggingService from '@trici/logger';
-import { ITapEvent, TRICI_APP_EVENT } from '@trici/models';
+import { IAppEvent, TRICI_APP_EVENT } from '@trici/models';
 import path from 'path';
 import { deleteDirectoryWithContents } from '@trici/utils';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import knexfile from './knex/knexfile';
 
-describe('TapEventRepository', () => {
-  let repository: TapEventRepository;
+describe('AppEventRepository', () => {
+  let repository: AppEventRepository;
   let db: sqlite3.Database;
   let logger: Logger;
   let dbManager: SqliteDbManager;
@@ -52,24 +52,26 @@ describe('TapEventRepository', () => {
     }
     db = dbManager.getDb();
 
-    repository = new TapEventRepository(db, logger);
+    repository = new AppEventRepository(db, logger);
   });
 
   afterAll(async () => {
     await dbManager.close();
   });
 
-  describe('save and getTapEvents', () => {
+  describe('save and getAppEvents', () => {
     it('should save a tap event to the database', async () => {
-      const tapEvent: ITapEvent = {
+      const tapEvent: IAppEvent = {
         id: uuidv4(),
         type: TRICI_APP_EVENT.FRONTMOST_APP_CHANGED,
         timestamp: Date.now(),
-        data: {
-          frontmostApp: 'Code',
-          previousFrontmostApp: 'Terminal',
-          previousAppActiveTime: 210,
-        },
+        data: [
+          {
+            frontmostApp: 'Code',
+            previousFrontmostApp: 'Terminal',
+            previousAppActiveTime: 210,
+          },
+        ],
       };
 
       expect(async () => await repository.save(tapEvent)).not.toThrow();
@@ -80,7 +82,7 @@ describe('TapEventRepository', () => {
       const to = Date.now();
       const type = TRICI_APP_EVENT.FRONTMOST_APP_CHANGED; // Assuming an event type
 
-      const events = await repository.getTapEvents(from, to, type);
+      const events = await repository.getAppEvents(from, to, type);
 
       console.log('retrieved events', events);
       expect(events).toHaveLength(1);

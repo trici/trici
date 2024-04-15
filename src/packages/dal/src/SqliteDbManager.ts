@@ -41,6 +41,8 @@ export class SqliteDbManager implements ISqliteDbManager {
         console.log('knexConfig in init: ', knexConfig);
         this.knexInstance = knex(knexConfig);
         const [batchno, migrations] = await this.knexInstance.migrate.latest();
+        console.log('batchno:', batchno);
+        console.log('migrations:', migrations);
         if (migrations.length === 0) {
           this.#logger.info('No migrations ran');
         } else {
