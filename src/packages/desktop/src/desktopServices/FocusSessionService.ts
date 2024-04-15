@@ -9,7 +9,7 @@ import {
 } from '@trici/models';
 import { generateNewTriciId, generateUpdatedTriciId } from '@trici/utils';
 import { screen } from 'electron';
-import { ITriciRepository } from '@trici/dal';
+import { ITriciDocRepository } from '@trici/dal';
 import { AppEventEmitter } from './AppEventEmitter';
 import { TriciAction } from '../typedefs/TriciAction';
 import { IActionDispatcher, dispatch } from './ActionDispatcher';
@@ -24,13 +24,13 @@ export interface IFocusSessionService {
 export class FocusSessionService implements ITriciDesktopService, IFocusSessionService {
   #currentFocusSession: FocusSession | null;
   #focusSessionTimer: NodeJS.Timeout | null;
-  #repository: ITriciRepository;
+  #repository: ITriciDocRepository;
   appEventEmitter: AppEventEmitter;
   actionDispatcher: IActionDispatcher<TriciAction>;
   isServiceInitialized: boolean = false;
 
   constructor(
-    repository: ITriciRepository,
+    repository: ITriciDocRepository,
     appEventEmitter: AppEventEmitter,
     actionDispatcher: IActionDispatcher<TriciAction>,
   ) {

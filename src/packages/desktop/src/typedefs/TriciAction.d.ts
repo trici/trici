@@ -50,5 +50,8 @@ export type TriciAction =
       type: 'CLOSE_ONBOARDING_WINDOW';
     }
   | {
+      type: 'OPEN_EVENT_VIEWER_WINDOW';
+    }
+  | {
       type: 'ASK_FOR_SCREEN_RECORDING_PERMISSIONS';
     };

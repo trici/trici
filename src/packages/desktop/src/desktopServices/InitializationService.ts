@@ -9,7 +9,9 @@ import { AppService, IAppService } from './AppService';
 import { WindowManager } from './WindowManager';
 import { CliMessageHandlerService } from './CliMessageHandlerService';
 import { FocusSessionService } from './FocusSessionService';
-import { TriciRepository } from '@trici/dal';
+import { ITriciDocRepository, TriciDocRepository } from '@trici/dal';
+import { AppEventRepository, IAppEventRepository } from '@trici/dal';
+import { SqliteDbManager, ISqliteDbManager } from '@trici/dal';
 import IdleTimeService from './IdleTimeService';
 import { AppObserverService } from '@trici/app-observer';
 import { UserActivityMonitorService } from './UserActivityMonitorService';
@@ -28,6 +30,8 @@ import { PermissionsService } from './PermissionsService';
 import UsedApplicationsService from './UsedApplicationsService';
 import { MainProcessIpcMessageSender } from './MainProcessIpcMessageSender';
 import path from 'path';
+import sqlite3 from 'sqlite3';
+import knexfile from '../../knex/knexfile';
 
 let logger: Logger;
 let appJsonStorageService: IAppJsonStorageService;
@@ -36,7 +40,10 @@ let processManager: IProcessManager;
 let appService: IAppService;
 let permissionsService: PermissionsService;
 
-let repo: TriciRepository;
+let dbManager: ISqliteDbManager;
+let sqliteDb: sqlite3.Database;
+let repo: ITriciDocRepository;
+let eventRepo: IAppEventRepository;
 let cliMessageHandlerService: CliMessageHandlerService;
 let focusSessionService: FocusSessionService;
 
@@ -120,8 +127,20 @@ export const InitializationService: IInitializationService = {
       appService = new AppService(processManager, trayService, appJsonStorageService, permissionsService);
       await appService.checkUserDataDirectory();
 
-      repo = new TriciRepository(logger);
+      repo = new TriciDocRepository(logger);
       repo.init(global.userDataDirectoryCheckResult.dataDir.path);
+
+      //Set up the sqlite database
+      console.log('knexfile:', knexfile);
+      dbManager = new SqliteDbManager(logger);
+      await dbManager.init(global.userDataDirectoryCheckResult.dataDir.path, knexfile);
+
+      sqliteDb = dbManager.getDb();
+
+      eventRepo = new AppEventRepository(sqliteDb, logger);
+
+      // Initialize the AppEventEmitter
+      appEventEmitter.initializeRepo(eventRepo);
 
       const userPreferencesResult = await repo.get(userPreferencesId);
       const userPreferences = new UserPreferences(userPreferencesResult);
@@ -152,7 +171,12 @@ export const InitializationService: IInitializationService = {
       const triciRecorder = new TriciRecorder(ffmpegPath, logger);
 
       // Initialize the infra to listen to queries from the renderer process
-      const mainProcessDataAccessService = MainProcessDataAccessService.getInstance(repo, appObserverService, logger);
+      const mainProcessDataAccessService = MainProcessDataAccessService.getInstance(
+        repo,
+        eventRepo,
+        appObserverService,
+        logger,
+      );
       const mainProcessIpcMessageHandlerService = new MainProcessIpcMessageHandlerService(
         logger,
         mainProcessDataAccessService,
@@ -180,7 +204,6 @@ export const InitializationService: IInitializationService = {
           logger,
           IdleTimeService,
           appObserverService,
-          repo,
           appJsonStorageService,
           appEventEmitter,
           actionDispatcher,

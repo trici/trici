@@ -5,9 +5,17 @@
  * This is done to reduce conversion between Record objects and plain objects since the communication between main and renderer process also happens with plain objects.
  */
 import { AppObserverService } from '@trici/app-observer';
-import { ITriciRepository } from '@trici/dal';
+import { ITriciDocRepository } from '@trici/dal';
+import { IAppEventRepository } from '@trici/dal';
 import { Logger } from '@trici/logger';
-import { Constants, KEY_PARTS, UserPreferences, IUserPreferences, UsedApplications } from '@trici/models';
+import {
+  Constants,
+  KEY_PARTS,
+  UserPreferences,
+  IUserPreferences,
+  UsedApplications,
+  TRICI_APP_EVENT,
+} from '@trici/models';
 import { generateUninitializedTriciId } from '@trici/utils';
 import { app } from 'electron/main';
 import fs from 'fs/promises';
@@ -17,31 +25,45 @@ import fs from 'fs/promises';
  */
 export interface IMainProcessDataAccessService {
   getUserPreferences(id: string): Promise<UserPreferences>;
-  saveUserPreferences(userPreferences: UserPreferences, idOfDocToDelete: string): Promise<UserPreferences>;
+  saveUserPreferences(userPreferences: IUserPreferences, idOfDocToDelete: string): Promise<UserPreferences>;
   getInstalledApplications(): Promise<[{ name: string; iconPath: string }] | []>;
   saveUsedApplications(usedApplications: UsedApplications, idOfDocToDelete: string): Promise<UsedApplications>;
   getUsedApplications(id: string): Promise<UsedApplications>;
+  getTriciAppEvents(fromTime: number, toTime: number, type: TRICI_APP_EVENT, count: number): Promise<any>;
 }
 
 export class MainProcessDataAccessService implements IMainProcessDataAccessService {
-  private _repository: ITriciRepository;
+  private _repository: ITriciDocRepository;
+  private _tapEventRepository: IAppEventRepository;
   private _appObserver: AppObserverService;
   private _logger: Logger;
   private static _instance: MainProcessDataAccessService;
 
-  private constructor(repository: ITriciRepository, appObserver: AppObserverService, logger: Logger) {
+  private constructor(
+    repository: ITriciDocRepository,
+    tapEventRepository: IAppEventRepository,
+    appObserver: AppObserverService,
+    logger: Logger,
+  ) {
     this._repository = repository;
+    this._tapEventRepository = tapEventRepository;
     this._appObserver = appObserver;
     this._logger = logger;
   }
 
   public static getInstance(
-    repository: ITriciRepository,
+    repository: ITriciDocRepository,
+    tapEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
     logger: Logger,
   ): MainProcessDataAccessService {
     if (!MainProcessDataAccessService._instance) {
-      MainProcessDataAccessService._instance = new MainProcessDataAccessService(repository, appObserver, logger);
+      MainProcessDataAccessService._instance = new MainProcessDataAccessService(
+        repository,
+        tapEventRepository,
+        appObserver,
+        logger,
+      );
     }
     return MainProcessDataAccessService._instance;
   }
@@ -168,5 +190,50 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       logger.error('Error in saveUsedApplications', error);
       throw error;
     }
+  }
+
+  /**
+   * Gets the Trici App Events from the database
+   * @param fromTime The start time of the events
+   * @param toTime The end time of the events
+   * @param type The type of the events
+   */
+  public async getTriciAppEvents(
+    fromTime: number,
+    toTime: number,
+    type: TRICI_APP_EVENT = TRICI_APP_EVENT.FRONTMOST_APP_CHANGED,
+    count: number = 20,
+  ): Promise<any> {
+    try {
+      const events = await this._tapEventRepository.getAppEvents(fromTime, toTime, type, count);
+      return events;
+    } catch (error) {
+      logger.error('Error in getTriciAppEvents', error);
+      throw error;
+    }
+    // try {
+    //   const startkey = [toTime, type];
+    //   const endkey = [fromTime, type];
+    //   const queryOptions = {
+    //     include_docs: true,
+    //     descending: true,
+    //     startkey: startkey,
+    //     endkey: endkey,
+    //     limit: count,
+    //   };
+    //   console.log('queryOptions:', queryOptions);
+    //   const queryResult = await this._repository.queryAppEvents(queryOptions);
+    //   console.log('getTriciAppEvents', queryResult);
+    //   if (queryResult.rows.length > 0) {
+    //     const events = queryResult.rows.map((row: any) => {
+    //       return new AppEvent(row.doc).toJS();
+    //     });
+    //     return events;
+    //   }
+    //   return [];
+    // } catch (error) {
+    //   logger.error('Error in getTriciAppEvents', error);
+    //   throw error;
+    // }
   }
 }

@@ -21,6 +21,7 @@ export class WindowManager implements IWindowManager {
   alertWindow: BrowserWindow | null;
   mainWindow: BrowserWindow | null;
   onboardingWindow: BrowserWindow | null;
+  eventViewerWindow: BrowserWindow | null;
   actionHandlersRegistered: boolean = false;
   actionDispatcher: IActionDispatcher<TriciAction>;
   preloadScriptPath: string;
@@ -30,6 +31,7 @@ export class WindowManager implements IWindowManager {
     this.settingsWindow = null;
     this.mainWindow = null;
     this.alertWindow = null;
+    this.eventViewerWindow = null;
     this.onboardingWindow = null;
     this.actionDispatcher = actionDispatcher;
     this.preloadScriptPath = path.join(app.getAppPath(), 'dist', 'preload.js');
@@ -69,6 +71,10 @@ export class WindowManager implements IWindowManager {
             console.log('Onboarding Finished. Closing Onboarding Window');
             this._closeOnboardingWindow();
             break;
+          case 'OPEN_EVENT_VIEWER_WINDOW':
+            console.log('Open Event Viewer Window');
+            this._openEventViewerWindow();
+            break;
           default:
             break;
         }
@@ -76,6 +82,41 @@ export class WindowManager implements IWindowManager {
       this.actionHandlersRegistered = true;
     }
   }
+  private _openEventViewerWindow() {
+    if (this.eventViewerWindow) {
+      this.eventViewerWindow.show();
+      return;
+    }
+    const preloadScriptPath = this.preloadScriptPath;
+    const { x, y } = this._getWindowCoordinates(1600, 1200);
+    this.eventViewerWindow = new BrowserWindow({
+      width: 1600,
+      height: 1200,
+      x,
+      y,
+      webPreferences: {
+        nodeIntegration: false,
+        preload: preloadScriptPath,
+        contextIsolation: true,
+      },
+      maximizable: true,
+      minimizable: true,
+    });
+
+    this.eventViewerWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), {
+      query: { type: 'eventviewer' },
+    });
+
+    contextMenu({
+      window: this.eventViewerWindow,
+      showInspectElement: true,
+    });
+
+    this.eventViewerWindow.on('closed', () => {
+      this.eventViewerWindow = null;
+    });
+  }
+
   private _closeOnboardingWindow() {
     if (this.onboardingWindow) {
       this.onboardingWindow.close();
@@ -174,6 +215,9 @@ export class WindowManager implements IWindowManager {
     }
     if (this.onboardingWindow) {
       this.onboardingWindow.reload();
+    }
+    if (this.eventViewerWindow) {
+      this.eventViewerWindow.reload();
     }
   }
 

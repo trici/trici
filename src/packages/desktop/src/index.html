@@ -37,6 +37,8 @@
     const type = urlParams.get('type');
     if (type === 'settings') {
       document.title = 'Trici Settings';
+    } else if (type === 'eventviewer') {
+      document.title = 'Trici Event Viewer';
     }
     let scriptUrl = getScriptUrlByEnv(type);
     (function() {

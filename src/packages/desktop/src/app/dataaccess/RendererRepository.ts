@@ -1,4 +1,11 @@
-import { UsedApplications, UserPreferences } from '@trici/models';
+import {
+  IUsedApplications,
+  IUserPreferences,
+  AppEvent,
+  TRICI_APP_EVENT,
+  UsedApplications,
+  UserPreferences,
+} from '@trici/models';
 import { IBridgeAPIInterface } from '../../typedefs/preload';
 
 export interface IRendererRepository {
@@ -6,6 +13,7 @@ export interface IRendererRepository {
   saveUserPreferences(userPreferences: UserPreferences, idOfDocToDelete: string): Promise<UserPreferences>;
   getCachedUserPreferences(): UserPreferences | null;
   getUsedApplications(): Promise<UsedApplications>;
+  getEvents(from: number, to: number, type: TRICI_APP_EVENT): Promise<AppEvent[]>;
 }
 
 /**
@@ -35,13 +43,13 @@ export class RendererRepository implements IRendererRepository {
       // console.log("this.bridgeApi:%O", this.bridgeApi);
       // console.log("self.bridgeApi:%O", self.bridgeApi);
       window.bridgeApi.query({ handler: 'getUserPreferences', args });
-      window.bridgeApi.registerQueryResultHandler(result => {
+      window.bridgeApi.registerQueryResultHandler((result: { data: IUserPreferences | undefined }) => {
         const userPreferences = new UserPreferences(result.data);
         self.cachedUserPreferences = userPreferences;
         console.log('getUserPreferences-Success:%O', userPreferences);
         fulfill(userPreferences);
       }, 'getUserPreferences-Success');
-      window.bridgeApi.registerQueryResultHandler(result => {
+      window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
         reject(result.data);
       }, 'getUserPreferences-Error');
     });
@@ -55,13 +63,13 @@ export class RendererRepository implements IRendererRepository {
         idOfDocToDelete,
       };
       window.bridgeApi.query({ handler: 'saveUserPreferences', args });
-      window.bridgeApi.registerQueryResultHandler(result => {
+      window.bridgeApi.registerQueryResultHandler((result: { data: IUserPreferences | undefined }) => {
         console.log('saveUserPreferences-Success:%O', result.data);
         const userPreferences = new UserPreferences(result.data);
         this.cachedUserPreferences = userPreferences;
         fulfill(userPreferences);
       }, 'saveUserPreferences-Success');
-      window.bridgeApi.registerQueryResultHandler(result => {
+      window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
         reject(result.data);
       }, 'saveUserPreferences-Error');
     });
@@ -75,14 +83,35 @@ export class RendererRepository implements IRendererRepository {
     return new Promise((fulfill, reject) => {
       const args = {};
       window.bridgeApi.query({ handler: 'getUsedApplications', args });
-      window.bridgeApi.registerQueryResultHandler(result => {
+      window.bridgeApi.registerQueryResultHandler((result: { data: IUsedApplications | undefined }) => {
         console.log('getUsedApplications-Success:%O', result.data);
         const usedApplications = new UsedApplications(result.data);
         fulfill(usedApplications);
       }, 'getUsedApplications-Success');
-      window.bridgeApi.registerQueryResultHandler(result => {
+      window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
         reject(result.data);
       }, 'getUsedApplications-Error');
+    });
+  }
+
+  /**
+   * Retrieves an array of AppEvents between the specified dates.
+   * @param from The start date of the range to retrieve events for.
+   * @param to The end date of the range to retrieve events for.
+   * @returns A Promise that resolves with an array of AppEvents.
+   */
+  public getEvents(from: number, to: number, type: TRICI_APP_EVENT): Promise<AppEvent[]> {
+    return new Promise((fulfill, reject) => {
+      const args = { from: from, to: to, type: type };
+      window.bridgeApi.query({ handler: 'getEvents', args });
+      window.bridgeApi.registerQueryResultHandler((result: { data: any[] }) => {
+        console.log('getEvents-Success:%O', result.data);
+        const events = result.data.map((event: any) => new AppEvent(event));
+        fulfill(events);
+      }, 'getEvents-Success');
+      window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
+        reject(result.data);
+      }, 'getEvents-Error');
     });
   }
 }

@@ -20,12 +20,14 @@ async function buildJs() {
     tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
     external: [
       'pouchdb',
+      'sqlite3',
       'winston',
       'macos-notification-state',
       'electron',
       'shelljs',
       'mac-screen-capture-permissions',
       'node-mac-permissions',
+      'knex',
     ],
   });
 }

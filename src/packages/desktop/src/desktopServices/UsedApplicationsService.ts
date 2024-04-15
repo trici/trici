@@ -1,7 +1,7 @@
 import { AppObserverService } from '@trici/app-observer';
 import { Constants, UsedAppCategory, UsedApplicationRecord, UsedApplications } from '@trici/models';
 import { IAppJsonStorageService } from './AppJsonStorageService';
-import { ITriciRepository } from '@trici/dal';
+import { ITriciDocRepository } from '@trici/dal';
 import { generateNewTriciId, generateUpdatedTriciId } from '@trici/utils';
 import { ITriciDesktopService } from 'src/typedefs/ITriciDesktopService';
 import { IActionDispatcher } from './ActionDispatcher';
@@ -10,7 +10,7 @@ import { TriciAction } from 'src/typedefs/TriciAction';
 class UsedApplicationsService implements ITriciDesktopService {
   appObserverServiceInstance: AppObserverService;
   appJsonStorageServiceInstance: IAppJsonStorageService;
-  repo: ITriciRepository;
+  repo: ITriciDocRepository;
   usedApplications: UsedApplications | null = null;
   isServiceInitialized: boolean = false;
   actionDispatcher: IActionDispatcher<TriciAction>;
@@ -18,7 +18,7 @@ class UsedApplicationsService implements ITriciDesktopService {
   constructor(
     appObserverServiceInstance: AppObserverService,
     appJsonStorageServiceInstance: IAppJsonStorageService,
-    repo: ITriciRepository,
+    repo: ITriciDocRepository,
     dispatcher: IActionDispatcher<TriciAction>,
   ) {
     this.appObserverServiceInstance = appObserverServiceInstance;

@@ -97,6 +97,12 @@ class TrayService implements ITriciDesktopService, ITrayService {
           },
         },
         {
+          label: 'Event Viewer',
+          click: () => {
+            dispatch({ type: 'OPEN_EVENT_VIEWER_WINDOW' });
+          },
+        },
+        {
           label: 'Quit',
           click: () => {
             app.quit();

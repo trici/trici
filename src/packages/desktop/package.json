@@ -55,7 +55,7 @@
     "@types/uuid": "^9.0.1",
     "concurrently": "^8.2.1",
     "cross-env": "^7.0.3",
-    "electron": "^23.1.4",
+    "electron": "^23.3.13",
     "playwright": "^1.31.2",
     "prettier-plugin-tailwindcss": "^0.5.4",
     "run-script-os": "^1.1.6",
@@ -64,7 +64,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@fluentui/react-components": "^9.21.0",
-    "@singhshashi/proactive": "^0.11.2",
+    "@singhshashi/proactive": "^0.11.5",
     "@tabler/icons-react": "^2.22.0",
     "@tanstack/react-query": "^4.29.19",
     "@trici/app-observer": "workspace:^",
@@ -81,12 +81,14 @@
     "electron-unhandled": "^4.0.1",
     "ffmpeg-static": "^5.1.0",
     "fs-extra": "^11.1.1",
+    "knex": "^3.1.0",
     "loglevel": "^1.8.1",
     "mac-screen-capture-permissions": "^2.1.0",
     "node-mac-permissions": "^2.3.0",
     "pouchdb": "^8.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "recoil": "^0.7.7"
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.0"
   }
 }
