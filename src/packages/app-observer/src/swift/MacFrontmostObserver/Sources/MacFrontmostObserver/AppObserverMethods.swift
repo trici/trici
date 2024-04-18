@@ -52,7 +52,7 @@ public class AppObserverMethods {
         let infoPlistPath = "\(appPath)/Contents/Info.plist"
 
         if let infoPlist = NSDictionary(contentsOfFile: infoPlistPath) {
-          let appName = infoPlist["CFBundleName"] as? String ?? app.replacingOccurrences(of: ".app", with: "")
+          let appName = infoPlist["CFBundleDisplayName"] as? String ?? app.replacingOccurrences(of: ".app", with: "")
 
           let icon = NSWorkspace.shared.icon(forFile: appPath)
           if let pngData = convertIconToPNGData(icon) {
