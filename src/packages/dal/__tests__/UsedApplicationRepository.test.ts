@@ -59,6 +59,7 @@ describe('UsedApplicationRepository', () => {
     it('should save a used application to the database', async () => {
       const usedApplicationRecord: IUsedApplication = {
         applicationName: 'Test Application',
+        appIdentifier: 'com.test.app',
         appCategory: UsedAppCategory.DEFINITELY_WORK,
         durationUsed: 10,
         iconPath: '',
@@ -70,6 +71,7 @@ describe('UsedApplicationRepository', () => {
     it('should retrieve a used application from the database', async () => {
       const usedApplicationRecord: IUsedApplication = {
         applicationName: 'Test Application',
+        appIdentifier: 'com.test.app',
         appCategory: UsedAppCategory.DEFINITELY_WORK,
         durationUsed: 20,
         iconPath: '',
@@ -84,6 +86,7 @@ describe('UsedApplicationRepository', () => {
     it('should be able to insert multiple used applications to the database in a single call', async () => {
       const usedApplicationRecord1: IUsedApplication = {
         applicationName: 'Test Application 1',
+        appIdentifier: 'com.test.app1',
         appCategory: UsedAppCategory.DEFINITELY_WORK,
         durationUsed: 10,
         iconPath: '',
@@ -91,6 +94,7 @@ describe('UsedApplicationRepository', () => {
 
       const usedApplicationRecord2: IUsedApplication = {
         applicationName: 'Test Application 2',
+        appIdentifier: 'com.test.app2',
         appCategory: UsedAppCategory.DEFINITELY_WORK,
         durationUsed: 20,
         iconPath: '',
@@ -98,6 +102,7 @@ describe('UsedApplicationRepository', () => {
 
       const usedApplicationRecord3: IUsedApplication = {
         applicationName: 'Test Application 3',
+        appIdentifier: 'com.test.app3',
         appCategory: UsedAppCategory.DEFINITELY_WORK,
         durationUsed: 30,
         iconPath: '',

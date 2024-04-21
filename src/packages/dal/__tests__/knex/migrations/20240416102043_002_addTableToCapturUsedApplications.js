@@ -4,7 +4,8 @@
  */
 exports.up = function (knex) {
   return knex.schema.createTable('used_application', table => {
-    table.string('application_name').unique().notNullable();
+    table.string('application_name').notNullable();
+    table.string('app_identifier').unique().notNullable();
     table.integer('app_category').notNullable();
     table.integer('duration_used').notNullable();
     table.string('icon_path').notNullable();
