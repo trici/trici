@@ -15,10 +15,17 @@ public struct FrontmostObserver {
     let notificationCenter = workspace.notificationCenter
 
     if let frontmostApplication = workspace.frontmostApplication {
+      let appName = frontmostApplication.localizedName ?? "unknown"
+      let appIdentifier = frontmostApplication.bundleIdentifier ?? "unknown"
+
+      let appDetails: [String: Any] = [
+        "appName": appName,
+        "appIdentifier": appIdentifier,
+      ]
+
       let message: [String: Any] = [
         "type": "frontmostApp",
-        "response": frontmostApplication.localizedName ?? "unknown",
-        "bundleIdentifier": frontmostApplication.bundleIdentifier ?? "unknown",
+        "response": appDetails,
         "timestamp": Date().timeIntervalSince1970,
       ]
       if let data = try? JSONSerialization.data(withJSONObject: message),
@@ -38,11 +45,18 @@ public struct FrontmostObserver {
       else {
         return
       }
+
+      let appName = app.localizedName ?? "unknown"
+      let appIdentifier = app.bundleIdentifier ?? "unknown"
+
+      let appDetails: [String: Any] = [
+        "appName": appName,
+        "appIdentifier": appIdentifier,
+      ]
       // print the app name and unixtimestamp
       let message: [String: Any] = [
         "type": "frontmostApp",
-        "response": app.localizedName ?? "unknown",
-        "bundleIdentifier": app.bundleIdentifier ?? "unknown",
+        "response": appDetails,
         "timestamp": Date().timeIntervalSince1970,
       ]
       if let data = try? JSONSerialization.data(withJSONObject: message),
