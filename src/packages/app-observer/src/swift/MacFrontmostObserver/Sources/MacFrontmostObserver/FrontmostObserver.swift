@@ -18,6 +18,7 @@ public struct FrontmostObserver {
       let message: [String: Any] = [
         "type": "frontmostApp",
         "response": frontmostApplication.localizedName ?? "unknown",
+        "bundleIdentifier": frontmostApplication.bundleIdentifier ?? "unknown",
         "timestamp": Date().timeIntervalSince1970,
       ]
       if let data = try? JSONSerialization.data(withJSONObject: message),
@@ -41,6 +42,7 @@ public struct FrontmostObserver {
       let message: [String: Any] = [
         "type": "frontmostApp",
         "response": app.localizedName ?? "unknown",
+        "bundleIdentifier": app.bundleIdentifier ?? "unknown",
         "timestamp": Date().timeIntervalSince1970,
       ]
       if let data = try? JSONSerialization.data(withJSONObject: message),

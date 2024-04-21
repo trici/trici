@@ -107,7 +107,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
       const responseHandler = (data: Buffer) => {
         try {
           const appObserverResponse: AppObserverResponse = JSON.parse(data.toString('utf8'));
-          console.log('getInstalledApps response:', appObserverResponse);
+          console.log('getInstalledApps response:', JSON.stringify(appObserverResponse));
           if (appObserverResponse.type === 'installedApps') {
             // Remove the listener once we've received the response.
             this.child.stdout.off('data', responseHandler);
