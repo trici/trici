@@ -24,7 +24,7 @@ export class CliMessageHandlerService implements ICliMessageHandlerService {
     this.focusSessionService = focusSessionService;
   }
 
-  async handleStartFocusSession(data, socket): Promise<void> {
+  async handleStartFocusSession(data: any, socket: any): Promise<void> {
     /**
      * Here we are not dispatching an action to start the Focus Session but calling the FocusSessionService directly.
      * This is because to send a response to the cli, we need the socket on which the message was received.
@@ -54,7 +54,7 @@ export class CliMessageHandlerService implements ICliMessageHandlerService {
     }
   }
 
-  async handleEndFocusSession(data, socket): Promise<void> {
+  async handleEndFocusSession(data: any, socket: any): Promise<void> {
     try {
       const focusSession = await this.focusSessionService.endFocusSession();
       console.log('Focus session ended: ', focusSession.toJS());

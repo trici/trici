@@ -1,5 +1,12 @@
 import storage from 'electron-json-storage';
-import { TriciApp, LastSavedEntityIds, ILastSavedEntityIdsType, OnboardingState } from '@trici/models';
+import {
+  TriciApp,
+  LastSavedEntityIds,
+  ILastSavedEntityIdsType,
+  OnboardingState,
+  IOnboardingState,
+  ITriciApp,
+} from '@trici/models';
 import { Constants } from '@trici/models';
 
 export interface IAppJsonStorageService {
@@ -37,7 +44,7 @@ class AppJsonStorageService implements IAppJsonStorageService {
         if (Object.keys(data).length === 0) {
           triciApp = new TriciApp();
         } else {
-          triciApp = new TriciApp(data);
+          triciApp = new TriciApp(data as ITriciApp);
         }
         resolve(triciApp);
       });
@@ -74,7 +81,7 @@ class AppJsonStorageService implements IAppJsonStorageService {
           if (Object.keys(data).length === 0) {
             onboardingState = new OnboardingState();
           } else {
-            onboardingState = new OnboardingState(data);
+            onboardingState = new OnboardingState(data as IOnboardingState);
           }
           resolve(onboardingState);
         }
@@ -107,7 +114,7 @@ class AppJsonStorageService implements IAppJsonStorageService {
           if (Object.keys(data).length === 0) {
             lastSavedEntityIds = new LastSavedEntityIds();
           } else {
-            lastSavedEntityIds = new LastSavedEntityIds(data);
+            lastSavedEntityIds = new LastSavedEntityIds(data as ILastSavedEntityIdsType);
           }
           resolve(lastSavedEntityIds);
         }
