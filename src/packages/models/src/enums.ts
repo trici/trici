@@ -70,12 +70,14 @@ export enum AlertWindowMessageType {
   SCREEN_TO_RECORD_NOT_SET_AUTO_SESSION_START = 'SCREEN_TO_RECORD_NOT_SET_AUTO_SESSION_START',
 }
 
+// It is not clear what will be the category for the browser. Will it be 'PROBABLY_WORK' or 'PROBABLY_DISTRACT'?
 export enum UsedAppCategory {
   NOT_SET = 0,
   DEFINITELY_WORK = 1,
   PROBABLY_WORK = 2,
   PROBABLY_DISTRACT = 3,
   DEFINITELY_DISTRACT = 4,
+  COULD_BE_ANYTHING = 5,
 }
 
 export function getEnumKeyFromValue<T extends { [index: string]: string }>(enumObj: T, value: string): keyof T | null {
