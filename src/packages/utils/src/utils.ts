@@ -283,3 +283,24 @@ export function invariant(condition: boolean, message: string) {
     throw Error(message);
   }
 }
+
+/**
+ * Checks whether the passed application name is a web browser
+ * @param appName The name of the application
+ * @returns true if the application is a web browser, false otherwise
+ */
+export function isWebBrowser(appName: string): boolean {
+  if (appName === undefined) {
+    return false;
+  }
+  appName = appName.toLowerCase();
+  return (
+    appName.includes('chrome') ||
+    appName.includes('firefox') ||
+    appName.includes('safari') ||
+    appName.includes('opera') ||
+    appName.includes('edge') ||
+    appName.includes('brave') ||
+    appName.includes('arc')
+  );
+}
