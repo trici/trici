@@ -9,8 +9,8 @@ import { Buffer } from 'buffer';
 export interface IAppObserverService {
   start(isRunningInAsar: boolean): void;
   stop(): void;
-  getCurrentApp(): string;
-  getInstalledApps(): Promise<[{ name: string; iconPath: string }]>;
+  getCurrentApp(): { appName: string; appIdentifier: string } | null;
+  getInstalledApps(): Promise<[{ name: string; iconPath: string; bundleIdentifier: string }]>;
 }
 
 export type AppObserverResponse = {
@@ -23,7 +23,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
   child: any;
   logger: Logger | IConsoleLogger;
   appRoot: string;
-  currentApp: string;
+  currentApp: { appName: string; appIdentifier: string } | null;
   currentAppActiveStartTime: number;
 
   constructor(logger: Logger, appRoot: string) {
@@ -31,7 +31,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
     this.child = null;
     this.logger = logger ? logger : getConsoleLogger();
     this.appRoot = appRoot;
-    this.currentApp = '';
+    this.currentApp = null;
     this.currentAppActiveStartTime = 0;
   }
 
@@ -93,16 +93,17 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
     this.child.kill();
   }
 
-  getCurrentApp(): string {
+  getCurrentApp(): { appName: string; appIdentifier: string } | null {
     return this.currentApp;
   }
 
-  async getInstalledApps(): Promise<[{ name: string; iconPath: string }]> {
+  // TODO: the return type here should not use bundleIdentifier as it is specific for MacOS. It should be appIdentifier.
+  async getInstalledApps(): Promise<[{ name: string; iconPath: string; bundleIdentifier: string }]> {
     if (!this.child || !this.child.stdin || !this.child.stdout) {
       throw new Error('Child process not initialized.');
     }
 
-    return new Promise<[{ name: string; iconPath: string }]>((resolve, reject) => {
+    return new Promise<[{ name: string; iconPath: string; bundleIdentifier: string }]>((resolve, reject) => {
       // Create a listener for stdout to handle the installed apps response.
       const responseHandler = (data: Buffer) => {
         try {
@@ -114,9 +115,11 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
 
             if (appObserverResponse.response.length > 0) {
               // iterate through the response and pick name and iconPath properties.
-              const appsList = appObserverResponse.response.map((app: any) => {
-                return { name: app.name, iconPath: app.iconPath };
-              });
+              const appsList = appObserverResponse.response.map(
+                (app: { name: string; iconPath: string; bundleIdentifier: string }) => {
+                  return { name: app.name, iconPath: app.iconPath, bundleIdentifier: app.bundleIdentifier };
+                },
+              );
               resolve(appsList);
             } else {
               reject(new Error('No apps found.'));
