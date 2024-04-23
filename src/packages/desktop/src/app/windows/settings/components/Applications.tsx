@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UsedAppCategory, UsedApplications } from '@trici/models';
+import { UsedAppCategory, IUsedApplication } from '@trici/models';
 import { RendererRepository } from '../../../dataaccess/RendererRepository';
 import { DataGrid } from '@singhshashi/proactive';
 
@@ -13,7 +13,7 @@ export const Applications: React.FC = () => {
     return Math.round(durationUsed / 60);
   };
 
-  const usedApplicationsQuery = useQuery<UsedApplications>({
+  const usedApplicationsQuery = useQuery<IUsedApplication[]>({
     queryKey: ['usedApplications'],
     queryFn: () => renderRepository.getUsedApplications(),
   });
@@ -28,10 +28,10 @@ export const Applications: React.FC = () => {
 
   const usedApplications = usedApplicationsQuery.data;
 
-  const definitelyWorkApplications = usedApplications?.records.filter(app => {
+  const definitelyWorkApplications = usedApplications?.filter(app => {
     return app.appCategory === UsedAppCategory.DEFINITELY_WORK;
   });
-
+  console.log('usedApplications:', usedApplications);
   console.log('definitelyWorkApplications', definitelyWorkApplications);
   return (
     <div className="">

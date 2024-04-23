@@ -5,7 +5,7 @@
  * This is done to reduce conversion between Record objects and plain objects since the communication between main and renderer process also happens with plain objects.
  */
 import { AppObserverService } from '@trici/app-observer';
-import { ITriciDocRepository } from '@trici/dal';
+import { ITriciDocRepository, IUsedApplicationRepository } from '@trici/dal';
 import { IAppEventRepository } from '@trici/dal';
 import { Logger } from '@trici/logger';
 import {
@@ -13,7 +13,7 @@ import {
   KEY_PARTS,
   UserPreferences,
   IUserPreferences,
-  UsedApplications,
+  UsedApplication,
   TRICI_APP_EVENT,
 } from '@trici/models';
 import { generateUninitializedTriciId } from '@trici/utils';
@@ -26,41 +26,46 @@ import fs from 'fs/promises';
 export interface IMainProcessDataAccessService {
   getUserPreferences(id: string): Promise<UserPreferences>;
   saveUserPreferences(userPreferences: IUserPreferences, idOfDocToDelete: string): Promise<UserPreferences>;
-  getInstalledApplications(): Promise<[{ name: string; iconPath: string }] | []>;
-  saveUsedApplications(usedApplications: UsedApplications, idOfDocToDelete: string): Promise<UsedApplications>;
-  getUsedApplications(id: string): Promise<UsedApplications>;
+  getInstalledApplications(): Promise<[{ name: string; iconPath: string; bundleIdentifier: string }] | []>;
+  saveUsedApplications(usedApplications: UsedApplication[]): Promise<void>;
+  getUsedApplications(): Promise<UsedApplication[]>;
   getTriciAppEvents(fromTime: number, toTime: number, type: TRICI_APP_EVENT, count: number): Promise<any>;
 }
 
 export class MainProcessDataAccessService implements IMainProcessDataAccessService {
-  private _repository: ITriciDocRepository;
-  private _tapEventRepository: IAppEventRepository;
+  private _docRepository: ITriciDocRepository;
+  private _usedApplicationRepository: IUsedApplicationRepository;
+  private _appEventRepository: IAppEventRepository;
   private _appObserver: AppObserverService;
   private _logger: Logger;
   private static _instance: MainProcessDataAccessService;
 
   private constructor(
     repository: ITriciDocRepository,
-    tapEventRepository: IAppEventRepository,
+    usedApplicationRepository: IUsedApplicationRepository,
+    appEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
     logger: Logger,
   ) {
-    this._repository = repository;
-    this._tapEventRepository = tapEventRepository;
+    this._docRepository = repository;
+    this._usedApplicationRepository = usedApplicationRepository;
+    this._appEventRepository = appEventRepository;
     this._appObserver = appObserver;
     this._logger = logger;
   }
 
   public static getInstance(
     repository: ITriciDocRepository,
-    tapEventRepository: IAppEventRepository,
+    usedApplicationRepository: IUsedApplicationRepository,
+    appEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
     logger: Logger,
   ): MainProcessDataAccessService {
     if (!MainProcessDataAccessService._instance) {
       MainProcessDataAccessService._instance = new MainProcessDataAccessService(
         repository,
-        tapEventRepository,
+        usedApplicationRepository,
+        appEventRepository,
         appObserver,
         logger,
       );
@@ -76,7 +81,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
    */
   public async getUserPreferences(id: string): Promise<UserPreferences> {
     try {
-      const result = await this._repository.get(id);
+      const result = await this._docRepository.get(id);
       console.log('getUserPreferences', result);
       let userPreferences = new UserPreferences(result);
       if (userPreferences._id === Constants.UNINITIALIZED_ID) {
@@ -101,7 +106,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     idOfDocToDelete: string,
   ): Promise<UserPreferences> {
     try {
-      const result = await this._repository.save(userPreferences, idOfDocToDelete);
+      const result = await this._docRepository.save(userPreferences, idOfDocToDelete);
       const savedUserPreferences = new UserPreferences(result);
       global.userPreferences = savedUserPreferences;
       return savedUserPreferences;
@@ -115,8 +120,10 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
    * Gets the list of Installed Applications from the system
    * @returns A promise that resolves to an array of InstalledApplication objects
    */
-  public async getInstalledApplications(): Promise<[{ name: string; iconPath: string }] | []> {
-    let installedApplications: [{ name: string; iconPath: string }] | [] = [];
+  public async getInstalledApplications(): Promise<
+    [{ name: string; iconPath: string; bundleIdentifier: string }] | []
+  > {
+    let installedApplications: [{ name: string; iconPath: string; bundleIdentifier: string }] | [] = [];
     try {
       const cachedResponseFilePath = app.getPath('temp') + '/installedApplications.json';
       // check if the cached response file exists
@@ -160,12 +167,13 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
 
   /**
    * Gets the used applications from the database
-   * @param id The id of the used applications document
    */
-  public async getUsedApplications(id: string): Promise<UsedApplications> {
+  public async getUsedApplications(): Promise<UsedApplication[]> {
     try {
-      const result = await this._repository.get(id);
-      const usedApplications = new UsedApplications(result);
+      const result = await this._usedApplicationRepository.getUsedApplications();
+      const usedApplications = result.map(app => {
+        return new UsedApplication(app);
+      });
       return usedApplications;
     } catch (error) {
       logger.error('Error in getUsedApplications', error);
@@ -178,14 +186,9 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
    * @summary This is added here as the used applications are sent from the renderer process and then saved to the database.
    * It is not leveraging any logic in the UsedApplicationsService.
    */
-  public async saveUsedApplications(
-    usedApplications: UsedApplications,
-    idOfDocToDelete: string,
-  ): Promise<UsedApplications> {
+  public async saveUsedApplications(usedApplications: UsedApplication[]): Promise<void> {
     try {
-      const result = await this._repository.save(usedApplications, idOfDocToDelete);
-      const savedUsedApplications = new UsedApplications(result);
-      return savedUsedApplications;
+      const result = await this._usedApplicationRepository.insertMany(usedApplications);
     } catch (error) {
       logger.error('Error in saveUsedApplications', error);
       throw error;
@@ -205,35 +208,11 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     count: number = 20,
   ): Promise<any> {
     try {
-      const events = await this._tapEventRepository.getAppEvents(fromTime, toTime, type, count);
+      const events = await this._appEventRepository.getAppEvents(fromTime, toTime, type, count);
       return events;
     } catch (error) {
       logger.error('Error in getTriciAppEvents', error);
       throw error;
     }
-    // try {
-    //   const startkey = [toTime, type];
-    //   const endkey = [fromTime, type];
-    //   const queryOptions = {
-    //     include_docs: true,
-    //     descending: true,
-    //     startkey: startkey,
-    //     endkey: endkey,
-    //     limit: count,
-    //   };
-    //   console.log('queryOptions:', queryOptions);
-    //   const queryResult = await this._repository.queryAppEvents(queryOptions);
-    //   console.log('getTriciAppEvents', queryResult);
-    //   if (queryResult.rows.length > 0) {
-    //     const events = queryResult.rows.map((row: any) => {
-    //       return new AppEvent(row.doc).toJS();
-    //     });
-    //     return events;
-    //   }
-    //   return [];
-    // } catch (error) {
-    //   logger.error('Error in getTriciAppEvents', error);
-    //   throw error;
-    // }
   }
 }

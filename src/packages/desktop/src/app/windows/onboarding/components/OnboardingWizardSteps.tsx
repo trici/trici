@@ -2,7 +2,7 @@ import React, { useCallback, useEffect } from 'react';
 import { Button, MultiSelectGrid, WizardStep, useWizard } from '@singhshashi/proactive';
 import { SimpleVideoClipPlayer } from '../../shared/components/SimpleVideoClipPlayer';
 import { useOnboarding } from './OnboardingContext';
-import { UsedAppCategory, UsedApplicationRecord } from '@trici/models';
+import { UsedAppCategory, UsedApplication, IUsedApplication } from '@trici/models';
 import { TriciAnimatedLogo } from '../../shared/components/TriciAnimatedLogo';
 
 const AskForScreenRecordingPermissionsOnMacComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
@@ -32,7 +32,7 @@ const AskForScreenRecordingPermissionsOnMacComponent: React.FC<{ stepindex: numb
       <div className="h-full w-full">
         <p className="text-center text-2xl font-bold">Trici requires your permission to record the screen</p>
         <p className="text-center ">All recordings are encrypted and stored locally on your computer.</p>
-        <div className="flex h-full w-full flex-col items-center justify-evenly">
+        <div className="flex h-fit w-full flex-col items-center justify-evenly gap-6 py-4">
           <div className="m-0 w-fit">
             <SimpleVideoClipPlayer clipUrl={videoClipUrl} />
           </div>
@@ -47,7 +47,7 @@ const AskForScreenRecordingPermissionsOnMacComponent: React.FC<{ stepindex: numb
     <div className="h-full w-full">
       <p className="text-center text-2xl font-bold">Trici requires your permission to record the screen</p>
       <p className="text-center ">All recordings are encrypted and stored locally on your computer.</p>
-      <div className="flex h-full w-full flex-col items-center justify-evenly">
+      <div className="flex h-fit w-full flex-col items-center justify-evenly gap-6 py-4">
         <div className="m-0 w-fit">
           <SimpleVideoClipPlayer clipUrl={videoClipUrl} />
         </div>
@@ -154,25 +154,27 @@ const AskWhichAreWorkAppsComponent: React.FC<{ stepindex: number }> = ({ stepind
   }, [installedApps]);
 
   const getUsedApplications = (
-    installedApps: [{ name: string; iconPath: string }] | [],
-    selectedItems: [{ name: string; iconPath: string }],
-  ): Array<UsedApplicationRecord> | [] => {
-    let usedApplications: Array<UsedApplicationRecord> = [];
+    installedApps: { name: string; iconPath: string; bundleIdentifier: string }[] | [],
+    selectedItems: { name: string; iconPath: string; bundleIdentifier: string }[],
+  ): Array<IUsedApplication> | [] => {
+    let usedApplications: Array<IUsedApplication> = [];
     if (installedApps.length === 0) {
       return usedApplications;
     }
-    installedApps.forEach((installedApp: { name: string; iconPath: string }) => {
-      const usedApplicationRecord: UsedApplicationRecord = {
+    installedApps.forEach((installedApp: { name: string; iconPath: string; bundleIdentifier: string }) => {
+      const usedApplicationRecord: IUsedApplication = {
         applicationName: installedApp.name,
+        appIdentifier: installedApp.bundleIdentifier,
         iconPath: installedApp.iconPath,
         durationUsed: 0,
         appCategory: UsedAppCategory.NOT_SET,
       };
       usedApplications.push(usedApplicationRecord);
     });
-    selectedItems.forEach((selectedItem: { name: string; iconPath: string }) => {
+    selectedItems.forEach((selectedItem: { name: string; iconPath: string; bundleIdentifier: string }) => {
       const usedApplicationRecord = usedApplications.find(
-        (usedApplicationRecord: UsedApplicationRecord) => usedApplicationRecord.applicationName === selectedItem.name,
+        (usedApplicationRecord: IUsedApplication) =>
+          usedApplicationRecord.appIdentifier === selectedItem.bundleIdentifier,
       );
       if (usedApplicationRecord) {
         usedApplicationRecord.appCategory = UsedAppCategory.DEFINITELY_WORK;
@@ -182,7 +184,7 @@ const AskWhichAreWorkAppsComponent: React.FC<{ stepindex: number }> = ({ stepind
   };
 
   const handleSelectionChange = useCallback(
-    (selectedItems): void => {
+    (selectedItems: Array<{ name: string; iconPath: string; bundleIdentifier: string }>): void => {
       const usedApplications = getUsedApplications(installedApps, selectedItems);
       window.bridgeApi.sendMessage({
         handler: 'updateUsedApplications',

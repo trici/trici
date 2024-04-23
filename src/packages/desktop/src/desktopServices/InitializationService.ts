@@ -9,7 +9,12 @@ import { AppService, IAppService } from './AppService';
 import { WindowManager } from './WindowManager';
 import { CliMessageHandlerService } from './CliMessageHandlerService';
 import { FocusSessionService } from './FocusSessionService';
-import { ITriciDocRepository, TriciDocRepository } from '@trici/dal';
+import {
+  ITriciDocRepository,
+  IUsedApplicationRepository,
+  TriciDocRepository,
+  UsedApplicationRepository,
+} from '@trici/dal';
 import { AppEventRepository, IAppEventRepository } from '@trici/dal';
 import { SqliteDbManager, ISqliteDbManager } from '@trici/dal';
 import IdleTimeService from './IdleTimeService';
@@ -20,7 +25,7 @@ import { PluginManager } from './PluginManager';
 import { AppEventEmitter } from './AppEventEmitter';
 import { ScreenRecordingPlugin } from '../plugins/ScreenRecordingPlugin';
 import actionDispatcher, { dispatch } from './ActionDispatcher';
-import { UserPreferences } from '@trici/models';
+import { IUsedApplication, UserPreferences } from '@trici/models';
 import { AskWhichScreenToRecordPlugin } from '../plugins/AskWhichScreenToRecordPlugin';
 import { IWindowManager } from './WindowManager';
 import { GlobalShortcutService } from './GlobalShortcutService';
@@ -31,7 +36,7 @@ import UsedApplicationsService from './UsedApplicationsService';
 import { MainProcessIpcMessageSender } from './MainProcessIpcMessageSender';
 import path from 'path';
 import sqlite3 from 'sqlite3';
-import knexfile from '../../knex/knexfile';
+import knexfile from '../../knexfile';
 
 let logger: Logger;
 let appJsonStorageService: IAppJsonStorageService;
@@ -44,6 +49,7 @@ let dbManager: ISqliteDbManager;
 let sqliteDb: sqlite3.Database;
 let repo: ITriciDocRepository;
 let eventRepo: IAppEventRepository;
+let usedApplicationRepository: IUsedApplicationRepository;
 let cliMessageHandlerService: CliMessageHandlerService;
 let focusSessionService: FocusSessionService;
 
@@ -138,6 +144,7 @@ export const InitializationService: IInitializationService = {
       sqliteDb = dbManager.getDb();
 
       eventRepo = new AppEventRepository(sqliteDb, logger);
+      usedApplicationRepository = new UsedApplicationRepository(sqliteDb, logger);
 
       // Initialize the AppEventEmitter
       appEventEmitter.initializeRepo(eventRepo);
@@ -154,7 +161,7 @@ export const InitializationService: IInitializationService = {
       const usedApplicationsService = new UsedApplicationsService(
         appObserverService,
         appJsonStorageService,
-        repo,
+        usedApplicationRepository,
         actionDispatcher,
       );
       usedApplicationsService.initService();
@@ -173,6 +180,7 @@ export const InitializationService: IInitializationService = {
       // Initialize the infra to listen to queries from the renderer process
       const mainProcessDataAccessService = MainProcessDataAccessService.getInstance(
         repo,
+        usedApplicationRepository,
         eventRepo,
         appObserverService,
         logger,

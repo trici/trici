@@ -1,9 +1,9 @@
 import {
-  IUsedApplications,
+  IUsedApplication,
   IUserPreferences,
   AppEvent,
   TRICI_APP_EVENT,
-  UsedApplications,
+  UsedApplication,
   UserPreferences,
 } from '@trici/models';
 import { IBridgeAPIInterface } from '../../typedefs/preload';
@@ -12,7 +12,7 @@ export interface IRendererRepository {
   getUserPreferences(): Promise<UserPreferences>;
   saveUserPreferences(userPreferences: UserPreferences, idOfDocToDelete: string): Promise<UserPreferences>;
   getCachedUserPreferences(): UserPreferences | null;
-  getUsedApplications(): Promise<UsedApplications>;
+  getUsedApplications(): Promise<UsedApplication[]>;
   getEvents(from: number, to: number, type: TRICI_APP_EVENT): Promise<AppEvent[]>;
 }
 
@@ -79,14 +79,20 @@ export class RendererRepository implements IRendererRepository {
     return this.cachedUserPreferences;
   }
 
-  public getUsedApplications(): Promise<UsedApplications> {
+  public getUsedApplications(): Promise<UsedApplication[]> {
     return new Promise((fulfill, reject) => {
       const args = {};
       window.bridgeApi.query({ handler: 'getUsedApplications', args });
-      window.bridgeApi.registerQueryResultHandler((result: { data: IUsedApplications | undefined }) => {
+      window.bridgeApi.registerQueryResultHandler((result: { data: IUsedApplication[] | undefined }) => {
         console.log('getUsedApplications-Success:%O', result.data);
-        const usedApplications = new UsedApplications(result.data);
-        fulfill(usedApplications);
+        if (!result.data) {
+          reject(new Error('getUsedApplications-Error'));
+        } else {
+          const usedApplications = result.data.map(app => {
+            return new UsedApplication(app);
+          });
+          fulfill(usedApplications);
+        }
       }, 'getUsedApplications-Success');
       window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
         reject(result.data);

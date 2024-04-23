@@ -3,7 +3,7 @@ import { OnboardingState } from '@trici/models';
 
 export type OnboardingContextType = {
   onboardingState: OnboardingState;
-  installedApps: [{ name: string; iconPath: string }] | [];
+  installedApps: [{ name: string; iconPath: string; bundleIdentifier: string }] | [];
 };
 
 const OnboardingContext = React.createContext<OnboardingContextType | null>(null);

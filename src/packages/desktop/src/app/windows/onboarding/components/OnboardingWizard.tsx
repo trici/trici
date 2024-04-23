@@ -6,7 +6,7 @@ import OnboardingWizardSteps from './OnboardingWizardSteps';
 
 export interface OnboardingWizardProps {
   onboardingState: OnboardingState;
-  installedApps: [{ name: string; iconPath: string }] | [];
+  installedApps: [{ name: string; iconPath: string; bundleIdentifier: string }] | [];
 }
 
 const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onboardingState, installedApps }) => {
@@ -40,7 +40,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onboardingState, in
         <Wizard
           children={OnboardingWizardSteps}
           width={'720px'}
-          height={'520px'}
+          height={'540px'}
           startingStep={onboardingState.lastOnboardingStep}
           onFinish={finishOnboarding}
           onStepChange={updateOnboardingStateOnStepChange}

@@ -11,6 +11,7 @@ import { screen } from 'electron';
 import { dispatch } from './ActionDispatcher';
 import { IMessageFromMain, IMessageFromRenderer } from '../typedefs/preload';
 import { OnboardingState } from '@trici/models';
+import { IUsedApplication } from '@trici/models';
 
 export interface IMainProcessIpcMessageHandlerService {
   initialize(): void;
@@ -63,11 +64,13 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
           break;
         case 'getUsedApplications':
           try {
-            const lastSavedEntityIds = await this.appJsonStorageService.getLastSavedEntityIds();
-            const usedApplications = await this.dataAccessService.getUsedApplications(
-              lastSavedEntityIds.usedApplicationsId,
-            );
-            result = { success: true, handler: 'getUsedApplications-Success', data: usedApplications.toJS() };
+            const usedApplicationsResult = await this.dataAccessService.getUsedApplications();
+            const usedApplications: Array<IUsedApplication> = [];
+            usedApplicationsResult.forEach(app => {
+              usedApplications.push(app.toJS());
+            });
+            console.log('usedApplications:', usedApplications);
+            result = { success: true, handler: 'getUsedApplications-Success', data: usedApplications };
           } catch (error) {
             result = { success: false, handler: 'getUsedApplications-Error', data: error };
           }

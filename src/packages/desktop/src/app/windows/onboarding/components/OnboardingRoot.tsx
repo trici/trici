@@ -25,7 +25,9 @@ export function OnboardingRoot() {
     }
   }
   const [onboardingState, setOnboardingState] = React.useState(onboardingStateInit);
-  const [installedApps, setInstalledApps] = React.useState<[{ name: string; iconPath: string }] | []>([]);
+  const [installedApps, setInstalledApps] = React.useState<
+    [{ name: string; iconPath: string; bundleIdentifier: string }] | []
+  >([]);
 
   useEffect(() => {
     window.bridgeApi.registerReceiveHandlers(
