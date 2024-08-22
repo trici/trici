@@ -180,7 +180,7 @@ export const InitializationService: IInitializationService = {
       // Initialize the infra to listen to queries from the renderer process
       const mainProcessDataAccessService = MainProcessDataAccessService.getInstance(
         repo,
-        usedApplicationRepository,
+        usedApplicationsService,
         eventRepo,
         appObserverService,
         logger,

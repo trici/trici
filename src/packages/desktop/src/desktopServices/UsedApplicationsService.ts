@@ -7,7 +7,13 @@ import { IActionDispatcher } from './ActionDispatcher';
 import { TriciAction } from 'src/typedefs/TriciAction';
 import { isWebBrowser } from '@trici/utils';
 
-class UsedApplicationsService implements ITriciDesktopService {
+export interface IUsedApplicationsService {
+  getUsedApplications(): IUsedApplication[] | null;
+  saveUsedApplications(usedApplications: IUsedApplication[]): Promise<IUsedApplication[]>;
+  getAppCategory(currentApplicationIdentifier: string): UsedAppCategory;
+}
+
+class UsedApplicationsService implements ITriciDesktopService, IUsedApplicationsService {
   appObserverServiceInstance: AppObserverService;
   appJsonStorageServiceInstance: IAppJsonStorageService;
   repo: IUsedApplicationRepository;
@@ -38,7 +44,7 @@ class UsedApplicationsService implements ITriciDesktopService {
         case 'UPDATE_USED_APPLICATIONS':
           console.log('UsedApplicationsService:UPDATE_USED_APPLICATIONS');
           const { usedApplications } = action.args;
-          this.updateUsedApplications(usedApplications);
+          this.saveUsedApplications(usedApplications);
           break;
         default:
           break;
@@ -51,7 +57,7 @@ class UsedApplicationsService implements ITriciDesktopService {
    * @param usedApplicationRecords These are values that are passed from the onboarding wizard.
    * @returns An array of used applications that need to be inserted .
    */
-  getRecordsToBeInserted = (
+  private getRecordsToBeInserted = (
     usedApplicationRecords: Array<IUsedApplication>,
     usedApplicationsInDb: Array<IUsedApplication>,
   ): Array<IUsedApplication> => {
@@ -61,6 +67,8 @@ class UsedApplicationsService implements ITriciDesktopService {
       if (foundAppInDb === undefined) {
         // Before adding see if we can auto assign the category.
         const isApplicationAWebBrowser = isWebBrowser(usedApplicationRecord.applicationName);
+
+        console.log('isApplicationAWebBrowser:', isApplicationAWebBrowser, usedApplicationRecord.applicationName);
 
         if (isApplicationAWebBrowser) {
           usedApplicationRecord.appCategory = UsedAppCategory.COULD_BE_ANYTHING;
@@ -77,7 +85,7 @@ class UsedApplicationsService implements ITriciDesktopService {
    * @param usedApplicationRecords These are values that are passed from the onboarding wizard.
    * @returns An array of used applications that need to be updated.
    */
-  getRecordsToBeUpdated = (
+  private getRecordsToBeUpdated = (
     usedApplicationRecords: Array<IUsedApplication>,
     usedApplcationsInDb: Array<IUsedApplication>,
   ): Array<IUsedApplication> => {
@@ -97,12 +105,16 @@ class UsedApplicationsService implements ITriciDesktopService {
     return recordsToBeUpdated;
   };
 
+  getUsedApplications(): IUsedApplication[] | null {
+    return this.usedApplications;
+  }
+
   /**
    * Updates the used applications in the database.
    * @param usedApplicationRecords These are values that are passed from the onboarding wizard.
    * @returns A promise that resolves to the updated used applications.
    */
-  async updateUsedApplications(usedApplicationRecords: Array<IUsedApplication>): Promise<IUsedApplication[]> {
+  async saveUsedApplications(usedApplicationRecords: Array<IUsedApplication>): Promise<IUsedApplication[]> {
     if (this.isServiceInitialized === false) {
       throw new Error('Service not initialized');
     }
@@ -172,7 +184,7 @@ class UsedApplicationsService implements ITriciDesktopService {
               } else {
                 throw new Error('usedApplications is null');
               }
-              this.updateUsedApplications(usedApplications);
+              this.saveUsedApplications(usedApplications);
             }
           }
           console.log(`UsedApplicationsService:frontmostAppChanged: ${JSON.stringify(appChangeData)}`);

@@ -14,6 +14,7 @@ export enum SESSION_STARTED_FROM {
   TRAY = 'TRAY',
   CLI = 'CLI',
   SHORTCUT = 'SHORTCUT',
+  APP_EVENT = 'APP_EVENT',
 }
 
 export enum CLI_MESSAGE_TYPE {
@@ -49,6 +50,9 @@ export enum TRICI_APP_EVENT {
   SESSION_STARTED_WITH_DISPLAY_TO_RECORD_NOT_SET = 'session-started-with-display-to-record-not-set',
   SCREEN_RECORDING_PERMISSION_GRANTED = 'screen-recording-permission-granted',
   FRONTMOST_APP_CHANGED = 'frontmost-app-changed',
+  USER_STARTED_WORKING = 'user-started-working',
+  USER_STOPPED_WORKING = 'user-stopped-working',
+  USER_MAY_BE_WORKING = 'user-may-be-working',
 }
 
 export enum NODE_ENV {

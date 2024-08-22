@@ -5,8 +5,7 @@
  * This is done to reduce conversion between Record objects and plain objects since the communication between main and renderer process also happens with plain objects.
  */
 import { AppObserverService } from '@trici/app-observer';
-import { ITriciDocRepository, IUsedApplicationRepository } from '@trici/dal';
-import { IAppEventRepository } from '@trici/dal';
+import { ITriciDocRepository, IAppEventRepository } from '@trici/dal';
 import { Logger } from '@trici/logger';
 import {
   Constants,
@@ -16,9 +15,10 @@ import {
   UsedApplication,
   TRICI_APP_EVENT,
 } from '@trici/models';
-import { generateUninitializedTriciId } from '@trici/utils';
+import { generateUninitializedTriciId, isWebBrowser } from '@trici/utils';
 import { app } from 'electron/main';
 import fs from 'fs/promises';
+import { IUsedApplicationsService } from './UsedApplicationsService';
 /**
  * IMainProcessDataAccessService
  * @description Interface for MainProcessDataAccessService
@@ -26,15 +26,16 @@ import fs from 'fs/promises';
 export interface IMainProcessDataAccessService {
   getUserPreferences(id: string): Promise<UserPreferences>;
   saveUserPreferences(userPreferences: IUserPreferences, idOfDocToDelete: string): Promise<UserPreferences>;
-  getInstalledApplications(): Promise<[{ name: string; iconPath: string; bundleIdentifier: string }] | []>;
-  saveUsedApplications(usedApplications: UsedApplication[]): Promise<void>;
+  getInstalledApplications(): Promise<
+    { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | []
+  >;
   getUsedApplications(): Promise<UsedApplication[]>;
   getTriciAppEvents(fromTime: number, toTime: number, type: TRICI_APP_EVENT, count: number): Promise<any>;
 }
 
 export class MainProcessDataAccessService implements IMainProcessDataAccessService {
   private _docRepository: ITriciDocRepository;
-  private _usedApplicationRepository: IUsedApplicationRepository;
+  private _usedApplicationsService: IUsedApplicationsService;
   private _appEventRepository: IAppEventRepository;
   private _appObserver: AppObserverService;
   private _logger: Logger;
@@ -42,13 +43,13 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
 
   private constructor(
     repository: ITriciDocRepository,
-    usedApplicationRepository: IUsedApplicationRepository,
+    usedApplicationsService: IUsedApplicationsService,
     appEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
     logger: Logger,
   ) {
     this._docRepository = repository;
-    this._usedApplicationRepository = usedApplicationRepository;
+    this._usedApplicationsService = usedApplicationsService;
     this._appEventRepository = appEventRepository;
     this._appObserver = appObserver;
     this._logger = logger;
@@ -56,7 +57,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
 
   public static getInstance(
     repository: ITriciDocRepository,
-    usedApplicationRepository: IUsedApplicationRepository,
+    usedApplicationsService: IUsedApplicationsService,
     appEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
     logger: Logger,
@@ -64,7 +65,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     if (!MainProcessDataAccessService._instance) {
       MainProcessDataAccessService._instance = new MainProcessDataAccessService(
         repository,
-        usedApplicationRepository,
+        usedApplicationsService,
         appEventRepository,
         appObserver,
         logger,
@@ -121,9 +122,10 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
    * @returns A promise that resolves to an array of InstalledApplication objects
    */
   public async getInstalledApplications(): Promise<
-    [{ name: string; iconPath: string; bundleIdentifier: string }] | []
+    { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | []
   > {
-    let installedApplications: [{ name: string; iconPath: string; bundleIdentifier: string }] | [] = [];
+    let installedApplications: { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | [] =
+      [];
     try {
       const cachedResponseFilePath = app.getPath('temp') + '/installedApplications.json';
       // check if the cached response file exists
@@ -150,7 +152,15 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
         }
       }
       if (!cachedResponseExists) {
-        installedApplications = await this._appObserver.getInstalledApps();
+        let response = await this._appObserver.getInstalledApps();
+        installedApplications = response.map(app => {
+          return {
+            name: app.name,
+            iconPath: app.iconPath,
+            bundleIdentifier: app.bundleIdentifier,
+            isBrowser: isWebBrowser(app.name),
+          };
+        });
         // write the response to the file system
         await fs.writeFile(cachedResponseFilePath, JSON.stringify(installedApplications));
       } else {
@@ -170,27 +180,16 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
    */
   public async getUsedApplications(): Promise<UsedApplication[]> {
     try {
-      const result = await this._usedApplicationRepository.getUsedApplications();
+      const result = await this._usedApplicationsService.getUsedApplications();
+      if (result === null) {
+        return [];
+      }
       const usedApplications = result.map(app => {
         return new UsedApplication(app);
       });
       return usedApplications;
     } catch (error) {
       logger.error('Error in getUsedApplications', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Saves the used applications to the database
-   * @summary This is added here as the used applications are sent from the renderer process and then saved to the database.
-   * It is not leveraging any logic in the UsedApplicationsService.
-   */
-  public async saveUsedApplications(usedApplications: UsedApplication[]): Promise<void> {
-    try {
-      const result = await this._usedApplicationRepository.insertMany(usedApplications);
-    } catch (error) {
-      logger.error('Error in saveUsedApplications', error);
       throw error;
     }
   }

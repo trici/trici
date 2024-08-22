@@ -154,37 +154,41 @@ const AskWhichAreWorkAppsComponent: React.FC<{ stepindex: number }> = ({ stepind
   }, [installedApps]);
 
   const getUsedApplications = (
-    installedApps: { name: string; iconPath: string; bundleIdentifier: string }[] | [],
-    selectedItems: { name: string; iconPath: string; bundleIdentifier: string }[],
+    installedApps: { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | [],
+    selectedItems: { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[],
   ): Array<IUsedApplication> | [] => {
     let usedApplications: Array<IUsedApplication> = [];
     if (installedApps.length === 0) {
       return usedApplications;
     }
-    installedApps.forEach((installedApp: { name: string; iconPath: string; bundleIdentifier: string }) => {
-      const usedApplicationRecord: IUsedApplication = {
-        applicationName: installedApp.name,
-        appIdentifier: installedApp.bundleIdentifier,
-        iconPath: installedApp.iconPath,
-        durationUsed: 0,
-        appCategory: UsedAppCategory.NOT_SET,
-      };
-      usedApplications.push(usedApplicationRecord);
-    });
-    selectedItems.forEach((selectedItem: { name: string; iconPath: string; bundleIdentifier: string }) => {
-      const usedApplicationRecord = usedApplications.find(
-        (usedApplicationRecord: IUsedApplication) =>
-          usedApplicationRecord.appIdentifier === selectedItem.bundleIdentifier,
-      );
-      if (usedApplicationRecord) {
-        usedApplicationRecord.appCategory = UsedAppCategory.DEFINITELY_WORK;
-      }
-    });
+    installedApps.forEach(
+      (installedApp: { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }) => {
+        const usedApplicationRecord: IUsedApplication = {
+          applicationName: installedApp.name,
+          appIdentifier: installedApp.bundleIdentifier,
+          iconPath: installedApp.iconPath,
+          durationUsed: 0,
+          appCategory: installedApp.isBrowser ? UsedAppCategory.COULD_BE_ANYTHING : UsedAppCategory.NOT_SET,
+        };
+        usedApplications.push(usedApplicationRecord);
+      },
+    );
+    selectedItems.forEach(
+      (selectedItem: { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }) => {
+        const usedApplicationRecord = usedApplications.find(
+          (usedApplicationRecord: IUsedApplication) =>
+            usedApplicationRecord.appIdentifier === selectedItem.bundleIdentifier,
+        );
+        if (usedApplicationRecord) {
+          usedApplicationRecord.appCategory = UsedAppCategory.DEFINITELY_WORK;
+        }
+      },
+    );
     return usedApplications;
   };
 
   const handleSelectionChange = useCallback(
-    (selectedItems: Array<{ name: string; iconPath: string; bundleIdentifier: string }>): void => {
+    (selectedItems: Array<{ name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }>): void => {
       const usedApplications = getUsedApplications(installedApps, selectedItems);
       window.bridgeApi.sendMessage({
         handler: 'updateUsedApplications',

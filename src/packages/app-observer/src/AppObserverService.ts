@@ -5,12 +5,13 @@ import config from '@trici/config';
 const child_process = require('child_process');
 import { EventEmitter } from 'events';
 import { Buffer } from 'buffer';
+import { isWebBrowser } from '@trici/utils';
 
 export interface IAppObserverService {
   start(isRunningInAsar: boolean): void;
   stop(): void;
   getCurrentApp(): { appName: string; appIdentifier: string } | null;
-  getInstalledApps(): Promise<[{ name: string; iconPath: string; bundleIdentifier: string }]>;
+  getInstalledApps(): Promise<{ name: string; iconPath: string; bundleIdentifier: string }[]>;
 }
 
 export type AppObserverResponse = {
@@ -98,7 +99,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
   }
 
   // TODO: the return type here should not use bundleIdentifier as it is specific for MacOS. It should be appIdentifier.
-  async getInstalledApps(): Promise<[{ name: string; iconPath: string; bundleIdentifier: string }]> {
+  async getInstalledApps(): Promise<{ name: string; iconPath: string; bundleIdentifier: string }[]> {
     if (!this.child || !this.child.stdin || !this.child.stdout) {
       throw new Error('Child process not initialized.');
     }
@@ -138,4 +139,4 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
   }
 }
 
-// export type AppObserverServiceInstance = InstanceType<typeof AppObserverService>;
+// export type AppObserverServiceInstance = InstanceType<typeof AppObserverServi

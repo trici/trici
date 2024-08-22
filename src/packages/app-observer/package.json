@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@trici/config": "workspace:^",
-    "@trici/logger": "workspace:^"
+    "@trici/logger": "workspace:^",
+    "@trici/utils": "workspace:^"
   }
 }

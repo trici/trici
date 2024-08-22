@@ -2,7 +2,7 @@ import { IdleTimeServiceInstance } from './IdleTimeService';
 import { AppObserverService } from '@trici/app-observer';
 import type { Logger } from '@trici/logger';
 import { Constants, DailyUserActivity, KEY_PARTS, TRICI_APP_EVENT, UsedAppCategory } from '@trici/models';
-import { generateNewTriciId, generateUpdatedTriciId, isTriciIdValidForToday } from '@trici/utils';
+import { generateNewTriciId, generateUpdatedTriciId, isTriciIdValidForToday, isWebBrowser } from '@trici/utils';
 import { IAppJsonStorageService } from './AppJsonStorageService';
 import { AppEventEmitter } from './AppEventEmitter';
 import { ITriciDesktopService } from '../typedefs/ITriciDesktopService';
@@ -161,14 +161,35 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   registerAppEventHandlers(): void {
     // TODO: Register any app event handlers that this service needs to handle
     this.appEventEmitter.on(TRICI_APP_EVENT.USER_BECOMING_HYPER_ACTIVE, () => {
+      // If the user is using a browser when hyperactive, then we want to know the url that
+      // the user is browsing to figure out whether the user is working or leisure.
+      // Thus I was thinking that we should enquire what is the url only when the user is hyperactive.
+      // So we don't get to know the url when the user changes the tab in the browser. This is a problem.
+      // Upon further investigation, to know the url when the user changes the tab in the browser etc., we
+      // will need to build a browser extension.
+
       const currentApplication = this.appObserverServiceInstance.getCurrentApp();
       console.log('UserHyperActive.currentApplication:', currentApplication);
-      const currentAppCategory = this.usedApplicationsService.getAppCategory(currentApplication);
+      const currentApplicationIdentifier = currentApplication?.appIdentifier || 'unknown';
+      const currentAppCategory = this.usedApplicationsService.getAppCategory(currentApplicationIdentifier);
       console.log('UserHyperActive.currentAppCategory:', currentAppCategory);
       if (currentAppCategory === UsedAppCategory.DEFINITELY_WORK) {
         console.log('User started working');
+        this.appEventEmitter.emit(TRICI_APP_EVENT.USER_STARTED_WORKING, currentApplication);
       } else if (currentAppCategory === UsedAppCategory.DEFINITELY_DISTRACT) {
         console.log('User Fooling around');
+      } else if (currentAppCategory === UsedAppCategory.COULD_BE_ANYTHING) {
+        // Right now, only browsers are categorized as COULD_BE_ANYTHING. If/When we allow the user to categorize apps, then it could be other apps as well.
+        // This does beg the question that shoyuld I allow the user to categorize apps?
+        // check if the current app is a browser
+        if (isWebBrowser(currentApplication?.appName || 'unknown')) {
+          console.log('User is browsing');
+        } else {
+          console.log('Not sure what to do');
+          console.log('currentAppCategory:', currentAppCategory);
+        }
+      } else if (currentAppCategory === UsedAppCategory.NOT_SET) {
+        console.log('Not sure what to do');
       }
     });
   }
@@ -189,6 +210,8 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       this.logger.info(`UserActivityMonitorService frontmostAppChanged:${JSON.stringify(frontmostAppChangeData)}`);
       this.appEventEmitter.emit(TRICI_APP_EVENT.FRONTMOST_APP_CHANGED, frontmostAppChangeData);
     });
+
+    // IMPORTANT: Earlier I was saving the events in DailyUserActivity, now they are saved in sqlite app_event table.
 
     // try {
     //   // Fetch the current user activity from the db.

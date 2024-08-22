@@ -16,7 +16,7 @@ export function SimpleVideoClipPlayer({ clipUrl }: { clipUrl: string }) {
     if (videoRef.current) {
       videoRef.current.src = clipUrl;
       videoRef.current.loop = true;
-      videoRef.current.autoplay = true;
+      videoRef.current.autoplay = false;
     }
   }, [clipUrl]);
 

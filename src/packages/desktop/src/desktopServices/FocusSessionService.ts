@@ -83,6 +83,15 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
         dispatch({ type: 'END_FOCUS_SESSION' });
       }
     });
+    this.appEventEmitter.on(TRICI_APP_EVENT.USER_STARTED_WORKING, () => {
+      if (!this.isFocusSessionInProgress()) {
+        dispatch({
+          type: 'START_FOCUS_SESSION',
+          startedBy: SESSION_STARTED_BY.TRICI_ACTIVITY,
+          startedFrom: SESSION_STARTED_FROM.APP_EVENT,
+        });
+      }
+    });
   };
 
   initService(): void {
