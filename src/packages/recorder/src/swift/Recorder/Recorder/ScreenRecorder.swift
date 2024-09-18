@@ -44,6 +44,7 @@ class ScreenRecorder: NSObject {
   private var assetWriterInput: AVAssetWriterInput?
   private var pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor?
   private var outputURL: URL?
+  
     
     private var streamConfiguration: SCStreamConfiguration {
         let streamConfig = SCStreamConfiguration()
@@ -67,7 +68,7 @@ class ScreenRecorder: NSObject {
         streamConfig.showsCursor = true
         streamConfig.pixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
 //        streamConfig.pixelFormat = kCVPixelFormatType_32BGRA
-        streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: 30)
+        streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: 7)
         streamConfig.scalesToFit = true
         
         return streamConfig
@@ -174,90 +175,194 @@ class ScreenRecorder: NSObject {
     }
     
     
-    func start() async {
-        // Exit if already running
-        guard !isRunning else { return }
-        
-        do {
+  func start() async {
+      // Exit if already running
+      guard !isRunning else { return }
+      
+      do {
           isRunning = true
           let config = streamConfiguration
           let filter = contentFilter
-          logger.info("streamConfig:\(config)")
+          logger.info("streamConfig: \(config)")
           logger.info("Opening named pipe")
-          // Attempt to open the file handle
-              if namedPipeFileHandle == nil {
-                  do {
-                      let path = "/tmp/tricistream"
-                    if let handle = FileHandle(forWritingAtPath: path) {
-                            namedPipeFileHandle = handle
-                        } else {
-                            logger.error("Failed to open named pipe: The pipe might not be ready for writing.")
-                            return
-                        }
-                    
-                  }
+          
+          // Attempt to open the named pipe file handle
+          if namedPipeFileHandle == nil {
+              let path = "/tmp/tricistream"
+              if let handle = FileHandle(forWritingAtPath: path) {
+                  namedPipeFileHandle = handle
+              } else {
+                  logger.error("Failed to open named pipe: The pipe might not be ready for writing.")
+                  return
               }
+          }
+          
+          // Create a serial dispatch queue for writing
+          let writeQueue = DispatchQueue(label: "com.gettrici.Recorder.WriteQueue")
           
           logger.info("Starting capture")
           Task {
-            for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
-              namedPipeFileHandle?.write(rawData)
-            }
-            logger.info("Capture Engine stopped frames")
-            namedPipeFileHandle?.closeFile()
-//            logger.info("Finished writing raw data to \(rawFilePath)")
+              var frameCounter = 0
+              let startTime = Date()
+              do {
+                  for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
+                      // Dispatch the write operation to the writeQueue
+                      writeQueue.async {
+                          self.namedPipeFileHandle?.write(rawData)
+                          do {
+                              try self.namedPipeFileHandle?.synchronize()
+                          } catch {
+                              self.logger.error("Failed to synchronize data to pipe: \(error.localizedDescription)")
+                          }
+                      }
+                      frameCounter += 1
+                      
+                  }
+                  
+                  // Wait for all pending write operations to complete
+                  writeQueue.sync {
+                      // All write operations have completed
+                    logger.info("Finished writing all frames from queue")
+                  }
+                  let endTime = Date()
+                  let totalDuration = endTime.timeIntervalSince(startTime)
+                  self.logger.info("Total duration: \(totalDuration) seconds")
+                  self.logger.info("Total frames written: \(frameCounter)")
+              } catch {
+                  logger.error("Error during capture: \(error.localizedDescription)")
+              }
+              // Close the named pipe file handle
+              namedPipeFileHandle?.closeFile()
+              self.namedPipeFileHandle = nil  // Clear the handle after closing
+              logger.info("Capture finished.")
           }
-         
-        } catch {
-            logger.error("\(error.localizedDescription)")
-            // Unable to start the stream. Set the running state to false.
-            isRunning = false
-        }
-    }
+      } catch {
+          logger.error("\(error.localizedDescription)")
+          // Unable to start the stream. Set the running state to false.
+          isRunning = false
+      }
+  }
+  
+//  func startDebug() async {
+//      // Exit if already running
+//      guard !isRunning else { return }
+//      
+//      do {
+//        isRunning = true
+//        let config = streamConfiguration
+//        let filter = contentFilter
+//
+//          let rawFilePath = "/Users/shashi/projects/trici/src/packages/recorder/recordings/testRecording.raw"
+//          let rawFileURL = URL(fileURLWithPath: rawFilePath)
+//          guard let fileHandle = try? FileHandle(forWritingTo: rawFileURL) else {
+//                   logger.error("Failed to open raw data file for writing.")
+//                   return
+//               }
+//        
+//        logger.info("Starting Debug capture")
+//        Task {
+//          var frameCount = 0;
+//          let expectedSize = config.width * config.height * 3 / 2
+//          logger.info("Expected frame size:\(expectedSize) bytes")
+//          logger.info("Configured resolution:\(config.width)x\(config.height)")
+//          
+//          for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
+//            fileHandle.write(rawData)
+//            frameCount += 1
+//            
+//            if (frameCount == 1 || frameCount == 40) {
+//              let actualWidth = rawData.count/(config.height * 3/2)
+//              logger.info("Actual capture width (based on data size): \(actualWidth)")
+//              logger.info("Actual capture height (based on config): \(config.height)")
+//              logger.info("Actual data size: \(rawData.count)")
+//            }
+//            
+//            if frameCount % 30 == 0 {  // Log every 30 frames
+//              logger.info("Processed \(frameCount) frames. Last frame size: \(rawData.count)")
+//            }
+//          }
+//          logger.info("Capture Engine stopped frames")
+//          logger.info("Total frames written:\(frameCount)")
+//          fileHandle.closeFile()
+//            logger.info("Finished writing raw data to \(rawFilePath)")
+//        }
+//       
+//      } catch {
+//          logger.error("\(error.localizedDescription)")
+//          // Unable to start the stream. Set the running state to false.
+//          isRunning = false
+//      }
+//  }
   
   func startDebug() async {
       // Exit if already running
       guard !isRunning else { return }
       
       do {
-        isRunning = true
-        let config = streamConfiguration
-        let filter = contentFilter
+          isRunning = true
+          let config = streamConfiguration
+          let filter = contentFilter
 
           let rawFilePath = "/Users/shashi/projects/trici/src/packages/recorder/recordings/testRecording.raw"
           let rawFileURL = URL(fileURLWithPath: rawFilePath)
           guard let fileHandle = try? FileHandle(forWritingTo: rawFileURL) else {
-                   logger.error("Failed to open raw data file for writing.")
-                   return
-               }
-        
-        logger.info("Starting Debug capture")
-        Task {
-          var frameCount = 0;
-          let expectedSize = config.width * config.height * 3 / 2
-          logger.info("Expected frame size:\(expectedSize) bytes")
-          logger.info("Configured resolution:\(config.width)x\(config.height)")
-          
-          for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
-            fileHandle.write(rawData)
-            frameCount += 1
-            
-            if (frameCount == 1 || frameCount == 40) {
-              let actualWidth = rawData.count/(config.height * 3/2)
-              logger.info("Actual capture width (based on data size): \(actualWidth)")
-              logger.info("Actual capture height (based on config): \(config.height)")
-              logger.info("Actual data size: \(rawData.count)")
-            }
-            
-            if frameCount % 30 == 0 {  // Log every 30 frames
-              logger.info("Processed \(frameCount) frames. Last frame size: \(rawData.count)")
-            }
+              logger.error("Failed to open raw data file for writing.")
+              return
           }
-          logger.info("Capture Engine stopped frames")
-          fileHandle.closeFile()
-            logger.info("Finished writing raw data to \(rawFilePath)")
-        }
-       
+          
+          let writeQueue = DispatchQueue(label: "com.gettrici.Recorder.WriteQueue")
+          logger.info("Starting Debug capture")
+          Task {
+              var frameCount = 0
+              let expectedFrameSize = config.width * config.height * 3 / 2
+              logger.info("Expected frame size: \(expectedFrameSize) bytes")
+              logger.info("Configured resolution: \(config.width)x\(config.height)")
+              
+              // Log the start time
+              let startTime = Date()
+              logger.info("Capture started at: \(startTime)")
+              
+              for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
+                writeQueue.async {
+                  fileHandle.write(rawData)
+                }
+                  frameCount += 1
+                  
+                  if frameCount == 1 || frameCount == 40 {
+                      let actualWidth = rawData.count / (config.height * 3 / 2)
+                      logger.info("Actual capture width (based on data size): \(actualWidth)")
+                      logger.info("Actual capture height (based on config): \(config.height)")
+                      logger.info("Actual data size: \(rawData.count) bytes")
+                  }
+                  
+                  if frameCount % 30 == 0 {  // Log every 30 frames
+                      logger.info("Processed \(frameCount) frames. Last frame size: \(rawData.count) bytes")
+                  }
+              }
+            
+            writeQueue.sync {
+              logger.info("Finished writing queue contents")
+            }
+              
+              // Log the end time
+              let endTime = Date()
+              logger.info("Capture ended at: \(endTime)")
+              
+              // Calculate total duration
+              let totalDuration = endTime.timeIntervalSince(startTime)  // Duration in seconds
+              logger.info("Total duration: \(totalDuration) seconds")
+              
+              // Calculate expected frames
+              let frameRate: Double = 7.0  // Frame rate is 7 fps
+              let expectedFrames = totalDuration * frameRate
+              logger.info("Expected frames (Total Duration x Frame Rate): \(expectedFrames)")
+              
+              logger.info("Total frames written: \(frameCount)")
+              logger.info("Capture Engine stopped frames")
+              fileHandle.closeFile()
+              logger.info("Finished writing raw data to \(rawFilePath)")
+          }
+          
       } catch {
           logger.error("\(error.localizedDescription)")
           // Unable to start the stream. Set the running state to false.

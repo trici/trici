@@ -140,10 +140,14 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       'nv12',
       '-video_size',
       sizeParam,
-      '-r',
-      '30',
       '-f',
       'rawvideo',
+      '-framerate',
+      '7',
+      '-fflags',
+      '+genpts',
+      '-use_wallclock_as_timestamps',
+      '1',
       '-i',
       this.namedPipePath,
       '-i',
@@ -157,9 +161,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       '-profile:v',
       'high',
       '-fps_mode',
-      'cfr',
-      '-r',
-      '10',
+      'vfr',
       '-f',
       'segment',
       '-segment_time',
@@ -172,7 +174,10 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       '1024',
       '-reset_timestamps',
       '1',
+      '-force_key_frames',
+      'expr:gte(t,n_forced*5)',
       `${recordingFileNameWithPath}-%04d.mp4`,
+
       // `${recordingFileNameWithPath}.mp4`,
     ];
 
@@ -180,12 +185,12 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     console.log('args:', args);
 
     try {
-      this.recordingProcess.stdin.write('start\n');
-
       this.ffmpegProcess = spawn(this.#ffmpegBinPath, args, {
         stdio: ['pipe', 'pipe', 'pipe'],
       });
       this.logger.info(`TriciRecorder startLiveRecording: ${recordingFileName}`);
+
+      this.recordingProcess.stdin.write('start\n');
 
       this.ffmpegProcess.stdout.pipe(recordingCommandStdOutStdErrFileStream);
       this.ffmpegProcess.stderr.pipe(recordingCommandStdOutStdErrFileStream);
@@ -233,6 +238,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
             this.recordingProcess = null;
           }
           if (this.ffmpegProcess) {
+            console.log('killing ffmpegProcess');
             this.ffmpegProcess.stdin.end();
             this.ffmpegProcess.kill();
             this.ffmpegProcess = null;

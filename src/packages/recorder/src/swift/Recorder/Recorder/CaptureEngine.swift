@@ -22,12 +22,17 @@ class CaptureEngine: NSObject, @unchecked Sendable {
     /// Start capturing and directly handle raw video data.
     func startCapture(configuration: SCStreamConfiguration, filter: SCContentFilter) -> AsyncThrowingStream<Data, Error> {
         AsyncThrowingStream<Data, Error> { continuation in
-            // The stream output object.
+          self.continuation = continuation
+          // The stream output object.
             let streamOutput = CaptureEngineStreamOutput(continuation: continuation)
             self.streamOutput = streamOutput
+          
+          
             
             streamOutput.sampleBufferHandler = { sampleBuffer in
                 if let data = self.processSampleBuffer(sampleBuffer) {
+                  let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+                       self.logger.info("Frame timestamp: \(pts.seconds)")
                     continuation.yield(data)
                 }
             }
@@ -212,23 +217,42 @@ class CaptureEngine: NSObject, @unchecked Sendable {
   
   func update(configuration: SCStreamConfiguration, filter: SCContentFilter) async {
       do {
-          try await stream?.updateConfiguration(configuration)
+        let startTime = Date()
+                logger.debug("Starting configuration update at \(startTime)")
+
+                // Update the stream configuration
+                try await stream?.updateConfiguration(configuration)
+                let afterConfigUpdateTime = Date()
+                let configUpdateDuration = afterConfigUpdateTime.timeIntervalSince(startTime)
+                logger.debug("Configuration update completed at \(afterConfigUpdateTime), duration: \(configUpdateDuration) seconds")
+
+//          try await stream?.updateConfiguration(configuration)
           try await stream?.updateContentFilter(filter)
       } catch {
           logger.error("Failed to update the stream session: \(String(describing: error))")
       }
   }
 
-    func stopCapture() async {
-        do {
-            try await stream?.stopCapture()
-            logger.info("Capture Engine stream stopCapture successful")
-            continuation?.finish()
-        } catch {
-            logger.error("Error stopping capture")
-            continuation?.finish(throwing: error)
-        }
-    }
+  func stopCapture() async {
+      do {
+          try await stream?.stopCapture()
+          logger.info("Capture Engine stream stopCapture successful")
+          continuation?.finish()  // Signal the stream has ended
+      } catch {
+          logger.error("Error stopping capture: \(error.localizedDescription)")
+          continuation?.finish(throwing: error)  // Signal an error occurred
+      }
+  }
+//    func stopCapture() async {
+//        do {
+//            try await stream?.stopCapture()
+//            logger.info("Capture Engine stream stopCapture successful")
+//            continuation?.finish()
+//        } catch {
+//            logger.error("Error stopping capture")
+//            continuation?.finish(throwing: error)
+//        }
+//    }
 }
 
 private class CaptureEngineStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate {
@@ -251,8 +275,12 @@ private class CaptureEngineStreamOutput: NSObject, SCStreamOutput, SCStreamDeleg
         
     }
     
-    func stream(_ stream: SCStream, didStopWithError error: Error) {
-        continuation?.finish(throwing: error)
-    }
+  func stream(_ stream: SCStream, didStopWithError error: Error) {
+          if let error = error as NSError?, error.code != 0 {
+              continuation?.finish(throwing: error)
+          } else {
+              continuation?.finish()
+          }
+      }
 }
 
