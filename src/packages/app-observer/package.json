@@ -31,7 +31,7 @@
     "build-types": "tsc && node ../../scripts/flatten-types.js .",
     "build-prod:darwin": "pnpm run buildBinary-prod:darwin && pnpm run esbuild-prod",
     "build-dev:darwin": "pnpm run buildBinary-dev:darwin && pnpm run esbuild-dev && pnpm run build-types",
-    "buildBinary-prod:darwin": "if [ -f 'bin/MacFrontmostObserver' ]; then rm bin/MacFrontmostObserver; fi && swift build -c release --package-path src/swift/MacFrontmostObserver && cp src/swift/MacFrontmostObserver/.build/release/MacFrontmostObserver bin/MacFrontmostObserver && shasum -a 256 bin/MacFrontmostObserver > dist/MacFrontmostObserver.sha256",
+    "buildBinary-prod:darwin": "if [ -f 'bin/turiya' ]; then rm bin/turiya; fi && xcodebuild -project src/swift/turiya/turiya.xcodeproj -scheme turiya -configuration Release -derivedDataPath src/swift/turiya/build && cp src/swift/turiya/build/Build/Products/Release/turiya bin/turiya && shasum -a 256 bin/dev/turiya > dist/turiya.sha256",
     "buildBinary-dev:darwin": "if [ -f 'bin/dev/turiya' ]; then rm bin/dev/turiya; fi && xcodebuild -project src/swift/turiya/turiya.xcodeproj -scheme turiya -configuration Debug -derivedDataPath src/swift/turiya/build  && cp src/swift/turiya/build/Build/Products/Debug/turiya bin/dev/turiya && shasum -a 256 bin/dev/turiya > dist/turiya.sha256"
   },
   "bugs": {
