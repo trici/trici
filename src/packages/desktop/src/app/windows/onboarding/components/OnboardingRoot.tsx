@@ -26,7 +26,7 @@ export function OnboardingRoot() {
   }
   const [onboardingState, setOnboardingState] = React.useState(onboardingStateInit);
   const [installedApps, setInstalledApps] = React.useState<
-    [{ name: string; iconPath: string; bundleIdentifier: string }] | []
+    [{ name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }] | []
   >([]);
 
   useEffect(() => {

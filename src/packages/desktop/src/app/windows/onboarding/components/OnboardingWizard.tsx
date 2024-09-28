@@ -6,7 +6,7 @@ import OnboardingWizardSteps from './OnboardingWizardSteps';
 
 export interface OnboardingWizardProps {
   onboardingState: OnboardingState;
-  installedApps: [{ name: string; iconPath: string; bundleIdentifier: string }] | [];
+  installedApps: [{ name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }] | [];
 }
 
 const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onboardingState, installedApps }) => {

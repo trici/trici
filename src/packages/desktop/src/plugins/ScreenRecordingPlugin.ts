@@ -38,7 +38,6 @@ export class ScreenRecordingPlugin implements ITriciPlugin {
     this.recorder.startLiveRecording(
       recordingFileName,
       recordingStorageLocation,
-      screenToRecord,
       includeWatermark,
       watermarkImagePath,
     );
