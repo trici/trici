@@ -2,7 +2,6 @@
 const fs = require('fs');
 const path = require('path');
 
-const src = path.resolve(__dirname, '..', 'app-observer', 'bin');
 const dest = path.resolve(__dirname, 'bin');
 
 function deleteDir(dirPath) {
@@ -41,10 +40,65 @@ function copyDir(src, dest) {
     }
   }
 }
+
+
 console.log(`Deleting ${dest}...`);
 deleteDir(dest);
-console.log(`Copying ${src} to ${dest}...`);
-copyDir(src, dest);
+
+// make bin/dev
+// make bin/turiya
+console.log(`Creating bin directory and bin/dev directory...`);
+fs.mkdirSync(path.resolve(__dirname, 'bin'));
+fs.mkdirSync(path.resolve(__dirname, 'bin', 'dev'));
+
+// copy app-observer binary from app-observer/bin to bin
+// check if the binary exists in app-observer/bin/dev/turiya then copy else print not copied
+
+const turiyaDevSrc = path.resolve(__dirname, '..', 'app-observer', 'bin', 'dev', 'turiya');
+const turiyaDevDest = path.resolve(__dirname, 'bin', 'dev', 'turiya');
+fs.stat(turiyaDevSrc, (err, stats) => {
+  if (err) {
+    console.log('Binary not found in app-observer/bin/dev/turiya....');
+  } else {
+    console.log(`Copying ${turiyaDevSrc} to ${turiyaDevDest}...`);
+    fs.copyFileSync(turiyaDevSrc, turiyaDevDest);
+  }
+});
+
+const turiyaSrc = path.resolve(__dirname, '..', 'app-observer', 'bin', 'turiya');
+const turiyaDest = path.resolve(__dirname, 'bin', 'turiya');
+fs.stat(turiyaSrc, (err, stats) => {
+  if (err) {
+    console.log('Binary not found in app-observer/bin/turiya....');
+  } else {
+    console.log(`Copying ${turiyaSrc} to ${turiyaDest}...`);
+    fs.copyFileSync(turiyaSrc, turiyaDest);
+  }
+});
+
+// copy recorder binary from recorder/bin to bin
+const recorderDevSrc = path.resolve(__dirname, '..', 'recorder', 'bin', 'dev', 'recorder');
+const recorderDevDest = path.resolve(__dirname, 'bin', 'dev', 'recorder');
+fs.stat(recorderDevSrc, (err, stats) => {
+  if (err) {
+    console.log('Binary not found in recorder/bin/dev/recorder....');
+  } else {
+    console.log(`Copying ${recorderDevSrc} to ${recorderDevDest}...`);
+    fs.copyFileSync(recorderDevSrc, recorderDevDest);
+  }
+});
+
+const recorderSrc = path.resolve(__dirname, '..', 'recorder', 'bin', 'recorder');
+const recorderDest = path.resolve(__dirname, 'bin', 'recorder');
+fs.stat(recorderSrc, (err, stats) => {
+  if (err) {
+    console.log('Binary not found in recorder/bin/recorder....');
+  } else {
+    console.log(`Copying ${recorderSrc} to ${recorderDest}...`);
+    fs.copyFileSync(recorderSrc, recorderDest);
+  }
+});
+
 
 //copy ffmpeg binary from node_modules to bin
 const ffmpegSrc = path.resolve(__dirname, '..', 'desktop', 'node_modules', 'ffmpeg-static', 'ffmpeg');
