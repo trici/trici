@@ -31,8 +31,8 @@
     "build-types": "tsc && node ../../scripts/flatten-types.js .",
     "build-prod:darwin": "pnpm run buildBinary-prod:darwin && pnpm run esbuild-prod",
     "build-dev:darwin": "pnpm run buildBinary-dev:darwin && pnpm run esbuild-dev && pnpm run build-types",
-    "buildBinary-prod:darwin": "if [ -f 'bin/turiya' ]; then rm bin/turiya; fi && xcodebuild -project src/swift/turiya/turiya.xcodeproj -scheme turiya -configuration Release -derivedDataPath src/swift/turiya/build && cp src/swift/turiya/build/Build/Products/Release/turiya bin/turiya && shasum -a 256 bin/dev/turiya > dist/turiya.sha256",
-    "buildBinary-dev:darwin": "if [ -f 'bin/dev/turiya' ]; then rm bin/dev/turiya; fi && xcodebuild -project src/swift/turiya/turiya.xcodeproj -scheme turiya -configuration Debug -derivedDataPath src/swift/turiya/build  && cp src/swift/turiya/build/Build/Products/Debug/turiya bin/dev/turiya && shasum -a 256 bin/dev/turiya > dist/turiya.sha256"
+    "buildBinary-prod:darwin": "if [ -f 'bin/triciobserver' ]; then rm bin/triciobserver; fi && xcodebuild -project src/swift/triciobserver/triciobserver.xcodeproj -scheme triciobserver -configuration Release -derivedDataPath src/swift/triciobserver/build && cp src/swift/triciobserver/build/Build/Products/Release/triciobserver bin/triciobserver && shasum -a 256 bin/dev/triciobserver > dist/triciobserver.sha256",
+    "buildBinary-dev:darwin": "if [ -f 'bin/dev/triciobserver' ]; then rm bin/dev/triciobserver; fi && xcodebuild -project src/swift/triciobserver/triciobserver.xcodeproj -scheme triciobserver -configuration Debug -derivedDataPath src/swift/triciobserver/build  && cp src/swift/triciobserver/build/Build/Products/Debug/triciobserver bin/dev/triciobserver && shasum -a 256 bin/dev/triciobserver > dist/triciobserver.sha256"
   },
   "bugs": {
     "url": "https://github.com/trici/trici/issues"

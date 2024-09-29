@@ -46,33 +46,33 @@ console.log(`Deleting ${dest}...`);
 deleteDir(dest);
 
 // make bin/dev
-// make bin/turiya
+// make bin/triciobserver
 console.log(`Creating bin directory and bin/dev directory...`);
 fs.mkdirSync(path.resolve(__dirname, 'bin'));
 fs.mkdirSync(path.resolve(__dirname, 'bin', 'dev'));
 
 // copy app-observer binary from app-observer/bin to bin
-// check if the binary exists in app-observer/bin/dev/turiya then copy else print not copied
+// check if the binary exists in app-observer/bin/dev/triciobserver then copy else print not copied
 
-const turiyaDevSrc = path.resolve(__dirname, '..', 'app-observer', 'bin', 'dev', 'turiya');
-const turiyaDevDest = path.resolve(__dirname, 'bin', 'dev', 'turiya');
-fs.stat(turiyaDevSrc, (err, stats) => {
+const triciobserverDevSrc = path.resolve(__dirname, '..', 'app-observer', 'bin', 'dev', 'triciobserver');
+const triciobserverDevDest = path.resolve(__dirname, 'bin', 'dev', 'triciobserver');
+fs.stat(triciobserverDevSrc, (err, stats) => {
   if (err) {
-    console.log('Binary not found in app-observer/bin/dev/turiya....');
+    console.log('Binary not found in app-observer/bin/dev/triciobserver....');
   } else {
-    console.log(`Copying ${turiyaDevSrc} to ${turiyaDevDest}...`);
-    fs.copyFileSync(turiyaDevSrc, turiyaDevDest);
+    console.log(`Copying ${triciobserverDevSrc} to ${triciobserverDevDest}...`);
+    fs.copyFileSync(triciobserverDevSrc, triciobserverDevDest);
   }
 });
 
-const turiyaSrc = path.resolve(__dirname, '..', 'app-observer', 'bin', 'turiya');
-const turiyaDest = path.resolve(__dirname, 'bin', 'turiya');
-fs.stat(turiyaSrc, (err, stats) => {
+const triciobserverSrc = path.resolve(__dirname, '..', 'app-observer', 'bin', 'triciobserver');
+const triciobserverDest = path.resolve(__dirname, 'bin', 'triciobserver');
+fs.stat(triciobserverSrc, (err, stats) => {
   if (err) {
-    console.log('Binary not found in app-observer/bin/turiya....');
+    console.log('Binary not found in app-observer/bin/triciobserver....');
   } else {
-    console.log(`Copying ${turiyaSrc} to ${turiyaDest}...`);
-    fs.copyFileSync(turiyaSrc, turiyaDest);
+    console.log(`Copying ${triciobserverSrc} to ${triciobserverDest}...`);
+    fs.copyFileSync(triciobserverSrc, triciobserverDest);
   }
 });
 

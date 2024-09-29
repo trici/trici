@@ -29,7 +29,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		9B326D362C9D214900381825 /* turiya */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = turiya; sourceTree = BUILT_PRODUCTS_DIR; };
+		9B326D362C9D214900381825 /* triciobserver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = triciobserver; sourceTree = BUILT_PRODUCTS_DIR; };
 		9B326D392C9D214900381825 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		9B326D402C9D221B00381825 /* FrontmostObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontmostObserver.swift; sourceTree = "<group>"; };
 		9B326D422C9D223300381825 /* AppObserverMethods.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppObserverMethods.swift; sourceTree = "<group>"; };
@@ -53,7 +53,7 @@
 		9B326D2D2C9D214900381825 = {
 			isa = PBXGroup;
 			children = (
-				9B326D382C9D214900381825 /* turiya */,
+				9B326D382C9D214900381825 /* triciobserver */,
 				9B326D372C9D214900381825 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -61,12 +61,12 @@
 		9B326D372C9D214900381825 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9B326D362C9D214900381825 /* turiya */,
+				9B326D362C9D214900381825 /* triciobserver */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		9B326D382C9D214900381825 /* turiya */ = {
+		9B326D382C9D214900381825 /* triciobserver */ = {
 			isa = PBXGroup;
 			children = (
 				9B326D392C9D214900381825 /* main.swift */,
@@ -74,15 +74,15 @@
 				9B326D422C9D223300381825 /* AppObserverMethods.swift */,
 				9B326D442C9E0F2A00381825 /* LoggingService.swift */,
 			);
-			path = turiya;
+			path = triciobserver;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		9B326D352C9D214900381825 /* turiya */ = {
+		9B326D352C9D214900381825 /* triciobserver */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 9B326D3D2C9D214900381825 /* Build configuration list for PBXNativeTarget "turiya" */;
+			buildConfigurationList = 9B326D3D2C9D214900381825 /* Build configuration list for PBXNativeTarget "triciobserver" */;
 			buildPhases = (
 				9B326D322C9D214900381825 /* Sources */,
 				9B326D332C9D214900381825 /* Frameworks */,
@@ -92,14 +92,14 @@
 			);
 			dependencies = (
 			);
-			name = turiya;
+			name = triciobserver;
 			packageProductDependencies = (
 				9B326D472C9E110F00381825 /* CocoaLumberjack */,
 				9B326D492C9E110F00381825 /* CocoaLumberjackSwift */,
 				9B326D4B2C9E110F00381825 /* CocoaLumberjackSwiftLogBackend */,
 			);
 			productName = turiya;
-			productReference = 9B326D362C9D214900381825 /* turiya */;
+			productReference = 9B326D362C9D214900381825 /* triciobserver */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -117,7 +117,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 9B326D312C9D214900381825 /* Build configuration list for PBXProject "turiya" */;
+			buildConfigurationList = 9B326D312C9D214900381825 /* Build configuration list for PBXProject "triciobserver" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -133,7 +133,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				9B326D352C9D214900381825 /* turiya */,
+				9B326D352C9D214900381825 /* triciobserver */,
 			);
 		};
 /* End PBXProject section */
@@ -296,7 +296,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		9B326D312C9D214900381825 /* Build configuration list for PBXProject "turiya" */ = {
+		9B326D312C9D214900381825 /* Build configuration list for PBXProject "triciobserver" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9B326D3B2C9D214900381825 /* Debug */,
@@ -305,7 +305,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		9B326D3D2C9D214900381825 /* Build configuration list for PBXNativeTarget "turiya" */ = {
+		9B326D3D2C9D214900381825 /* Build configuration list for PBXNativeTarget "triciobserver" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9B326D3E2C9D214900381825 /* Debug */,

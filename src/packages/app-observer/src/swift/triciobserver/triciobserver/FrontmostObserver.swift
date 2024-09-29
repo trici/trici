@@ -64,11 +64,6 @@ public struct FrontmostObserver {
       {
         FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
       }
-        if (appIdentifier == "com.google.Chrome") {
-            var appObserverMethods = AppObserverMethods()
-            appObserverMethods.getActiveBrowserOpenedURL()
-        }
-      
     }
   }
 
