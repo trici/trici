@@ -1,6 +1,6 @@
 //
 //  LoggingService.swift
-//  turiya
+//  triciobserver
 //
 //  Created by Shashi Singh on 21/09/24.
 //
@@ -185,12 +185,8 @@ class LoggingService {
         return initialized
     }
     
-    static func getLogger() -> Logger? {
-        if (isInitialized()) {
-            return shared.logger
-        } else {
-            return nil
-        }
+    static func getLogger() -> Logger {
+      return shared.logger
     }
     
     

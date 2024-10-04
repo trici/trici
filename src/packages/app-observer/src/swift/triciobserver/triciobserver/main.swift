@@ -7,22 +7,28 @@
 
 import Foundation
 
+let logger: Logger
+
+let env = ProcessInfo.processInfo.environment["APP_ENV"] ?? "dev"
+
+let isProd = env == "prod"
+
+var logsDirectoryPath = isProd ? "/Library/Logs/trici" :  "/Library/Logs/TriciDev"
+
+LoggingService.initializeLogging(logsDirectoryPath: logsDirectoryPath, logFilePrefix: "trici_observer")
+if (!LoggingService.isInitialized()) {
+  print("Logger not initialized")
+  exit(1)
+} else {
+  logger = LoggingService.getLogger()
+}
+
+logger.info("Logger initialized")
+
 let frontmostObserver = FrontmostObserver()
 let appObserverMethods = AppObserverMethods()
 
-let logger: Logger?
 
-// Initialize the logger
-LoggingService.initializeLogging(logsDirectoryPath: "Library/Logs/TriciDev", logFilePrefix: "trici_turiya")
-
-if (!LoggingService.isInitialized()) {
-    print("Logger not initialized")
-    exit(1)
-} else {
-    logger = LoggingService.getLogger()
-}
-
-logger?.info("Logger initialized")
 
 let fileManager = FileManager.default
 let isReadable = fileManager.isReadableFile(atPath: "/Applications")
