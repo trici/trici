@@ -12,8 +12,9 @@ import AVFoundation
 
 
 class ScreenRecorder: NSObject {
-  private let logger = LoggingService.shared.getLogger()
+  private var logger: Logger
   private var namedPipeFileHandle: FileHandle?
+  private var captureEngine: CaptureEngine
     
     private(set) var availableDisplays = [SCDisplay]()
     
@@ -21,7 +22,9 @@ class ScreenRecorder: NSObject {
         didSet { updateEngine() }
     }
     
-    override init() {
+  init(logger:Logger) {
+    self.logger = logger
+    self.captureEngine = CaptureEngine(logger:logger)
         super.init()
           NotificationCenter.default.addObserver(
               self,
@@ -29,15 +32,14 @@ class ScreenRecorder: NSObject {
               name: .activeScreenDidChange,
               object: nil
           )
-//          setupStreamConfiguration()
+          
+      //          setupStreamConfiguration()
       }
     
     var isRunning = false
   
   private var scaleFactor: Int { Int(NSScreen.main?.backingScaleFactor ?? 2) }
   
-  // The object that manages the SCStream.
-    private let captureEngine = CaptureEngine()
   
   // Properties for managing the asset writer
   private var assetWriter: AVAssetWriter?

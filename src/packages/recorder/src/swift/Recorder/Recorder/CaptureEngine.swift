@@ -12,13 +12,16 @@ import ScreenCaptureKit
 
 class CaptureEngine: NSObject, @unchecked Sendable {
     
-    private let logger = LoggingService.shared.getLogger()
+  private var logger: Logger;
     private(set) var stream: SCStream?
     private var streamOutput: CaptureEngineStreamOutput?
     private let videoSampleBufferQueue = DispatchQueue(label: "com.gettrici.Recorder.VideoSampleBufferQueue")
 
     private var continuation: AsyncThrowingStream<Data, Error>.Continuation?
     
+  init(logger:Logger) {
+    self.logger = logger
+  }
     /// Start capturing and directly handle raw video data.
     func startCapture(configuration: SCStreamConfiguration, filter: SCContentFilter) -> AsyncThrowingStream<Data, Error> {
         AsyncThrowingStream<Data, Error> { continuation in
@@ -99,7 +102,7 @@ class CaptureEngine: NSObject, @unchecked Sendable {
       let actualSize = pixelData.count
       
       if actualSize != expectedSize {
-          logger.warning("Warning: YUV 4:2:2 pixel data size mismatch!")
+        logger.warn("Warning: YUV 4:2:2 pixel data size mismatch!")
       }
       
       return pixelData
@@ -131,7 +134,7 @@ class CaptureEngine: NSObject, @unchecked Sendable {
       let actualSize = pixelData.count
       
       if actualSize != expectedSize {
-          logger.warning("Warning: NV12 pixel data size mismatch!")
+          logger.warn("Warning: NV12 pixel data size mismatch!")
       }
       
       return pixelData
@@ -152,7 +155,7 @@ class CaptureEngine: NSObject, @unchecked Sendable {
       let actualSize = bgraData.count
       
       if actualSize != expectedSize {
-          logger.warning("Warning: BGRA pixel data size mismatch!")
+          logger.warn("Warning: BGRA pixel data size mismatch!")
       }
       
       return bgraData

@@ -17,9 +17,11 @@ public class ActiveScreenObserver {
     private let workspace = NSWorkspace.shared
     private var activeScreenID: NSNumber?
     private var observer: Any?
-    private let logger = LoggingService.shared.getLogger()
+    private var logger: Logger
 
-    public init() {}
+  init(logger:Logger) {
+    self.logger = logger
+  }
     
     public func getActiveScreenID() -> NSNumber? {
         return activeScreenID

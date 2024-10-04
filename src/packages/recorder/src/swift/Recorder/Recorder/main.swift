@@ -7,8 +7,23 @@
 
 import Foundation
 
-let logger = LoggingService.shared.getLogger()
+let logger: Logger
 
+let env = ProcessInfo.processInfo.environment["APP_ENV"] ?? "dev"
+
+let isProd = env == "prod"
+
+var logsDirectoryPath = isProd ? "/Library/Logs/trici" :  "/Library/Logs/TriciDev"
+
+LoggingService.initializeLogging(logsDirectoryPath: logsDirectoryPath, logFilePrefix: "trici_recorder")
+if (!LoggingService.isInitialized()) {
+  print("Logger not initialized")
+  exit(1)
+} else {
+  logger = LoggingService.getLogger()
+}
+
+logger.info("Logger initialized ")
 let now = Date()
 let dateFormatter = DateFormatter()
 
@@ -16,7 +31,7 @@ dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
 
 let dateString = dateFormatter.string(from: now)
 // ScreenRecorder has to be initialized before activeScreenObserver
-let screenRecorder = ScreenRecorder()
+let screenRecorder = ScreenRecorder(logger:logger)
 Task {
     await screenRecorder.refreshAvailableContent()
     let canRecord = await screenRecorder.canRecord
@@ -26,7 +41,7 @@ Task {
 
 
 
-let activeScreenObserver = ActiveScreenObserver()
+let activeScreenObserver = ActiveScreenObserver(logger: logger)
 activeScreenObserver.startObserver()
 
 if let activeScreenId = activeScreenObserver.getActiveScreenID() {
