@@ -46,13 +46,13 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
         if (isRunningInAsar) {
           pathToExecutable =
             config.builtFor === 'dev' || config.builtFor === 'livedev'
-              ? path.join(this.appRoot, '..', 'app.asar.unpacked', 'bin', 'dev', 'turiya')
-              : path.join(this.appRoot, '..', 'app.asar.unpacked', 'bin', 'turiya');
+              ? path.join(this.appRoot, '..', 'app.asar.unpacked', 'bin', 'dev', 'triciobserver')
+              : path.join(this.appRoot, '..', 'app.asar.unpacked', 'bin', 'triciobserver');
         } else {
           pathToExecutable =
             config.builtFor === 'dev' || config.builtFor === 'livedev'
-              ? path.join(this.appRoot, 'bin', 'dev', 'turiya')
-              : path.join(this.appRoot, 'bin', 'turiya');
+              ? path.join(this.appRoot, 'bin', 'dev', 'triciobserver')
+              : path.join(this.appRoot, 'bin', 'triciobserver');
           this.logger.info(`pathToExecutable:${pathToExecutable}`);
         }
         this.logger.info(`AppObserverService starting:${pathToExecutable}`);

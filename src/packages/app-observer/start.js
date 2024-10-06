@@ -22,10 +22,10 @@ appObserver.on('frontmostAppChanged', data => {
   console.log(data);
 });
 
-console.log('Getting installed apps...');
-appObserver.getInstalledApps().then(apps => {
-  console.log(apps);
-});
+//console.log('Getting installed apps...');
+//appObserver.getInstalledApps().then(apps => {
+ // console.log(apps);
+//});
 
 process.on('SIGINT', () => {
   console.log('SIGINT received.');
