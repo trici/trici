@@ -4,7 +4,6 @@ import { IActionDispatcher } from './ActionDispatcher';
 import contextMenu from 'electron-context-menu';
 import { TriciAction } from '../typedefs/TriciAction';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
-import { openSystemPreferences } from 'mac-screen-capture-permissions';
 import path from 'path';
 
 export type WindowName = 'settings' | 'main' | 'alert' | 'onboarding';
@@ -49,9 +48,6 @@ export class WindowManager implements IWindowManager {
             break;
           case 'SHOW_ALERT_WINDOW':
             this._createAndShowAlertWindow(action.args.alertType, action.args.quitAppOnClose);
-            break;
-          case 'OPEN_SYSTEM_PREFERENCES':
-            this._openSystemPreferences();
             break;
           case 'CLOSE_ALERT_WINDOW':
             this._closeAlertWindow();
@@ -163,13 +159,13 @@ export class WindowManager implements IWindowManager {
       maximizable: false,
       minimizable: false,
       titleBarStyle: 'hidden',
-      // alwaysOnTop: false,
       webPreferences: {
         nodeIntegration: false,
         preload: preloadScriptPath,
         contextIsolation: true,
       },
     });
+    this.onboardingWindow.setAlwaysOnTop(true, 'normal');
     this.onboardingWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), {
       query: { type: 'onboarding' },
     });
@@ -195,12 +191,7 @@ export class WindowManager implements IWindowManager {
         app.exit(0);
       }
     });
-  }
-
-  private _openSystemPreferences(): void {
-    if (process.platform === 'darwin') {
-      openSystemPreferences();
-    }
+    this.onboardingWindow.focus();
   }
 
   private _reloadOpenWindows(): void {

@@ -5,6 +5,67 @@ import { useOnboarding } from './OnboardingContext';
 import { UsedAppCategory, UsedApplication, IUsedApplication } from '@trici/models';
 import { TriciAnimatedLogo } from '../../shared/components/TriciAnimatedLogo';
 
+const AskForAccessibilityPermissionsOnMacComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
+  const { setStepReady, getStepReady } = useWizard();
+  const { onboardingState } = useOnboarding();
+
+  const hasAskedForAccessibilityPermissions = onboardingState.hasAskedForAccessibilityPermissions;
+  useEffect(() => {
+    if (hasAskedForAccessibilityPermissions) {
+      window.bridgeApi.sendMessage({ handler: 'askForAccessibilityPermissions', args: {} });
+    }
+  }, [hasAskedForAccessibilityPermissions]);
+
+  const [accessibilityPermissionsReceived, setAccessibilityPermissionsReceived] = React.useState(
+    getStepReady(stepindex),
+  );
+
+  useEffect(() => {
+    const accessibilityPermissionsStepReady =
+      onboardingState.hasAskedForAccessibilityPermissions && onboardingState.hasBeenGivenAccessibilityPermissions;
+    setStepReady(stepindex, accessibilityPermissionsStepReady);
+  }, [accessibilityPermissionsReceived, onboardingState]);
+
+  const videoClipUrl = `file://${window.bridgeApi.appPath}/resources/clips/TriciAccessibilityPermissions_final.mp4`;
+  if (onboardingState.hasBeenGivenAccessibilityPermissions) {
+    return (
+      <div className="h-full w-full">
+        <p className="text-center text-2xl font-bold">Trici requires Accessibility permissions</p>
+        <p className="text-center ">This allows Trici to monitor your app usage and provide accurate insights.</p>
+        <div className="flex h-fit w-full flex-col items-center justify-evenly gap-6 py-4">
+          <div className="m-0 w-fit">
+            <SimpleVideoClipPlayer clipUrl={videoClipUrl} />
+          </div>
+          <div className="m-0 w-full text-center">
+            <p className="text-xl font-bold">Accessibility Permissions Granted</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="h-full w-full">
+      <p className="text-center text-2xl font-bold">Trici requires Accessibility permissions</p>
+      <p className="text-center ">This allows Trici to monitor your app usage and provide accurate insights.</p>
+      <div className="flex h-fit w-full flex-col items-center justify-evenly gap-6 py-4">
+        <div className="m-0 w-fit">
+          <SimpleVideoClipPlayer clipUrl={videoClipUrl} />
+        </div>
+        <div className="m-0 w-full text-center">
+          <Button
+            variant="primary"
+            onClick={() => {
+              window.bridgeApi.sendMessage({ handler: 'askForAccessibilityPermissions', args: {} });
+            }}
+          >
+            Grant Accessibility Permissions
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AskForScreenRecordingPermissionsOnMacComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
   const { setStepReady, getStepReady } = useWizard();
   const { onboardingState } = useOnboarding();
@@ -135,6 +196,14 @@ const AskForScreenRecordingPermissionsOnMacStep = () => {
   );
 };
 
+const AskFirAccessibilityPermissionsOnMacStep = () => {
+  return (
+    <WizardStep stepindex={3}>
+      <AskForAccessibilityPermissionsOnMacComponent stepindex={2} />
+    </WizardStep>
+  );
+};
+
 const AskWhichAreWorkAppsComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
   const { setStepReady, getStepReady } = useWizard();
   const { onboardingState, installedApps } = useOnboarding();
@@ -260,8 +329,8 @@ const AskWhichAreWorkAppsComponent: React.FC<{ stepindex: number }> = ({ stepind
 
 const AskWhichAreWorkAppsStep = () => {
   return (
-    <WizardStep stepindex={3}>
-      <AskWhichAreWorkAppsComponent stepindex={2} />
+    <WizardStep stepindex={4}>
+      <AskWhichAreWorkAppsComponent stepindex={3} />
     </WizardStep>
   );
 };
@@ -269,7 +338,7 @@ const AskWhichAreWorkAppsStep = () => {
 const SuccessfullyFinishedInitialSetupStep = () => {
   const illustrationUrl = `file://${window.bridgeApi.appPath}/resources/images/undraw_happy_news.svg`;
   return (
-    <WizardStep stepindex={4}>
+    <WizardStep stepindex={5}>
       <div className="h-full w-full">
         <div className="flex h-full w-full flex-col items-center justify-evenly ">
           <div className="h-[350px] w-[350px] text-center text-white">
@@ -286,8 +355,9 @@ const OnboardingWizardSteps = [
   <TriciFirstWelcomeStep key="step0" />,
   <InformUserAboutRequiredPermissionsStep key="step1" />,
   <AskForScreenRecordingPermissionsOnMacStep key="step2" />,
-  <AskWhichAreWorkAppsStep key="step3" />,
-  <SuccessfullyFinishedInitialSetupStep key="step4" />,
+  <AskFirAccessibilityPermissionsOnMacStep key="step3" />,
+  <AskWhichAreWorkAppsStep key="step4" />,
+  <SuccessfullyFinishedInitialSetupStep key="step5" />,
 ];
 
 export default OnboardingWizardSteps;

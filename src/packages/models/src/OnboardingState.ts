@@ -5,6 +5,8 @@ export interface IOnboardingState {
   lastOnboardingStep: number;
   hasAskedForScreenRecordingPermissions: boolean;
   hasBeenGivenScreenRecordingPermissions: boolean;
+  hasAskedForAccessibilityPermissions: boolean;
+  hasBeenGivenAccessibilityPermissions: boolean;
   hasChosenWorkApplications: boolean;
 }
 
@@ -13,6 +15,8 @@ const OnboardingStateRecord = Immutable.Record({
   lastOnboardingStep: 0,
   hasAskedForScreenRecordingPermissions: false,
   hasBeenGivenScreenRecordingPermissions: false,
+  hasAskedForAccessibilityPermissions: false,
+  hasBeenGivenAccessibilityPermissions: false,
   hasChosenWorkApplications: false,
 });
 
@@ -29,6 +33,8 @@ export class OnboardingState extends OnboardingStateRecord implements IOnboardin
         lastOnboardingStep: 0,
         hasAskedForScreenRecordingPermissions: false,
         hasBeenGivenScreenRecordingPermissions: false,
+        hasAskedForAccessibilityPermissions: false,
+        hasBeenGivenAccessibilityPermissions: false,
         hasChosenWorkApplications: false,
       });
     } else {
@@ -37,6 +43,8 @@ export class OnboardingState extends OnboardingStateRecord implements IOnboardin
         lastOnboardingStep: onboardingState.lastOnboardingStep,
         hasAskedForScreenRecordingPermissions: onboardingState.hasAskedForScreenRecordingPermissions,
         hasBeenGivenScreenRecordingPermissions: onboardingState.hasBeenGivenScreenRecordingPermissions,
+        hasAskedForAccessibilityPermissions: onboardingState.hasAskedForAccessibilityPermissions,
+        hasBeenGivenAccessibilityPermissions: onboardingState.hasBeenGivenAccessibilityPermissions,
         hasChosenWorkApplications: onboardingState.hasChosenWorkApplications,
       });
     }
@@ -46,5 +54,12 @@ export class OnboardingState extends OnboardingStateRecord implements IOnboardin
   }
   setHasBeenGivenScreenRecordingPermissions(): OnboardingState {
     return this.set('hasBeenGivenScreenRecordingPermissions', true);
+  }
+
+  setHasAskedForAccessibilityPermissions(): OnboardingState {
+    return this.set('hasAskedForAccessibilityPermissions', true);
+  }
+  setHasBeenGivenAccessibilityPermissions(): OnboardingState {
+    return this.set('hasBeenGivenAccessibilityPermissions', true);
   }
 }

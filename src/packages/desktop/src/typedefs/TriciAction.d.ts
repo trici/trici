@@ -54,4 +54,7 @@ export type TriciAction =
     }
   | {
       type: 'ASK_FOR_SCREEN_RECORDING_PERMISSIONS';
+    }
+  | {
+      type: 'ASK_FOR_ACCESSIBILITY_PERMISSIONS';
     };

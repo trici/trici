@@ -10,7 +10,7 @@ export interface IPermissionsService {
   hasScreenRecordingPermissions(): boolean;
   hasAccessibilityPermissions(): boolean;
   checkScreenRecordingPermissions(): Promise<void>;
-  requestAccessibilityPermissions(): Promise<void>;
+  checkAccessisibilityPermissions(): Promise<void>;
 }
 
 export class PermissionsService implements ITriciDesktopService, IPermissionsService {
@@ -39,6 +39,10 @@ export class PermissionsService implements ITriciDesktopService, IPermissionsSer
         case 'ASK_FOR_SCREEN_RECORDING_PERMISSIONS':
           console.log('Checking for screen recording permissions');
           this.checkScreenRecordingPermissions();
+          break;
+        case 'ASK_FOR_ACCESSIBILITY_PERMISSIONS':
+          console.log('Checking for accessibility permissions');
+          this.checkAccessisibilityPermissions();
           break;
         default:
           break;
@@ -74,9 +78,11 @@ export class PermissionsService implements ITriciDesktopService, IPermissionsSer
       global.onboardingState = onboardingState;
     }
     // this will trigger the dialog for asking for permission the first time.
-    permissions.askForScreenCaptureAccess();
+    console.log('calling permissions.askForScreenCaptureAccess');
+    permissions.askForScreenCaptureAccess(true);
+    console.log('after permissions.askForScreenCaptureAccess');
     const screenCapturePermission = this.hasScreenRecordingPermissions();
-    console.log('PermissionService.checkScreenRecordingPermissions', screenCapturePermission);
+    console.log('PermissionsService.checkScreenRecordingPermissions', screenCapturePermission);
     if (screenCapturePermission) {
       onboardingState = onboardingState.setHasBeenGivenScreenRecordingPermissions();
       await this.appJsonStorageService.setOnboardingState(onboardingState);
@@ -87,19 +93,34 @@ export class PermissionsService implements ITriciDesktopService, IPermissionsSer
         data: { onboardingState: global.onboardingState.toJS() },
         initValue: false,
       });
-
       return;
-    } else {
-      dispatch({
-        type: 'OPEN_SYSTEM_PREFERENCES',
-      });
-      dispatch({
-        type: 'CLOSE_ONBOARDING_WINDOW',
-      });
     }
   }
 
-  async requestAccessibilityPermissions(): Promise<void> {
+  async checkAccessisibilityPermissions(): Promise<void> {
+    let onboardingState = await this.appJsonStorageService.getOnboardingState();
+    if (!onboardingState.hasAskedForAccessibilityPermissions) {
+      onboardingState = onboardingState.setHasAskedForAccessibilityPermissions();
+      await this.appJsonStorageService.setOnboardingState(onboardingState);
+      global.onboardingState = onboardingState;
+    }
+    // this will trigger the dialog for asking for permission the first time.
+    console.log('calling permissions.askForAccessibilityAccess');
     permissions.askForAccessibilityAccess();
+    console.log('after permissions.askForAccessibilityAccess');
+    const accessibilityPermissions = this.hasAccessibilityPermissions();
+    console.log('PermissionsService.checkAccessisibilityPermissions', accessibilityPermissions);
+    if (accessibilityPermissions) {
+      onboardingState = onboardingState.setHasBeenGivenAccessibilityPermissions();
+      await this.appJsonStorageService.setOnboardingState(onboardingState);
+      global.onboardingState = onboardingState;
+      this.messageSender.send('onboarding', {
+        success: true,
+        handler: 'onboardingStateUpdated',
+        data: { onboardingState: global.onboardingState.toJS() },
+        initValue: false,
+      });
+      return;
+    }
   }
 }

@@ -115,6 +115,12 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
         response = successResponseForVoidFunctions;
         break;
       }
+      case 'askForAccessibilityPermissions': {
+        console.log("dispatching 'ASK_FOR_ACCESSIBILITY_PERMISSIONS' action");
+        dispatch({ type: 'ASK_FOR_ACCESSIBILITY_PERMISSIONS' });
+        response = successResponseForVoidFunctions;
+        break;
+      }
       case 'openSystemPreferencesAndCloseAlert': {
         dispatch({ type: 'OPEN_SYSTEM_PREFERENCES' });
         dispatch({ type: 'CLOSE_ALERT_WINDOW' });
