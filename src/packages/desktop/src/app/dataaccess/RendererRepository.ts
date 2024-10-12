@@ -2,7 +2,7 @@ import {
   IUsedApplication,
   IUserPreferences,
   AppEvent,
-  TRICI_APP_EVENT,
+  TriciAppEvent,
   UsedApplication,
   UserPreferences,
 } from '@trici/models';
@@ -13,7 +13,7 @@ export interface IRendererRepository {
   saveUserPreferences(userPreferences: UserPreferences, idOfDocToDelete: string): Promise<UserPreferences>;
   getCachedUserPreferences(): UserPreferences | null;
   getUsedApplications(): Promise<UsedApplication[]>;
-  getEvents(from: number, to: number, type: TRICI_APP_EVENT): Promise<AppEvent[]>;
+  getEvents(from: number, to: number, type: TriciAppEvent): Promise<AppEvent[]>;
 }
 
 /**
@@ -106,7 +106,7 @@ export class RendererRepository implements IRendererRepository {
    * @param to The end date of the range to retrieve events for.
    * @returns A Promise that resolves with an array of AppEvents.
    */
-  public getEvents(from: number, to: number, type: TRICI_APP_EVENT): Promise<AppEvent[]> {
+  public getEvents(from: number, to: number, type: TriciAppEvent): Promise<AppEvent[]> {
     return new Promise((fulfill, reject) => {
       const args = { from: from, to: to, type: type };
       window.bridgeApi.query({ handler: 'getEvents', args });

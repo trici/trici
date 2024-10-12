@@ -3,7 +3,7 @@
  */
 import * as Immutable from 'immutable';
 import { Constants } from './Constants';
-import { SESSION_STARTED_BY, SESSION_STARTED_FROM } from './enums';
+import { SessionStartedBy, SessionStartedFrom } from './enums';
 
 interface IFocusSessionType {
   _id: string;
@@ -16,8 +16,8 @@ interface IFocusSessionType {
   displayUnits: any[];
   shouldHaveRecording: boolean;
   activities: any[];
-  startedBy: SESSION_STARTED_BY;
-  startedFrom: SESSION_STARTED_FROM;
+  startedBy: SessionStartedBy;
+  startedFrom: SessionStartedFrom;
 }
 
 const FocusSessionSchema: IFocusSessionType = {
@@ -31,8 +31,8 @@ const FocusSessionSchema: IFocusSessionType = {
   displayUnits: [],
   shouldHaveRecording: true,
   activities: [],
-  startedBy: SESSION_STARTED_BY.NOT_SET,
-  startedFrom: SESSION_STARTED_FROM.NOT_SET,
+  startedBy: SessionStartedBy.NOT_SET,
+  startedFrom: SessionStartedFrom.NOT_SET,
 };
 
 const FocusSessionRecord = Immutable.Record(FocusSessionSchema);
@@ -51,8 +51,8 @@ export class FocusSession extends FocusSessionRecord {
         displayUnits: [],
         shouldHaveRecording: false,
         activities: [],
-        startedBy: SESSION_STARTED_BY.NOT_SET,
-        startedFrom: SESSION_STARTED_FROM.NOT_SET,
+        startedBy: SessionStartedBy.NOT_SET,
+        startedFrom: SessionStartedFrom.NOT_SET,
       });
     } else {
       super({

@@ -1,6 +1,6 @@
 import { DataGrid } from '@singhshashi/proactive';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppEvent, TRICI_APP_EVENT } from '@trici/models';
+import { AppEvent, TriciAppEvent } from '@trici/models';
 import React, { useState } from 'react';
 import { RendererRepository } from 'src/app/dataaccess/RendererRepository';
 
@@ -9,7 +9,7 @@ interface EventViewerContainerState {
   day: number;
   from: number;
   to: number;
-  type: TRICI_APP_EVENT;
+  type: TriciAppEvent;
 }
 
 // const bridgeApi: IBridgeAPIInterface = window.bridgeApi;
@@ -23,7 +23,7 @@ export function EventViewerContainer() {
     day: new Date().setHours(0, 0, 0, 0),
     from: new Date().setHours(0, 0, 0, 0),
     to: new Date().setHours(23, 59, 59, 999),
-    type: TRICI_APP_EVENT.FRONTMOST_APP_CHANGED,
+    type: TriciAppEvent.FRONTMOST_APP_CHANGED,
   });
 
   const eventViewerQuery = useQuery<AppEvent[]>({
@@ -38,7 +38,7 @@ export function EventViewerContainer() {
     return <div>Error: {eventViewerQuery.error.toString()}</div>;
   }
 
-  const allEventTypes = Object.values(TRICI_APP_EVENT);
+  const allEventTypes = Object.values(TriciAppEvent);
   console.log('eventViewerQuery', eventViewerQuery);
   return (
     <>
@@ -54,11 +54,11 @@ export function EventViewerContainer() {
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                     setState({
                       ...state,
-                      type: e.target.value as TRICI_APP_EVENT,
+                      type: e.target.value as TriciAppEvent,
                     });
                   }}
                 >
-                  {allEventTypes.map((type: TRICI_APP_EVENT) => {
+                  {allEventTypes.map((type: TriciAppEvent) => {
                     return (
                       <option key={type} value={type}>
                         {type}

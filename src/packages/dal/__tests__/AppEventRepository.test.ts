@@ -3,7 +3,7 @@ import { SqliteDbManager } from '../src/SqliteDbManager';
 import sqlite3 from 'sqlite3';
 import type { Logger } from '@trici/logger';
 import LoggingService from '@trici/logger';
-import { IAppEvent, TRICI_APP_EVENT } from '@trici/models';
+import { IAppEvent, TriciAppEvent } from '@trici/models';
 import path from 'path';
 import { deleteDirectoryWithContents } from '@trici/utils';
 import { v4 as uuidv4 } from 'uuid';
@@ -63,7 +63,7 @@ describe('AppEventRepository', () => {
     it('should save a tap event to the database', async () => {
       const tapEvent: IAppEvent = {
         id: uuidv4(),
-        type: TRICI_APP_EVENT.FRONTMOST_APP_CHANGED,
+        type: TriciAppEvent.FRONTMOST_APP_CHANGED,
         timestamp: Date.now(),
         data: [
           {
@@ -80,14 +80,14 @@ describe('AppEventRepository', () => {
     it('should retrieve tap events from the database', async () => {
       const from = Date.now() - 10000; // 10 seconds ago
       const to = Date.now();
-      const type = TRICI_APP_EVENT.FRONTMOST_APP_CHANGED; // Assuming an event type
+      const type = TriciAppEvent.FRONTMOST_APP_CHANGED; // Assuming an event type
 
       const events = await repository.getAppEvents(from, to, type);
 
       console.log('retrieved events', events);
       expect(events).toHaveLength(1);
       const retrievedEvent = events[0];
-      expect(retrievedEvent.type).toEqual(TRICI_APP_EVENT.FRONTMOST_APP_CHANGED);
+      expect(retrievedEvent.type).toEqual(TriciAppEvent.FRONTMOST_APP_CHANGED);
 
       // Verify the events are retrieved correctly
       // This could include checking the length of the events array and properties of the events

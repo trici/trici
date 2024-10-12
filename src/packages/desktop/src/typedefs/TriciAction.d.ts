@@ -1,4 +1,4 @@
-import { SESSION_STARTED_BY, SESSION_STARTED_FROM, UsedApplicationRecord } from '@trici/models';
+import { SessionStartedBy, SESSION_STARTED_FROM, UsedApplicationRecord } from '@trici/models';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
 
 export type TriciAction =
@@ -8,7 +8,7 @@ export type TriciAction =
     }
   | {
       type: 'START_FOCUS_SESSION';
-      startedBy: SESSION_STARTED_BY;
+      startedBy: SessionStartedBy;
       startedFrom: SESSION_STARTED_FROM;
     }
   | {

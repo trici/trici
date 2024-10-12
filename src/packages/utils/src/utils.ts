@@ -4,7 +4,7 @@ import config from '@trici/config';
 import type { Logger } from '@trici/logger';
 import { v5 as uuidv5 } from 'uuid';
 import { generateSystemFingerprint } from './fingerprint';
-import { Constants, IPC_SERVER_EVENTS } from '@trici/models';
+import { Constants, IPCServerEvents } from '@trici/models';
 
 import ipc from 'node-ipc';
 
@@ -42,13 +42,13 @@ export function createIpcClient(showLogs: boolean = true, logger?: Logger): ITri
       return new Promise((resolve, reject) => {
         const ipcConfigId = config.ipcConfigId;
         ipc.connectTo(ipcConfigId, () => {
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.CONNECT, () => {
-            ipc.of[ipcConfigId].emit(IPC_SERVER_EVENTS.PING, { msg: 'ping' });
+          ipc.of[ipcConfigId].on(IPCServerEvents.CONNECT, () => {
+            ipc.of[ipcConfigId].emit(IPCServerEvents.PING, { msg: 'ping' });
           });
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.DISCONNECT, () => {
+          ipc.of[ipcConfigId].on(IPCServerEvents.DISCONNECT, () => {
             // console.log("Client disconnected from node-ipc server");
           });
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.PING, message => {
+          ipc.of[ipcConfigId].on(IPCServerEvents.PING, message => {
             console.log('Client received message from node-ipc server: ', message);
             // const response = JSON.parse(message);
             // console.log("Client received message from node-ipc server: ", response);
@@ -74,23 +74,23 @@ export function createIpcClient(showLogs: boolean = true, logger?: Logger): ITri
         }, 1500); // Adjust the timeout duration (in milliseconds) as needed
 
         ipc.connectTo(ipcConfigId, () => {
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.CONNECT, () => {
+          ipc.of[ipcConfigId].on(IPCServerEvents.CONNECT, () => {
             clearTimeout(connectionTimeout);
-            ipc.of[ipcConfigId].emit(IPC_SERVER_EVENTS.CLI_MESSAGE, msg);
+            ipc.of[ipcConfigId].emit(IPCServerEvents.CLI_MESSAGE, msg);
           });
 
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.DISCONNECT, () => {
+          ipc.of[ipcConfigId].on(IPCServerEvents.DISCONNECT, () => {
             console.log('Client disconnected from node-ipc server');
           });
 
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.ERROR, err => {
+          ipc.of[ipcConfigId].on(IPCServerEvents.ERROR, err => {
             clearTimeout(connectionTimeout);
             const connectError = new Error(`${err.message}`);
             connectError.name = 'ConnectError';
             reject(connectError);
           });
 
-          ipc.of[ipcConfigId].on(IPC_SERVER_EVENTS.CLI_MESSAGE, response => {
+          ipc.of[ipcConfigId].on(IPCServerEvents.CLI_MESSAGE, response => {
             // console.log("got resp: " + JSON.stringify(response));
             resolve(response);
           });

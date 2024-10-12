@@ -7,7 +7,7 @@
  */
 
 import { App, app, Menu, Tray } from 'electron';
-import { SESSION_STARTED_BY, SESSION_STARTED_FROM, TrayState, TRICI_APP_EVENT } from '@trici/models';
+import { SessionStartedBy, SessionStartedFrom, TrayState, TriciAppEvent } from '@trici/models';
 import type { Logger } from '@trici/logger';
 import { dispatch, IActionDispatcher } from './ActionDispatcher';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
@@ -85,8 +85,8 @@ class TrayService implements ITriciDesktopService, ITrayService {
           click: () => {
             dispatch({
               type: 'START_FOCUS_SESSION',
-              startedBy: SESSION_STARTED_BY.USER,
-              startedFrom: SESSION_STARTED_FROM.TRAY,
+              startedBy: SessionStartedBy.USER,
+              startedFrom: SessionStartedFrom.TRAY,
             });
           },
         },
@@ -156,11 +156,11 @@ class TrayService implements ITriciDesktopService, ITrayService {
   }
 
   private registerAppEventHandlers(): void {
-    this.eventBus.on(TRICI_APP_EVENT.FOCUS_SESSION_STARTED, () => {
+    this.eventBus.on(TriciAppEvent.FOCUS_SESSION_STARTED, () => {
       console.log("TrayService: Received event 'FOCUS_SESSION_STARTED'");
       this.changeTrayState(TrayState.SESSION_IN_PROGRESS);
     });
-    this.eventBus.on(TRICI_APP_EVENT.FOCUS_SESSION_ENDED, () => {
+    this.eventBus.on(TriciAppEvent.FOCUS_SESSION_ENDED, () => {
       console.log("TrayService: Received event 'FOCUS_SESSION_ENDED'");
       this.changeTrayState(TrayState.DEFAULT);
     });

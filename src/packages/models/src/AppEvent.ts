@@ -1,17 +1,17 @@
 import Immutable from 'immutable';
 import { Constants } from './Constants';
-import { TRICI_APP_EVENT } from './enums';
+import { TriciAppEvent } from './enums';
 
 export interface IAppEvent {
   id: string;
-  type: TRICI_APP_EVENT;
+  type: TriciAppEvent;
   timestamp: number;
   data: Array<any>;
 }
 
 const AppEventSchema: IAppEvent = {
   id: Constants.UNINITIALIZED_ID,
-  type: TRICI_APP_EVENT.NOT_SET,
+  type: TriciAppEvent.NOT_SET,
   timestamp: 0,
   data: [],
 };
@@ -23,7 +23,7 @@ export class AppEvent extends AppEventRecord {
     if (typeof appEvent === 'undefined' || appEvent === null) {
       super({
         id: Constants.UNINITIALIZED_ID,
-        type: TRICI_APP_EVENT.NOT_SET,
+        type: TriciAppEvent.NOT_SET,
         timestamp: 0,
         data: [],
       });

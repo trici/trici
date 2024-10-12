@@ -1,10 +1,10 @@
-import { IAppEvent, TRICI_APP_EVENT } from '@trici/models';
+import { IAppEvent, TriciAppEvent } from '@trici/models';
 import sqlite3 from 'sqlite3';
 import { Logger } from '@trici/logger';
 
 export interface IAppEventRepository {
   save(tapEvent: IAppEvent): Promise<void>;
-  getAppEvents(from: number, to: number, type: TRICI_APP_EVENT, count: number): Promise<Array<IAppEvent>>;
+  getAppEvents(from: number, to: number, type: TriciAppEvent, count: number): Promise<Array<IAppEvent>>;
 }
 
 export class AppEventRepository implements IAppEventRepository {
@@ -40,7 +40,7 @@ export class AppEventRepository implements IAppEventRepository {
   public async getAppEvents(
     from: number,
     to: number,
-    type: TRICI_APP_EVENT,
+    type: TriciAppEvent,
     count: number = 20,
   ): Promise<Array<IAppEvent>> {
     if (!this.db) {

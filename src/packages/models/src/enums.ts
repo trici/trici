@@ -3,13 +3,13 @@ export enum TrayState {
   SESSION_IN_PROGRESS = 'SESSION_IN_PROGRESS',
 }
 
-export enum SESSION_STARTED_BY {
+export enum SessionStartedBy {
   NOT_SET = 'NOT_SET',
   USER = 'USER',
   TRICI_ACTIVITY = 'TRICI_ACTIVITY',
 }
 
-export enum SESSION_STARTED_FROM {
+export enum SessionStartedFrom {
   NOT_SET = 'NOT_SET',
   TRAY = 'TRAY',
   CLI = 'CLI',
@@ -17,26 +17,26 @@ export enum SESSION_STARTED_FROM {
   APP_EVENT = 'APP_EVENT',
 }
 
-export enum CLI_MESSAGE_TYPE {
+export enum CLIMessageType {
   START_FOCUS_SESSION = 'START_FOCUS_SESSION',
   STOP_FOCUS_SESSION = 'STOP_FOCUS_SESSION',
   GET_STATUS = 'GET_STATUS',
 }
 
-export enum IPC_SERVER_EVENTS {
+export enum IPCServerEvents {
   CONNECT = 'connect',
   PING = 'ping',
   CLI_MESSAGE = 'climessage',
   DISCONNECT = 'disconnect',
   ERROR = 'error',
 }
-export enum KEY_PARTS {
+export enum KeyParts {
   FOCUS_SESSION = 'fcs',
   DAILY_USER_ACTIVITY = 'dua',
   USER_PREFERENCES = 'upref',
 }
 
-export enum TRICI_APP_EVENT {
+export enum TriciAppEvent {
   NOT_SET = 'not-set',
   FOCUS_SESSION_STARTED = 'focus-session-started',
   FOCUS_SESSION_ENDED = 'focus-session-ended',
@@ -54,13 +54,13 @@ export enum TRICI_APP_EVENT {
   USER_MAY_BE_WORKING = 'user-may-be-working',
 }
 
-export enum NODE_ENV {
+export enum NodeEnv {
   PRODUCTION = 'production',
   DEVELOPMENT = 'development',
   TEST = 'test',
 }
 
-export enum PLATFORM {
+export enum Platform {
   darwin = 'darwin',
   win32 = 'win32',
   linux = 'linux',

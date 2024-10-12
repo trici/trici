@@ -7,14 +7,7 @@
 import { AppObserverService } from '@trici/app-observer';
 import { ITriciDocRepository, IAppEventRepository } from '@trici/dal';
 import { Logger } from '@trici/logger';
-import {
-  Constants,
-  KEY_PARTS,
-  UserPreferences,
-  IUserPreferences,
-  UsedApplication,
-  TRICI_APP_EVENT,
-} from '@trici/models';
+import { Constants, KeyParts, UserPreferences, IUserPreferences, UsedApplication, TriciAppEvent } from '@trici/models';
 import { generateUninitializedTriciId, isWebBrowser } from '@trici/utils';
 import { app } from 'electron/main';
 import fs from 'fs/promises';
@@ -30,7 +23,7 @@ export interface IMainProcessDataAccessService {
     { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | []
   >;
   getUsedApplications(): Promise<UsedApplication[]>;
-  getTriciAppEvents(fromTime: number, toTime: number, type: TRICI_APP_EVENT, count: number): Promise<any>;
+  getTriciAppEvents(fromTime: number, toTime: number, type: TriciAppEvent, count: number): Promise<any>;
 }
 
 export class MainProcessDataAccessService implements IMainProcessDataAccessService {
@@ -86,7 +79,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       console.log('getUserPreferences', result);
       let userPreferences = new UserPreferences(result);
       if (userPreferences._id === Constants.UNINITIALIZED_ID) {
-        const correctUnitializedId = generateUninitializedTriciId(installationId, KEY_PARTS.USER_PREFERENCES);
+        const correctUnitializedId = generateUninitializedTriciId(installationId, KeyParts.USER_PREFERENCES);
         userPreferences = userPreferences.set('_id', correctUnitializedId);
       }
       return userPreferences;
@@ -203,7 +196,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
   public async getTriciAppEvents(
     fromTime: number,
     toTime: number,
-    type: TRICI_APP_EVENT = TRICI_APP_EVENT.FRONTMOST_APP_CHANGED,
+    type: TriciAppEvent = TriciAppEvent.FRONTMOST_APP_CHANGED,
     count: number = 20,
   ): Promise<any> {
     try {

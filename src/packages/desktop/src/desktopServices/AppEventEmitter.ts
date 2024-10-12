@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import { IAppEventRepository } from '@trici/dal';
 import { IAppEvent, AppEvent, getEnumKeyFromValue } from '@trici/models';
 import { v4 as uuidv4 } from 'uuid';
-import { Constants, TRICI_APP_EVENT } from '@trici/models';
+import { Constants, TriciAppEvent } from '@trici/models';
 
 export class AppEventEmitter extends EventEmitter {
   private static instance: AppEventEmitter;
@@ -25,11 +25,11 @@ export class AppEventEmitter extends EventEmitter {
     if (!this.repoInitialized || this._repo === null) {
       throw new Error('AppEventEmitter.saveEvent: repo not initialized');
     }
-    const eventTypeKey = getEnumKeyFromValue(TRICI_APP_EVENT, eventName.toString());
+    const eventTypeKey = getEnumKeyFromValue(TriciAppEvent, eventName.toString());
     if (eventTypeKey === null) {
       throw new Error(`AppEventEmitter.saveEvent: eventTypeKey is null for eventName ${eventName.toString()}`);
     }
-    const eventType = TRICI_APP_EVENT[eventTypeKey];
+    const eventType = TriciAppEvent[eventTypeKey];
     let event = new AppEvent();
     const timestamp = Date.now();
     const eventId = uuidv4();
