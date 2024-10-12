@@ -14,7 +14,6 @@ interface IFocusSessionType {
   sessionDidStart: boolean;
   recordingProcessCrashedOnStart: boolean;
   displayUnits: any[];
-  screenToRecord: number;
   shouldHaveRecording: boolean;
   activities: any[];
   startedBy: SESSION_STARTED_BY;
@@ -30,7 +29,6 @@ const FocusSessionSchema: IFocusSessionType = {
   sessionDidStart: false,
   recordingProcessCrashedOnStart: false,
   displayUnits: [],
-  screenToRecord: 0,
   shouldHaveRecording: true,
   activities: [],
   startedBy: SESSION_STARTED_BY.NOT_SET,
@@ -51,7 +49,6 @@ export class FocusSession extends FocusSessionRecord {
         sessionDidStart: false,
         recordingProcessCrashedOnStart: false,
         displayUnits: [],
-        screenToRecord: 0,
         shouldHaveRecording: false,
         activities: [],
         startedBy: SESSION_STARTED_BY.NOT_SET,
@@ -67,7 +64,6 @@ export class FocusSession extends FocusSessionRecord {
         sessionDidStart: focusSession.sessionDidStart,
         recordingProcessCrashedOnStart: focusSession.recordingProcessCrashedOnStart,
         displayUnits: focusSession.displayUnits,
-        screenToRecord: focusSession.screenToRecord,
         shouldHaveRecording: focusSession.shouldHaveRecording,
         activities: focusSession.activities,
         startedBy: focusSession.startedBy,

@@ -44,7 +44,6 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
 
   static #createNewFocusSession = (startedBy: SESSION_STARTED_BY, startedFrom: SESSION_STARTED_FROM): FocusSession => {
     const displayUnits = screen.getAllDisplays();
-    const screenToRecord = displayUnits.length > 1 ? userPreferences.defaultScreenToRecord : 0;
     return new FocusSession({
       _id: generateNewTriciId(installationId, KEY_PARTS.FOCUS_SESSION),
       startTime: Date.now(),
@@ -54,7 +53,6 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
       sessionDidStart: true,
       recordingProcessCrashedOnStart: false,
       displayUnits: displayUnits,
-      screenToRecord: screenToRecord,
       shouldHaveRecording: true,
       activities: [],
       startedBy: startedBy,
@@ -111,31 +109,11 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
       console.log('Focus session started: ', focusSession.toJS());
     } catch (error: any) {
       let response;
-      if (error instanceof DisplayNotSelectedError) {
-        response = {
-          success: false,
-          message:
-            'Error starting focus session: Multiple monitors detected. Please set the default screen to record in the settings.',
-        };
-        if (startedBy === SESSION_STARTED_BY.TRICI_ACTIVITY) {
-          dispatch({
-            type: 'SHOW_ALERT_WINDOW',
-            args: { alertType: 'SCREEN_TO_RECORD_NOT_SET_AUTO_SESSION_START', quitAppOnClose: false },
-          });
-        } else {
-          dispatch({
-            type: 'SHOW_ALERT_WINDOW',
-            args: { alertType: 'SCREEN_TO_RECORD_NOT_SET', quitAppOnClose: false },
-          });
-        }
-        // this.appEventEmitter.emit(TRICI_APP_EVENT.SESSION_STARTED_WITH_DISPLAY_TO_RECORD_NOT_SET, startedBy);
-      } else {
         response = { success: false, message: `Error starting focus session: ${error.message}` };
         dispatch({
           type: 'SHOW_ALERT_WINDOW',
           args: { alertType: 'ALERT_ERROR_MESSAGE', quitAppOnClose: false, message: response.message },
         });
-      }
 
       console.log(response);
     }
@@ -159,11 +137,8 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
       throw new Error('Focus session already in progress');
     }
     // Add rules to check if a focus session can be started
+    // Removing the below business rule as the improved recorder can record the active screen amongst multiple screens.
     // If there are multiple monitors, then the user should have preselcted the monitor on which the focus session should be recorded
-    const displays = screen.getAllDisplays();
-    if (displays.length > 1 && userPreferences.defaultScreenToRecord === Constants.UNINITIALIZED_NUMBER) {
-      throw new DisplayNotSelectedError();
-    } else {
       try {
         this.#currentFocusSession = FocusSessionService.#createNewFocusSession(startedBy, startedFrom);
         this.#repository.save(this.#currentFocusSession.toJS(), Constants.UNINITIALIZED_ID);
@@ -173,7 +148,6 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
       } catch (error: any) {
         throw new Error('Error starting focus session: ' + error.message);
       }
-    }
   }
 
   public async endFocusSession(): Promise<FocusSession> {

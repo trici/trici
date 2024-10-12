@@ -47,7 +47,6 @@ export enum TRICI_APP_EVENT {
   USER_GOING_INACTIVE = 'user-going-inactive',
   USER_HYPER_ACTIVE = 'user-hyper-active',
   USER_BECOMING_HYPER_ACTIVE = 'user-becoming-hyper-active',
-  SESSION_STARTED_WITH_DISPLAY_TO_RECORD_NOT_SET = 'session-started-with-display-to-record-not-set',
   SCREEN_RECORDING_PERMISSION_GRANTED = 'screen-recording-permission-granted',
   FRONTMOST_APP_CHANGED = 'frontmost-app-changed',
   USER_STARTED_WORKING = 'user-started-working',
@@ -70,8 +69,6 @@ export enum PLATFORM {
 export enum AlertWindowMessageType {
   NONE = 'NONE',
   SCREEN_RECORDING_PERMISSION_REVOKED = 'SCREEN_RECORDING_PERMISSION_REVOKED',
-  SCREEN_TO_RECORD_NOT_SET = 'SCREEN_TO_RECORD_NOT_SET',
-  SCREEN_TO_RECORD_NOT_SET_AUTO_SESSION_START = 'SCREEN_TO_RECORD_NOT_SET_AUTO_SESSION_START',
 }
 
 // It is not clear what will be the category for the browser. Will it be 'PROBABLY_WORK' or 'PROBABLY_DISTRACT'?

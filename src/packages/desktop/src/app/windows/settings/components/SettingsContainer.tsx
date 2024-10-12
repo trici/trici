@@ -6,7 +6,6 @@ import { GlobalShortcuts } from './GlobalShortcuts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RendererRepository } from '../../../dataaccess/RendererRepository';
 import { IBridgeAPIInterface } from '../../../../typedefs/preload';
-import { SelectScreenToRecord } from './SelectScreenToRecord';
 import { IMessageFromMain } from '../../../../typedefs/preload';
 import { Surface } from '@singhshashi/proactive';
 import { Applications } from './Applications';
@@ -38,12 +37,6 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
         label: 'Shortcuts',
         icon: 'Keyboard',
         isActive: isSettingsItemActive(SettingsKey.SHORTCUTS),
-      },
-      {
-        key: SettingsKey.SCREEN_TO_RECORD,
-        label: 'Screen to Record',
-        icon: 'Display',
-        isActive: isSettingsItemActive(SettingsKey.SCREEN_TO_RECORD),
       },
       {
         key: SettingsKey.APPLICATIONS,
@@ -165,9 +158,6 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
           <div className="h-full w-full px-3 py-2 shadow-sm">
             {activeItem && activeItem.key === SettingsKey.SHORTCUTS && (
               <GlobalShortcuts userPreferences={userPreferencesQuery.data} onSave={_updateUserPreferences} />
-            )}
-            {activeItem && activeItem.key === SettingsKey.SCREEN_TO_RECORD && (
-              <SelectScreenToRecord userPreferences={userPreferencesQuery.data} onSave={_updateUserPreferences} />
             )}
             {activeItem && activeItem.key === SettingsKey.APPLICATIONS && <Applications />}
             {activeItem && activeItem.key === SettingsKey.FOCUS_SESSION && <div>Focus Session</div>}

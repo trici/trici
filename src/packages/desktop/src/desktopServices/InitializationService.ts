@@ -26,7 +26,6 @@ import { AppEventEmitter } from './AppEventEmitter';
 import { ScreenRecordingPlugin } from '../plugins/ScreenRecordingPlugin';
 import actionDispatcher, { dispatch } from './ActionDispatcher';
 import { IUsedApplication, UserPreferences } from '@trici/models';
-import { AskWhichScreenToRecordPlugin } from '../plugins/AskWhichScreenToRecordPlugin';
 import { IWindowManager } from './WindowManager';
 import { GlobalShortcutService } from './GlobalShortcutService';
 import { MainProcessDataAccessService } from './MainProcessDataAccessService';
@@ -77,8 +76,6 @@ function initializeLogger() {
 function regiserCorePlugins(pluginManager: PluginManager, recorder: TriciRecorder, windowManager: IWindowManager) {
   const screenRecordingPlugin = new ScreenRecordingPlugin(recorder);
   pluginManager.register(screenRecordingPlugin);
-  const askWhichScreenToRecordPlugin = new AskWhichScreenToRecordPlugin(windowManager);
-  pluginManager.register(askWhichScreenToRecordPlugin);
 }
 
 export interface IInitializationService {
