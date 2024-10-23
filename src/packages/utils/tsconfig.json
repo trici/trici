@@ -9,6 +9,6 @@
     "baseUrl": "./",
 	},
 	"include": [
-		"src/**/*.ts","__tests__/*.ts"
+		"src/**/*.ts"
 	],
 }
