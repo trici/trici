@@ -11,7 +11,7 @@ const deleteDirectoryWithContents = require('@trici/utils').deleteDirectoryWithC
  */
 
 const ffmpegPath = path.join(__dirname, '..', 'bin', 'ffmpeg');
-const waterMarkImagePath = path.join(__dirname, '..', 'bin', 'trici_watermark.png');
+const waterMarkImagePath = path.join(__dirname, '..', 'temp', 'trici_watermark.png');
 const recordingStorageLocation = path.join(__dirname, '..', 'recordings');
 
 async function runTest() {
