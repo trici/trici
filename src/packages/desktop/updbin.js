@@ -41,7 +41,6 @@ function copyDir(src, dest) {
   }
 }
 
-
 console.log(`Deleting ${dest}...`);
 deleteDir(dest);
 
@@ -77,19 +76,19 @@ fs.stat(triciobserverSrc, (err, stats) => {
 });
 
 // copy recorder binary from recorder/bin to bin
-const recorderDevSrc = path.resolve(__dirname, '..', 'recorder', 'bin', 'dev', 'recorder');
-const recorderDevDest = path.resolve(__dirname, 'bin', 'dev', 'recorder');
+const recorderDevSrc = path.resolve(__dirname, '..', 'recorder', 'bin', 'dev', 'Recorder');
+const recorderDevDest = path.resolve(__dirname, 'bin', 'dev', 'Recorder');
 fs.stat(recorderDevSrc, (err, stats) => {
   if (err) {
-    console.log('Binary not found in recorder/bin/dev/recorder....');
+    console.log('Binary not found in recorder/bin/dev/Recorder....');
   } else {
     console.log(`Copying ${recorderDevSrc} to ${recorderDevDest}...`);
     fs.copyFileSync(recorderDevSrc, recorderDevDest);
   }
 });
 
-const recorderSrc = path.resolve(__dirname, '..', 'recorder', 'bin', 'recorder');
-const recorderDest = path.resolve(__dirname, 'bin', 'recorder');
+const recorderSrc = path.resolve(__dirname, '..', 'recorder', 'bin', 'Recorder');
+const recorderDest = path.resolve(__dirname, 'bin', 'Recorder');
 fs.stat(recorderSrc, (err, stats) => {
   if (err) {
     console.log('Binary not found in recorder/bin/recorder....');
@@ -98,7 +97,6 @@ fs.stat(recorderSrc, (err, stats) => {
     fs.copyFileSync(recorderSrc, recorderDest);
   }
 });
-
 
 //copy ffmpeg binary from node_modules to bin
 const ffmpegSrc = path.resolve(__dirname, '..', 'desktop', 'node_modules', 'ffmpeg-static', 'ffmpeg');
