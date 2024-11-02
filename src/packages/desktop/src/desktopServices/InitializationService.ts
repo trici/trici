@@ -175,8 +175,8 @@ export const InitializationService: IInitializationService = {
       const recorderPath = isRunningInAsar
         ? path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'bin', 'Recorder')
         : config.builtFor === 'dev'
-        ? path.join(app.getAppPath(), '..', 'bin', 'dev', 'Recorder')
-        : path.join(app.getAppPath(), '..', 'bin', 'Recorder');
+        ? path.join(app.getAppPath(), 'bin', 'dev', 'Recorder')
+        : path.join(app.getAppPath(), 'bin', 'Recorder');
       const triciRecorder = new TriciRecorder(ffmpegPath, logger, recorderPath);
 
       // Initialize the infra to listen to queries from the renderer process
