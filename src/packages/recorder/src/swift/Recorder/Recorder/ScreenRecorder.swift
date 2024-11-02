@@ -70,8 +70,10 @@ class ScreenRecorder: NSObject {
         streamConfig.showsCursor = true
         streamConfig.pixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
 //        streamConfig.pixelFormat = kCVPixelFormatType_32BGRA
-        streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: 7)
+        streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: 12)
         streamConfig.scalesToFit = true
+        
+        streamConfig.queueDepth = 5
         
         return streamConfig
         
@@ -208,16 +210,37 @@ class ScreenRecorder: NSObject {
               let startTime = Date()
               do {
                   for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
-                      // Dispatch the write operation to the writeQueue
-                      writeQueue.async {
-                          self.namedPipeFileHandle?.write(rawData)
-                          do {
-                              try self.namedPipeFileHandle?.synchronize()
-                          } catch {
-                              self.logger.error("Failed to synchronize data to pipe: \(error.localizedDescription)")
-                          }
-                      }
-                      frameCounter += 1
+                    let frameReceivedTime = Date()
+                        
+                    // create a copy of the data so that the object is discarded and the surface is returned to the pool
+                    // this prevents frame loss
+                    let copiedData = Data(rawData)
+                    
+                        // Dispatch the write operation to the writeQueue
+                        writeQueue.async {
+                            self.namedPipeFileHandle?.write(copiedData)
+                            do {
+                                try self.namedPipeFileHandle?.synchronize()
+                            } catch {
+                                self.logger.error("Failed to synchronize data to pipe: \(error.localizedDescription)")
+                            }
+                        }
+                        let frameProcessedTime = Date()
+                        let processingTime = frameProcessedTime.timeIntervalSince(frameReceivedTime)
+                        
+//                        self.logger.info("Frame \(frameCounter) processing time: \(processingTime) seconds")
+                        
+                        frameCounter += 1
+//                      // Dispatch the write operation to the writeQueue
+//                      writeQueue.async {
+//                          self.namedPipeFileHandle?.write(rawData)
+//                          do {
+//                              try self.namedPipeFileHandle?.synchronize()
+//                          } catch {
+//                              self.logger.error("Failed to synchronize data to pipe: \(error.localizedDescription)")
+//                          }
+//                      }
+//                      frameCounter += 1
                       
                   }
                   

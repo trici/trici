@@ -18,39 +18,86 @@ class CaptureEngine: NSObject, @unchecked Sendable {
     private let videoSampleBufferQueue = DispatchQueue(label: "com.gettrici.Recorder.VideoSampleBufferQueue")
 
     private var continuation: AsyncThrowingStream<Data, Error>.Continuation?
+  
+  var lastFrameTime: Date?
     
   init(logger:Logger) {
     self.logger = logger
   }
-    /// Start capturing and directly handle raw video data.
-    func startCapture(configuration: SCStreamConfiguration, filter: SCContentFilter) -> AsyncThrowingStream<Data, Error> {
-        AsyncThrowingStream<Data, Error> { continuation in
+  
+  func startCapture(configuration: SCStreamConfiguration, filter: SCContentFilter) -> AsyncThrowingStream<Data, Error> {
+      AsyncThrowingStream<Data, Error> { continuation in
           self.continuation = continuation
+          
           // The stream output object.
-            let streamOutput = CaptureEngineStreamOutput(continuation: continuation)
-            self.streamOutput = streamOutput
+          let streamOutput = CaptureEngineStreamOutput(continuation: continuation)
+          self.streamOutput = streamOutput
           
-          
-            
-            streamOutput.sampleBufferHandler = { sampleBuffer in
-                if let data = self.processSampleBuffer(sampleBuffer) {
-                  let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-                       self.logger.info("Frame timestamp: \(pts.seconds)")
-                    continuation.yield(data)
-                }
-            }
+          // Initialize lastFramePTS
+          var lastFramePTS: CMTime?
 
-            do {
-                self.stream = SCStream(filter: filter, configuration: configuration, delegate: streamOutput)
-                
-                // Add a stream output to capture screen content.
-                try self.stream?.addStreamOutput(streamOutput, type: .screen, sampleHandlerQueue: self.videoSampleBufferQueue)
-                self.stream?.startCapture()
-            } catch {
-                continuation.finish(throwing: error)
-            }
-        }
-    }
+          streamOutput.sampleBufferHandler = { sampleBuffer in
+              if let data = self.processSampleBuffer(sampleBuffer) {
+                  let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+                  
+                  // Calculate the interval between frames
+                  if let lastPTS = lastFramePTS {
+                      let intervalSeconds = pts.seconds - lastPTS.seconds
+//                      self.logger.info("Interval between frames: \(intervalSeconds) seconds")
+                  } else {
+                      self.logger.info("First frame received.")
+                  }
+                  
+                  // Update the last frame timestamp
+                  lastFramePTS = pts
+                  
+//                  self.logger.info("Frame timestamp: \(pts.seconds)")
+                  continuation.yield(data)
+              }
+          }
+
+          do {
+              self.stream = SCStream(filter: filter, configuration: configuration, delegate: streamOutput)
+              
+              // Add a stream output to capture screen content.
+              try self.stream?.addStreamOutput(streamOutput, type: .screen, sampleHandlerQueue: self.videoSampleBufferQueue)
+              self.stream?.startCapture()
+          } catch {
+              continuation.finish(throwing: error)
+          }
+      }
+  }
+    /// Start capturing and directly handle raw video data.
+//    func startCapture(configuration: SCStreamConfiguration, filter: SCContentFilter) -> AsyncThrowingStream<Data, Error> {
+//     
+//      
+//        AsyncThrowingStream<Data, Error> { continuation in
+//          self.continuation = continuation
+//          // The stream output object.
+//            let streamOutput = CaptureEngineStreamOutput(continuation: continuation)
+//            self.streamOutput = streamOutput
+//          
+//          
+//            
+//            streamOutput.sampleBufferHandler = { sampleBuffer in
+//                if let data = self.processSampleBuffer(sampleBuffer) {
+//                  let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+//                       self.logger.info("Frame timestamp: \(pts.seconds)")
+//                    continuation.yield(data)
+//                }
+//            }
+//
+//            do {
+//                self.stream = SCStream(filter: filter, configuration: configuration, delegate: streamOutput)
+//                
+//                // Add a stream output to capture screen content.
+//                try self.stream?.addStreamOutput(streamOutput, type: .screen, sampleHandlerQueue: self.videoSampleBufferQueue)
+//                self.stream?.startCapture()
+//            } catch {
+//                continuation.finish(throwing: error)
+//            }
+//        }
+//    }
   
   private func processSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> Data? {
       guard let pixelBuffer = sampleBuffer.imageBuffer else { return nil }
