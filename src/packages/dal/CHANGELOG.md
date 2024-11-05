@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0](https://github.com/trici/trici/compare/@trici/dal@1.1.1...@trici/dal@2.0.0) (2024-11-05)
+
+### Bug Fixes
+
+- **@trici/dal:** accept knexfile as a parameter to init ([d160214](https://github.com/trici/trici/commit/d160214368dcaaf3e001082d4e885351cf3db437))
+- **@trici/dal:** added count of records to be returned ([94148bd](https://github.com/trici/trici/commit/94148bdfa97a62d3d8f46829226380f6ea22f535))
+- **@trici/dal:** dbManager should add the db name to the dataDirectoryPath ([2f86844](https://github.com/trici/trici/commit/2f86844b63580ca32429f5f12d373636fdf19b3d))
+- **@trici/dal:** save app_identifier as the unique identifier in the table ([02b866a](https://github.com/trici/trici/commit/02b866afbb7c205e8d5bb1a5b1915dfb9bafef5b))
+
+### Features
+
+- **@trici/dal:** added a repository for UsedApplications ([fd867f8](https://github.com/trici/trici/commit/fd867f880181ab597e63a1689ef6a508f46010ea))
+- Added repository to access Sqlite datastore ([2fd68be](https://github.com/trici/trici/commit/2fd68be10bc9619d916e1b693d633499d6424b2a))
+
+### BREAKING CHANGES
+
+- **@trici/dal:**
+
 ## [1.1.1](https://github.com/trici/trici/compare/@trici/dal@1.1.0...@trici/dal@1.1.1) (2023-09-08)
 
 **Note:** Version bump only for package @trici/dal

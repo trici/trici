@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0](https://github.com/trici/trici/compare/@trici/utils@1.3.1...@trici/utils@2.0.0) (2024-11-05)
+
+### Features
+
+- **@trici/utils:** added a method to check whether the passed app name is a web browser ([c1da792](https://github.com/trici/trici/commit/c1da792e6bbed0590a22389866d5f3c554a5c291))
+
+### BREAKING CHANGES
+
+- **@trici/utils:**
+
 ## [1.3.1](https://github.com/trici/trici/compare/@trici/utils@1.3.0...@trici/utils@1.3.1) (2023-09-08)
 
 **Note:** Version bump only for package @trici/utils

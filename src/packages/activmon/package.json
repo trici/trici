@@ -1,6 +1,6 @@
 {
   "name": "@trici/activmon",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Capture the state of user activity",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

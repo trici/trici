@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.4.0](https://github.com/trici/trici/compare/@trici/app-observer@1.3.2...@trici/app-observer@1.4.0) (2024-11-05)
+
+### Bug Fixes
+
+- **@trici/app-observer:** Addition of bundleIdentifier should not break AppObserverResponse return type ([962719f](https://github.com/trici/trici/commit/962719feb54adca4dc698a86267c9eb70224fb84))
+- **@trici/app-observer:** changed the value of Info.plist field being used to get more consistent names ([c502a3c](https://github.com/trici/trici/commit/c502a3cc733d9c80d2fb2f6e43192e3d87e923c2))
+- **@trici/app-observer:** Name of the installed app should be same as running app ([83fad30](https://github.com/trici/trici/commit/83fad30094fca5f88be437e871cbe231f9e7c263))
+- **@trici/app-observer:** return bundleIdentifier alongwith existin app related info ([2141fc9](https://github.com/trici/trici/commit/2141fc97173a34c2840505af4fc05a4445a3bf2f))
+- **@trici/app-observer:** using bundleIdentifier to uniquely identify apps on Mac ([bd041be](https://github.com/trici/trici/commit/bd041be64a09523146fb2f738bd410f88d98a9c9))
+- **AppObserverService:** round off the time spent on application ([fd59a0b](https://github.com/trici/trici/commit/fd59a0bfe31dcceaec67b593c234607ff3742adb))
+- Update the binary location to use turiya ([e7f0ea7](https://github.com/trici/trici/commit/e7f0ea78cb9ef9ad46f094bca100d7eaca848a6a))
+
+### Features
+
+- **@trici/app-observer:** added a method to return a list of installed apps alongwith icons ([9711a4d](https://github.com/trici/trici/commit/9711a4d4b851979476722f2d27473e6b5c1786ae))
+- Added method to get the browser url ([68ea089](https://github.com/trici/trici/commit/68ea089377113d53cf3936a6c881c88ef2575f60))
+- **AppObserverService:** added new info to appChange data that is emitted ([2eb19bb](https://github.com/trici/trici/commit/2eb19bbdf3ceef404d19c3c29814741e2225b0eb))
+
 ## [1.3.2](https://github.com/trici/trici/compare/@trici/app-observer@1.3.1...@trici/app-observer@1.3.2) (2023-09-12)
 
 **Note:** Version bump only for package @trici/app-observer
