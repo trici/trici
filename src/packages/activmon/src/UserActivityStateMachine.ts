@@ -98,6 +98,11 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
           );
         },
       },
+      {
+        from: UserActivityState.HYPER_ACTIVE,
+        to: UserActivityState.ACTIVE,
+        condition: (context: TriciPingEventData) => context.idleTime > ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD,
+      },
     ];
   }
 
