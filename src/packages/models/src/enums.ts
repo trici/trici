@@ -36,6 +36,24 @@ export enum KeyParts {
   USER_PREFERENCES = 'upref',
 }
 
+export enum UserActivityState {
+  ACTIVE = 'ACTIVE',
+  GOING_INACTIVE = 'GOING_INACTIVE',
+  INACTIVE = 'INACTIVE',
+  AWAY = 'AWAY',
+  BECOMING_HYPER_ACTIVE = 'BECOMING_HYPER_ACTIVE',
+  HYPER_ACTIVE = 'HYPER_ACTIVE',
+}
+
+export enum ActivityTimeBounds {
+  USER_WENT_AWAY_THRESHOLD = 600,
+  INACTIVE_ACTIVE_THRESHOLD = 200,
+  GOING_INACTIVE_THRESHOLD = 40,
+  ACTIVE_HYPER_ACTIVE_THRESHOLD = 6,
+  BECOMING_HYPER_ACTIVE_THRESHOLD = 15,
+  HYPER_ACTIVE_THRESHOLD = 30,
+}
+
 export enum TriciAppEvent {
   NOT_SET = 'not-set',
   FOCUS_SESSION_STARTED = 'focus-session-started',

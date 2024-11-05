@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import config from '@trici/config';
 import { ProcessManagerSingleton, IProcessManager } from '@trici/pm';
+import { UserActivityStateMachineSingleton, IUserActivityStateMachine } from '@trici/activmon';
 import TrayService, { ITrayService } from './TrayService';
 import LoggingService from '@trici/logger';
 import AppJsonStorageService, { IAppJsonStorageService } from './AppJsonStorageService';
@@ -209,6 +210,8 @@ export const InitializationService: IInitializationService = {
         pluginManager.initialize();
         regiserCorePlugins(pluginManager, triciRecorder, windowManager);
 
+        const userActivityStateMachine = UserActivityStateMachineSingleton.getInstance(logger);
+
         // Start the UserActivityMonitor service
         const userActivityMonitorService = new UserActivityMonitorService(
           logger,
@@ -218,6 +221,7 @@ export const InitializationService: IInitializationService = {
           appEventEmitter,
           actionDispatcher,
           usedApplicationsService,
+          userActivityStateMachine,
         );
         userActivityMonitorService.initService();
         userActivityMonitorService.start();

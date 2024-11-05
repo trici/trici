@@ -9,6 +9,8 @@ import { ITriciDesktopService } from '../typedefs/ITriciDesktopService';
 import { IActionDispatcher } from './ActionDispatcher';
 import { TriciAction } from '../typedefs/TriciAction';
 import UsedApplicationsService from './UsedApplicationsService';
+import { UserActivityStateMachine } from '@trici/activmon';
+import { UserActivityState } from '@trici/models';
 
 export interface IUserActivityMonitorService {
   start(): Promise<void>;
@@ -19,14 +21,8 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   idleTimeServiceInstance: IdleTimeServiceInstance;
   appObserverServiceInstance: AppObserverService;
   logger: Logger;
+  userActivityStateMachine: UserActivityStateMachine;
   lastIdleTime: number;
-  userWentAwayAt: number;
-  userCameBackAt: number;
-  userBecameActiveAt: number;
-  userBecameSuperActiveAt: number;
-  userBecameHyperActiveAt: number;
-  userHyperActiveForInSeconds: number;
-  userBecameInactiveAt: number;
   todaysUserActitivity: DailyUserActivity | null;
   appJsonStorageService: IAppJsonStorageService;
   appEventEmitter: AppEventEmitter;
@@ -42,18 +38,13 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     appEventEmitter: AppEventEmitter,
     actionDispatcher: IActionDispatcher<TriciAction>,
     usedApplicationsService: UsedApplicationsService,
+    userActivityStateMachine: UserActivityStateMachine,
   ) {
     this.logger = logger;
     this.idleTimeServiceInstance = idleTimeServiceInstance;
     this.appObserverServiceInstance = appObserverServiceInstance;
+    this.userActivityStateMachine = userActivityStateMachine;
     this.lastIdleTime = -1;
-    this.userBecameActiveAt = 0;
-    this.userBecameSuperActiveAt = 0;
-    this.userBecameHyperActiveAt = 0;
-    this.userHyperActiveForInSeconds = 0;
-    this.userBecameInactiveAt = 0;
-    this.userWentAwayAt = 0;
-    this.userCameBackAt = 0;
     this.todaysUserActitivity = null;
     this.appJsonStorageService = appJsonStorageService;
     this.appEventEmitter = appEventEmitter;
@@ -68,80 +59,93 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
   handleTriciPing = (idleTime: number) => {
     const idleTimeDiff = this.lastIdleTime - idleTime;
-    if (idleTimeDiff > Constants.USER_WENT_AWAY_THRESHOLD) {
-      console.log('user-came-back');
-      this.appEventEmitter.emit(TriciAppEvent.USER_CAME_BACK);
-      // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userCameBack', data: {} });
-      this.userCameBackAt = Date.now();
-      this.userBecameActiveAt = this.userCameBackAt;
-      this.userBecameSuperActiveAt = this.userCameBackAt;
-      this.userWentAwayAt = 0;
-      this.userBecameInactiveAt = 0;
-      // NotificationService.showUserCameBackNotification();
-    } else if (idleTimeDiff > Constants.INACTIVE_ACTIVE_THRESHOLD) {
-      console.log('user-active');
-      this.appEventEmitter.emit(TriciAppEvent.USER_ACTIVE);
-      // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userActive', data: {} });
-      this.userBecameActiveAt = Date.now();
-      this.userBecameSuperActiveAt = this.userBecameActiveAt;
-      this.userBecameInactiveAt = 0;
-    }
-    if (idleTime > Constants.USER_WENT_AWAY_THRESHOLD) {
-      if (this.userWentAwayAt === 0) {
-        this.userWentAwayAt = Date.now();
-        // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userWentAway', data: {} });
-        console.log('user-went-away');
-        this.appEventEmitter.emit(TriciAppEvent.USER_WENT_AWAY);
-      }
-    } else if (idleTime > Constants.INACTIVE_ACTIVE_THRESHOLD) {
-      if (this.userBecameInactiveAt === 0) {
-        // NotificationService.showSessionEndedNotification();
-        console.log('user-inactive');
-        this.appEventEmitter.emit(TriciAppEvent.USER_INACTIVE);
-        // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userInactive', data: {} });
-        this.userBecameInactiveAt = Date.now();
-      }
-    } else if (idleTime > Constants.GOING_INACTIVE_THRESHOLD && idleTime <= Constants.GOING_INACTIVE_THRESHOLD + 2) {
-      console.log('user-going-inactive');
-      this.appEventEmitter.emit(TriciAppEvent.USER_GOING_INACTIVE);
-      // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userGoingInactive', data: {} });
-      // NotificationService.showGoingInactiveNotification();
-    } else if (idleTime < Constants.HYPER_ACTIVE_THRESHOLD) {
-      if (this.userBecameHyperActiveAt === 0) {
-        this.userBecameHyperActiveAt = Date.now();
-      } else {
-        this.userHyperActiveForInSeconds = (Date.now() - this.userBecameHyperActiveAt) / 1000;
-        if (
-          this.userHyperActiveForInSeconds > Constants.HYPER_ACTIVE_ZONE_BEGIN_TIME_IN_SECONDS &&
-          this.userHyperActiveForInSeconds <= Constants.HYPER_ACTIVE_ZONE_BEGIN_TIME_IN_SECONDS + 2
-        ) {
-          console.log('user-becoming-hyper-active');
-          console.log(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE);
-          this.appEventEmitter.emit(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE, {});
-          // NotificationService.useTrayToPromptToStart();
-        } else if (
-          this.userHyperActiveForInSeconds > Constants.HYPER_ACTIVE_ZONE_TIME_IN_SECONDS &&
-          this.userHyperActiveForInSeconds <= Constants.HYPER_ACTIVE_ZONE_TIME_IN_SECONDS + 2
-        ) {
-          console.log('user-hyper-active');
-          this.appEventEmitter.emit(TriciAppEvent.USER_HYPER_ACTIVE);
-          // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userHyperActive', data: {} });
-          // NotificationService.useTrayToPromptToStart();
-          // NotificationService.showPromptToStartFocusSession();
-          // set userBecameHyperActiveAt to zero after 5 minutes
-          const self = this;
-          setTimeout(() => {
-            self.userBecameHyperActiveAt = 0;
-          }, 300000);
-        }
-      }
-    } else if (this.userBecameHyperActiveAt !== 0) {
-      this.userBecameHyperActiveAt = 0;
-      this.userHyperActiveForInSeconds = (Date.now() - this.userBecameHyperActiveAt) / 1000;
-      if (this.userHyperActiveForInSeconds > Constants.HYPER_ACTIVE_ZONE_TIME_IN_SECONDS) {
-        //mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userHyperActiveEnd', data: {} });
-      }
-    }
+    this.userActivityStateMachine.handleEvent({
+      idleTime,
+      idleTimeDiff,
+    });
+
+    console.log(
+      'idleTime, lastIdleTime, idleTimeDiff, userActivityState',
+      idleTime,
+      this.lastIdleTime,
+      idleTimeDiff,
+      this.userActivityStateMachine.getCurrentState(),
+    );
+
+    // if (idleTimeDiff > Constants.USER_WENT_AWAY_THRESHOLD) {
+    //   console.log('user-came-back');
+    //   this.appEventEmitter.emit(TriciAppEvent.USER_CAME_BACK);
+    //   // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userCameBack', data: {} });
+    //   this.userCameBackAt = Date.now();
+    //   this.userBecameActiveAt = this.userCameBackAt;
+    //   this.userBecameSuperActiveAt = this.userCameBackAt;
+    //   this.userWentAwayAt = 0;
+    //   this.userBecameInactiveAt = 0;
+    //   // NotificationService.showUserCameBackNotification();
+    // } else if (idleTimeDiff > Constants.INACTIVE_ACTIVE_THRESHOLD) {
+    //   console.log('user-active');
+    //   this.appEventEmitter.emit(TriciAppEvent.USER_ACTIVE);
+    //   // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userActive', data: {} });
+    //   this.userBecameActiveAt = Date.now();
+    //   this.userBecameSuperActiveAt = this.userBecameActiveAt;
+    //   this.userBecameInactiveAt = 0;
+    // }
+    // if (idleTime > Constants.USER_WENT_AWAY_THRESHOLD) {
+    //   if (this.userWentAwayAt === 0) {
+    //     this.userWentAwayAt = Date.now();
+    //     // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userWentAway', data: {} });
+    //     console.log('user-went-away');
+    //     this.appEventEmitter.emit(TriciAppEvent.USER_WENT_AWAY);
+    //   }
+    // } else if (idleTime > Constants.INACTIVE_ACTIVE_THRESHOLD) {
+    //   if (this.userBecameInactiveAt === 0) {
+    //     // NotificationService.showSessionEndedNotification();
+    //     console.log('user-inactive');
+    //     this.appEventEmitter.emit(TriciAppEvent.USER_INACTIVE);
+    //     // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userInactive', data: {} });
+    //     this.userBecameInactiveAt = Date.now();
+    //   }
+    // } else if (idleTime > Constants.GOING_INACTIVE_THRESHOLD && idleTime <= Constants.GOING_INACTIVE_THRESHOLD + 2) {
+    //   console.log('user-going-inactive');
+    //   this.appEventEmitter.emit(TriciAppEvent.USER_GOING_INACTIVE);
+    //   // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userGoingInactive', data: {} });
+    //   // NotificationService.showGoingInactiveNotification();
+    // } else if (idleTime < Constants.HYPER_ACTIVE_THRESHOLD) {
+    //   if (this.userBecameHyperActiveAt === 0) {
+    //     this.userBecameHyperActiveAt = Date.now();
+    //   } else {
+    //     this.userHyperActiveForInSeconds = (Date.now() - this.userBecameHyperActiveAt) / 1000;
+    //     if (
+    //       this.userHyperActiveForInSeconds > Constants.HYPER_ACTIVE_ZONE_BEGIN_TIME_IN_SECONDS &&
+    //       this.userHyperActiveForInSeconds <= Constants.HYPER_ACTIVE_ZONE_BEGIN_TIME_IN_SECONDS + 2
+    //     ) {
+    //       console.log('user-becoming-hyper-active');
+    //       console.log(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE);
+    //       this.appEventEmitter.emit(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE, {});
+    //       // NotificationService.useTrayToPromptToStart();
+    //     } else if (
+    //       this.userHyperActiveForInSeconds > Constants.HYPER_ACTIVE_ZONE_TIME_IN_SECONDS &&
+    //       this.userHyperActiveForInSeconds <= Constants.HYPER_ACTIVE_ZONE_TIME_IN_SECONDS + 2
+    //     ) {
+    //       console.log('user-hyper-active');
+    //       this.appEventEmitter.emit(TriciAppEvent.USER_HYPER_ACTIVE);
+    //       // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userHyperActive', data: {} });
+    //       // NotificationService.useTrayToPromptToStart();
+    //       // NotificationService.showPromptToStartFocusSession();
+    //       // set userBecameHyperActiveAt to zero after 5 minutes
+    //       const self = this;
+    //       setTimeout(() => {
+    //         self.userBecameHyperActiveAt = 0;
+    //       }, 300000);
+    //     }
+    //   }
+    // } else if (this.userBecameHyperActiveAt !== 0) {
+    //   this.userBecameHyperActiveAt = 0;
+    //   this.userHyperActiveForInSeconds = (Date.now() - this.userBecameHyperActiveAt) / 1000;
+    //   if (this.userHyperActiveForInSeconds > Constants.HYPER_ACTIVE_ZONE_TIME_IN_SECONDS) {
+    //     //mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userHyperActiveEnd', data: {} });
+    //   }
+    // }
     this.lastIdleTime = idleTime;
   };
 
@@ -194,8 +198,36 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     });
   }
 
+  handleUserActivityStateChange = (state: UserActivityState) => {
+    switch (state) {
+      case UserActivityState.ACTIVE:
+        this.appEventEmitter.emit(TriciAppEvent.USER_ACTIVE);
+        break;
+      case UserActivityState.GOING_INACTIVE:
+        this.appEventEmitter.emit(TriciAppEvent.USER_GOING_INACTIVE);
+        break;
+      case UserActivityState.INACTIVE:
+        this.appEventEmitter.emit(TriciAppEvent.USER_INACTIVE);
+        break;
+      case UserActivityState.AWAY:
+        this.appEventEmitter.emit(TriciAppEvent.USER_WENT_AWAY);
+        break;
+      case UserActivityState.BECOMING_HYPER_ACTIVE:
+        this.appEventEmitter.emit(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE);
+        break;
+      case UserActivityState.HYPER_ACTIVE:
+        this.appEventEmitter.emit(TriciAppEvent.USER_HYPER_ACTIVE);
+        break;
+      default:
+        console.log('Unknown state');
+        break;
+    }
+  };
+
   public initService(): void {
     if (!this.isServiceInitialized) {
+      // Subsribe to state change events from the UserActivityStateMachine
+      this.userActivityStateMachine.on('stateChanged', this.handleUserActivityStateChange);
       this.registerActionHandlers();
       this.registerAppEventHandlers();
       this.isServiceInitialized = true;
