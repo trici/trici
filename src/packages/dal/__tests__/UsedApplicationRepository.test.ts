@@ -1,3 +1,4 @@
+console.log('Executing file UsedApplicationRepository');
 import { Logger } from '@trici/logger';
 import { SqliteDbManager } from '../src/SqliteDbManager';
 import { UsedApplicationRepository } from '../src/UsedApplicationRepository';
@@ -77,7 +78,7 @@ describe('UsedApplicationRepository', () => {
         iconPath: '',
       };
 
-      expect(async () => await repository.save(usedApplicationRecord)).not.toThrow();
+      await repository.save(usedApplicationRecord);
 
       const fetchedUsedApplicationRecord = await repository.get('Test Application');
       expect(fetchedUsedApplicationRecord).toMatchObject(usedApplicationRecord);

@@ -1,4 +1,9 @@
 /**
+ * Add table to capture used applications
+ * MigrationName: AddTableUsedApplication
+ */
+
+/**
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
