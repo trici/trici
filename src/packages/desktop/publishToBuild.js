@@ -22,9 +22,17 @@ console.log(`Copied bin ${binPath} to build ${buildPath}`);
 
 //delete the build dist folder
 fs.removeSync(path.join(buildPath, 'dist'));
-// Copy the dist folder to build
-fs.copySync(path.join(__dirname, 'dist'), path.join(buildPath, 'dist'));
-console.log(`Copied dist ${path.join(__dirname, 'dist')} to build ${path.join(buildPath, 'dist')}`);
+// Copy the contents of the dist folder to build, excluding dev and live subfolders
+const distPath = path.join(__dirname, 'dist');
+const buildDistPath = path.join(buildPath, 'dist');
+
+fs.copySync(distPath, buildDistPath, {
+  filter: src => {
+    const base = path.basename(src);
+    return base !== 'dev' && base !== 'live';
+  },
+});
+console.log(`Copied dist contents (excluding dev and live) from ${distPath} to build ${buildDistPath}`);
 
 //copy the resources folder to build
 //copy the @trici/config node module to build/node_modules
