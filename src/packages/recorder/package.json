@@ -24,6 +24,7 @@
     "build-dev:darwin": "pnpm run buildBinary-dev:darwin && pnpm run esbuild-dev && pnpm run build-types",
     "build-dev:win32": "pnpm run buildBinary-dev:win32 && pnpm run esbuild-dev && pnpm run build-types",
     "buildBinary-dev:darwin": "if [ -f 'bin/dev/Recorder' ]; then rm -rf bin/dev/Recorder; fi && xcodebuild -project src/swift/Recorder/Recorder.xcodeproj -scheme Recorder -configuration Debug -derivedDataPath src/swift/Recorder/build && cp src/swift/Recorder/build/Build/Products/Debug/Recorder bin/dev/Recorder && shasum -a 256 bin/dev/Recorder > dist/Recorder.sha256",
+    "buildBinary-prod:darwin": "if [ -f 'bin/Recorder' ]; then rm -rf bin/Recorder; fi && xcodebuild -project src/swift/Recorder/Recorder.xcodeproj -scheme Recorder -configuration Release -derivedDataPath src/swift/Recorder/build && cp src/swift/Recorder/build/Build/Products/Release/Recorder bin/Recorder && shasum -a 256 bin/Recorder > dist/Recorder.sha256",
     "build-prod": "run-script-os",
     "build-prod:darwin": "pnpm run buildBinary-prod:darwin && pnpm run esbuild-prod && pnpm run build-types",
     "build-prod:win32": "pnpm run buildBinary-prod:win32 && pnpm run esbuild-prod && pnpm run build-types",
