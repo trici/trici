@@ -22,8 +22,7 @@ export function ScreenRecordingPermissionsRequired() {
           <Button
             variant="primary"
             onClick={() => {
-              console.log('Opening System Preferences');
-              window.bridgeApi.sendMessage({ handler: 'openSystemPreferencesAndCloseAlert', args: {} });
+              window.bridgeApi.sendMessage({ handler: 'askForScreenRecordingPermissions', args: {} });
             }}
           >
             Open System Preferences

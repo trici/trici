@@ -46,6 +46,11 @@ export class WindowManager implements IWindowManager {
           case 'RELOAD_OPEN_WINDOWS':
             this._reloadOpenWindows();
             break;
+          case 'ASK_FOR_SCREEN_RECORDING_PERMISSIONS':
+            // this is a special case where if the ASK_FOR_SCREEN_RECORDING_PERMISSIONS action is dispatched due to alert window
+            // then we need to set the alert window to not be always on top.
+            this._setAlertWindowNotAlwaysOnTop();
+            break;
           case 'SHOW_ALERT_WINDOW':
             this._createAndShowAlertWindow(action.args.alertType, action.args.quitAppOnClose);
             break;
@@ -249,6 +254,8 @@ export class WindowManager implements IWindowManager {
         contextIsolation: true,
       },
     });
+
+    this.alertWindow.setAlwaysOnTop(true, 'floating');
     if (quitAppOnClose) {
       this.alertWindow.on('close', () => {
         console.log('Closing the app as quitAppOnClose is true');
@@ -276,6 +283,12 @@ export class WindowManager implements IWindowManager {
     if (this.alertWindow) {
       this.alertWindow.close();
       this.alertWindow = null;
+    }
+  }
+
+  private _setAlertWindowNotAlwaysOnTop(): void {
+    if (this.alertWindow) {
+      this.alertWindow.setAlwaysOnTop(false);
     }
   }
 
