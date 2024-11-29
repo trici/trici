@@ -93,7 +93,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
         {
           label: 'Settings',
           click: () => {
-            dispatch({ type: 'OPEN_SETTINGS_WINDOW', args: { section: SettingsKey.SCREEN_TO_RECORD } });
+            dispatch({ type: 'OPEN_SETTINGS_WINDOW', args: { section: SettingsKey.APPLICATIONS } });
           },
         },
         {
