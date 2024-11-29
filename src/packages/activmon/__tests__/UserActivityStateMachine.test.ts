@@ -172,6 +172,14 @@ describe('UserActivityStateMachine', () => {
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('from HYPER_ACTIVE to ACTIVE'));
   });
 
+  test('should reset startedBecomingHyperActiveAt when user is active and idleTime is more than ACTIVE_HYPER_ACTIVE_THRESHOLD', () => {
+    expect(stateMachine.getCurrentState()).toBe(UserActivityState.ACTIVE);
+    const initialEventData = { idleTime: ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD + 1, idleTimeDiff: -2 };
+    stateMachine.handleEvent(initialEventData);
+    expect(stateMachine.getCurrentState()).toBe(UserActivityState.ACTIVE);
+    expect(stateMachine['startedBecomingHyperActiveAt']).toBe(0);
+  });
+
   test('should not transition if no conditions are met', () => {
     const initialState = stateMachine['currentState'];
     const triciPingEventData = { idleTime: 0, idleTimeDiff: 0 }; // No transition conditions met
