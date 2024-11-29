@@ -3,6 +3,7 @@ import { ITriciPlugin } from '../typedefs/ITriciPlugin';
 import { TriciRecorder } from '@trici/recorder';
 import { app } from 'electron';
 import path from 'path';
+import fs from 'fs';
 export class ScreenRecordingPlugin implements ITriciPlugin {
   public name: string = 'ScreenRecordingPlugin';
   public version: string = '1.0.0';
@@ -31,10 +32,21 @@ export class ScreenRecordingPlugin implements ITriciPlugin {
     const recordingFileName = focusSession.get('startTime').toString();
     const includeWatermark = true;
     const recordingStorageLocation = global.userDataDirectoryCheckResult.recordingsDir.path;
+    const focusSessionRecordingsDir = path.join(recordingStorageLocation, recordingFileName);
+
+    if (!fs.existsSync(focusSessionRecordingsDir)) {
+      fs.mkdirSync(focusSessionRecordingsDir, { recursive: true });
+      console.log(`Directory created at: ${focusSessionRecordingsDir}`);
+    }
     const watermarkImagePath = isRunningInAsar
       ? path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'resources', 'images', 'trici_watermark.png') + ''
       : app.getAppPath() + '/resources/images/trici_watermark.png';
-    this.recorder.startLiveRecording(recordingFileName, recordingStorageLocation, includeWatermark, watermarkImagePath);
+    this.recorder.startLiveRecording(
+      recordingFileName,
+      focusSessionRecordingsDir,
+      includeWatermark,
+      watermarkImagePath,
+    );
     this.recorder.on('recordingProcessExited', code => {
       logger.debug('Recording process exited with code: ' + code);
     });
