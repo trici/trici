@@ -12,6 +12,7 @@ export interface IAppObserverService {
   stop(): void;
   getCurrentApp(): { appName: string; appIdentifier: string } | null;
   getInstalledApps(): Promise<{ name: string; iconPath: string; bundleIdentifier: string }[]>;
+  getActiveBrowserOpenedURL(): Promise<string | null>;
 }
 
 export type AppObserverResponse = {
@@ -135,6 +136,31 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
 
       // Send the command to the Swift app to get installed apps.
       this.child.stdin.write('getInstalledApps\n');
+    });
+  }
+
+  async getActiveBrowserOpenedURL(): Promise<string | null> {
+    if (!this.child || !this.child.stdin || !this.child.stdout) {
+      throw new Error('Child process not initialized.');
+    }
+
+    return new Promise<string>((resolve, reject) => {
+      const responseHandler = (data: Buffer) => {
+        try {
+          const appObserverResponse: AppObserverResponse = JSON.parse(data.toString('utf8'));
+          if (appObserverResponse.type === 'activeBrowserOpenedUrl') {
+            this.child.stdout.off('data', responseHandler);
+            resolve(appObserverResponse.response);
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      this.child.stdout.on('data', responseHandler);
+
+      // Send the command to the Swift app to get the active browser's opened URL.
+      this.child.stdin.write('getActiveBrowserOpenedUrl\n');
     });
   }
 }
