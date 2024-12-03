@@ -21,7 +21,7 @@
     "build-dev": "pnpm run build-types && pnpm run build-esbuild-dev",
     "build-prod": "pnpm run build-esbuild-prod",
     "build-types": "tsc && node ../../scripts/flatten-types.js .",
-    "test": "cross-env NODE_ENV=test jest"
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles"
   },
   "bugs": {
     "url": "https://github.com/trici/trici/issues"
@@ -30,7 +30,6 @@
     "sharp": "^0.32.1"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.3",
     "cross-env": "^7.0.3"
   }
 }
