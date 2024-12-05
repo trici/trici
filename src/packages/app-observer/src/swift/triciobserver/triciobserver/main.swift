@@ -25,8 +25,9 @@ if (!LoggingService.isInitialized()) {
 
 logger.info("Logger initialized")
 
-let frontmostObserver = FrontmostObserver()
-let appObserverMethods = AppObserverMethods()
+let frontmostObserver = FrontmostObserver(logger: logger)
+let appObserverMethods = AppObserverMethods(logger: logger)
+
 
 
 

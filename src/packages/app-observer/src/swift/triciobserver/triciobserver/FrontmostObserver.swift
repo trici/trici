@@ -10,7 +10,12 @@ import Foundation
 
 public struct FrontmostObserver {
   private let workspace = NSWorkspace.shared
+  private let logger: Logger
 
+  init(logger: Logger){
+    self.logger = logger
+  }
+  
   public func startObserver() {
     let notificationCenter = workspace.notificationCenter
 

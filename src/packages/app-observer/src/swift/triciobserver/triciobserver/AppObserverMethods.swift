@@ -14,6 +14,12 @@ import Cocoa
 import ApplicationServices
 
 public struct AppObserverMethods {
+  private let logger: Logger
+  
+  init(logger:Logger) {
+    self.logger = logger
+  }
+  
   func convertIconToPNGData(_ icon: NSImage, maxWidth: CGFloat = 100, maxHeight: CGFloat = 100) -> Data? {
     guard let tiffRepresentation = icon.tiffRepresentation,
           let bitmapImage = NSBitmapImageRep(data: tiffRepresentation)
@@ -89,10 +95,10 @@ public struct AppObserverMethods {
               }
               apps.append(appData)
             } catch {
-              print("Error saving PNG for app \(appName): \(error)")
+              logger.error("Error saving PNG for app \(appName): \(error)")
             }
           } else {
-            print("Failed to get PNG representation for app \(app)")
+            logger.error("Failed to get PNG representation for app \(app)")
           }
         }
       }
@@ -108,7 +114,7 @@ public struct AppObserverMethods {
         FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
       }
     } catch {
-      print("Error reading from Applications directory: \(error)")
+      logger.error("Error reading from Applications directory: \(error)")
     }
   }
     
@@ -144,16 +150,18 @@ public struct AppObserverMethods {
     private func getFrontmostBrowserURL() -> String? {
     // Get the frontmost application
     guard let frontmostApp = NSWorkspace.shared.frontmostApplication else {
-        print("Could not get the frontmost application.")
+      logger.error("Could not get the frontmost application.")
         return nil
     }
 
     // Get the process identifier (PID) of the frontmost application
     let pid = frontmostApp.processIdentifier
-
+    
+      logger.info("frontmostProcessId: \(pid)")
+      
     // Get the bundle identifier of the frontmost application
     guard let bundleID = frontmostApp.bundleIdentifier else {
-        print("Could not get the bundle identifier.")
+      logger.error("Could not get the bundle identifier.")
         return nil
     }
 
@@ -166,7 +174,7 @@ public struct AppObserverMethods {
 
     // Check if the frontmost application is a supported browser
     guard supportedBrowsers.contains(bundleID) else {
-        print("Frontmost application is not a supported browser.")
+      logger.error("Frontmost application:\(bundleID) is not a supported browser")
         return nil
     }
 
@@ -179,7 +187,7 @@ public struct AppObserverMethods {
     guard windowsError == .success,
           let windows = windowList as? [AXUIElement],
           !windows.isEmpty else {
-        print("Could not get the windows of the frontmost application.")
+      logger.error("Could not get the windows of the frontmost application.")
         return nil
     }
 
@@ -195,7 +203,7 @@ public struct AppObserverMethods {
     case "org.mozilla.firefox":
         return getFirefoxURL(windowElement: frontWindow)
     default:
-        print("Browser not supported.")
+      logger.error("Browser not supported.")
         return nil
     }
 }
@@ -211,7 +219,7 @@ private func getSafariURL(windowElement: AXUIElement) -> String? {
             return urlString
         }
     }
-    print("Could not find the address bar in Safari.")
+  logger.error("Could not find the address bar in Safari.")
     return nil
 }
 
@@ -226,7 +234,7 @@ private func getChromeURL(windowElement: AXUIElement) -> String? {
             return urlString
         }
     }
-    print("Could not find the address bar in Google Chrome.")
+  logger.error("Could not find the address bar in Google Chrome.")
     return nil
 }
 
@@ -241,7 +249,7 @@ private func getFirefoxURL(windowElement: AXUIElement) -> String? {
             return urlString
         }
     }
-    print("Could not find the address bar in Firefox.")
+  logger.error("Could not find the address bar in Firefox.")
     return nil
 }
 
