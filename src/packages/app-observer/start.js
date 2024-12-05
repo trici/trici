@@ -22,6 +22,13 @@ appObserver.on('frontmostAppChanged', data => {
   console.log(data);
 });
 
+console.log('Calling getActiveBrowserOpenedURL in 3 seconds...');
+setTimeout(() => {
+  appObserver.getActiveBrowserOpenedURL().then(url => {
+    console.log('Active browser opened URL:', url);
+  });
+}, 3000);
+
 //console.log('Getting installed apps...');
 //appObserver.getInstalledApps().then(apps => {
  // console.log(apps);
