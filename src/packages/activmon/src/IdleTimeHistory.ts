@@ -46,4 +46,8 @@ export class IdleTimeHistory {
   getHistory(): number[] {
     return this.queue.getQueue();
   }
+
+  getImmediateHistory(): number[] {
+    return this.queue.getQueue().slice(-20);
+  }
 }

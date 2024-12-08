@@ -23,33 +23,33 @@ describe('UserActivityStateMachine', () => {
     jest.useRealTimers();
   });
 
-  test('should initialize with ACTIVE state', () => {
-    expect(stateMachine['currentState']).toBe(UserActivityState.ACTIVE);
+  test('should initialize with IDLE state', () => {
+    expect(stateMachine['currentState']).toBe(UserActivityState.IDLE);
     expect(stateMachine.getStateHistory()).toEqual([
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
+      { state: UserActivityState.IDLE, timestamp: expect.any(Number) },
     ]);
   });
 
-  test('should transition from ACTIVE to GOING_INACTIVE when user has been idle for more than GOING_INACTIVE_THRESHOLD', () => {
+  test('should transition from IDLE to GOING_INACTIVE when user has been idle for more than GOING_INACTIVE_THRESHOLD', () => {
     const triciPingEventData = { idleTime: ActivityTimeBounds.GOING_INACTIVE_THRESHOLD + 1, idleTimeDiff: -2 };
     stateMachine.handleEvent(triciPingEventData);
     expect(stateMachine['currentState']).toBe(UserActivityState.GOING_INACTIVE);
     expect(stateMachine.getStateHistory().length).toBe(2);
     expect(stateMachine.getStateHistory()).toEqual([
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
+      { state: UserActivityState.IDLE, timestamp: expect.any(Number) },
       { state: UserActivityState.GOING_INACTIVE, timestamp: expect.any(Number) },
     ]);
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('from ACTIVE to GOING_INACTIVE'));
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('from IDLE to GOING_INACTIVE'));
   });
 
   test('should transition from GOING_INACTIVE to INACTIVE when idleTime exceeds threshold', () => {
     expect(stateMachine.getCurrentState()).toBe(UserActivityState.GOING_INACTIVE);
-    const triciPingEventData = { idleTime: ActivityTimeBounds.INACTIVE_ACTIVE_THRESHOLD + 1, idleTimeDiff: -2 };
+    const triciPingEventData = { idleTime: ActivityTimeBounds.INACTIVE_THRESHOLD + 1, idleTimeDiff: -2 };
     stateMachine.handleEvent(triciPingEventData);
     expect(stateMachine['currentState']).toBe(UserActivityState.INACTIVE);
     expect(stateMachine.getStateHistory().length).toBe(3);
     expect(stateMachine.getStateHistory()).toEqual([
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
+      { state: UserActivityState.IDLE, timestamp: expect.any(Number) },
       { state: UserActivityState.GOING_INACTIVE, timestamp: expect.any(Number) },
       { state: UserActivityState.INACTIVE, timestamp: expect.any(Number) },
     ]);
@@ -65,7 +65,7 @@ describe('UserActivityStateMachine', () => {
     stateMachine.handleEvent(triciPingEventData);
     expect(stateMachine['currentState']).toBe(UserActivityState.AWAY);
     expect(stateMachine.getStateHistory()).toEqual([
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
+      { state: UserActivityState.IDLE, timestamp: expect.any(Number) },
       { state: UserActivityState.GOING_INACTIVE, timestamp: expect.any(Number) },
       { state: UserActivityState.INACTIVE, timestamp: expect.any(Number) },
       { state: UserActivityState.AWAY, timestamp: expect.any(Number) },
@@ -73,111 +73,127 @@ describe('UserActivityStateMachine', () => {
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('from INACTIVE to AWAY'));
   });
 
-  test('should transition from AWAY to ACTIVE when idleTimeDiff exceeds threshold', () => {
+  test('should transition from AWAY to IDLE when idleTimeDiff exceeds threshold', () => {
     expect(stateMachine.getCurrentState()).toBe(UserActivityState.AWAY);
     const triciPingEventData = { idleTime: 0, idleTimeDiff: ActivityTimeBounds.USER_WENT_AWAY_THRESHOLD + 1 };
     stateMachine.handleEvent(triciPingEventData);
-    expect(stateMachine['currentState']).toBe(UserActivityState.ACTIVE);
+    expect(stateMachine['currentState']).toBe(UserActivityState.IDLE);
     expect(stateMachine.getStateHistory()).toEqual([
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
+      { state: UserActivityState.IDLE, timestamp: expect.any(Number) },
       { state: UserActivityState.GOING_INACTIVE, timestamp: expect.any(Number) },
       { state: UserActivityState.INACTIVE, timestamp: expect.any(Number) },
       { state: UserActivityState.AWAY, timestamp: expect.any(Number) },
-      // moving from away to active
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
+      // moving from away to idle
+      { state: UserActivityState.IDLE, timestamp: expect.any(Number) },
     ]);
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('from AWAY to ACTIVE'));
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('from AWAY to IDLE'));
   });
 
-  test('should transition from ACTIVE to BECOMING_HYPER_ACTIVE when user has been hyper active for more than ACTIVE_HYPER_ACTIVE_THRESHOLD', () => {
+  test('should transition from IDLE to ACTIVE based on immediate history average', () => {
+    expect(stateMachine.getCurrentState()).toBe(UserActivityState.IDLE);
+
+    // Simulate a series of low idle times to build up immediate history
+    for (let i = 0; i < 20; i++) {
+      const eventData = { idleTime: ActivityTimeBounds.HISTORY_ACTIVE_THRESHOLD - 1, idleTimeDiff: -2 };
+      stateMachine.handleEvent(eventData);
+    }
+
     expect(stateMachine.getCurrentState()).toBe(UserActivityState.ACTIVE);
-    // First, simulate the user starting to become hyper-active
-    const initialEventData = { idleTime: 0, idleTimeDiff: -2 };
-    stateMachine.handleEvent(initialEventData);
-
-    // Advance time to just before the threshold
-    jest.advanceTimersByTime((ActivityTimeBounds.BECOMING_HYPER_ACTIVE_THRESHOLD - 1) * 1000);
-
-    // User is still active; no state change should occur
-    stateMachine.handleEvent(initialEventData);
-    expect(stateMachine.getCurrentState()).toBe(UserActivityState.ACTIVE);
-
-    // Advance time to exceed the threshold
-    jest.advanceTimersByTime(2000); // Advance by an additional 2 seconds
-
-    // Now, the condition for becoming hyper-active should be met
-    stateMachine.handleEvent(initialEventData);
-
-    expect(stateMachine.getCurrentState()).toBe(UserActivityState.BECOMING_HYPER_ACTIVE);
-    expect(stateMachine.getStateHistory()).toEqual([
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.GOING_INACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.INACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.AWAY, timestamp: expect.any(Number) },
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.BECOMING_HYPER_ACTIVE, timestamp: expect.any(Number) },
-    ]);
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('from ACTIVE to BECOMING_HYPER_ACTIVE'));
+    expect(stateMachine.getStateHistory()).toContainEqual({
+      state: UserActivityState.ACTIVE,
+      timestamp: expect.any(Number)
+    });
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('from IDLE to ACTIVE'));
   });
 
-  test('should transition from BECOMING_HYPER_ACTIVE to HYPER_ACTIVE when user has been hyper active for more than HYPER_ACTIVE_THRESHOLD', () => {
-    expect(stateMachine.getCurrentState()).toBe(UserActivityState.BECOMING_HYPER_ACTIVE);
-    const initialEventData = { idleTime: 0, idleTimeDiff: -2 };
-    stateMachine.handleEvent(initialEventData);
+  test('should transition from ACTIVE to BECOMING_HYPER_ACTIVE based on immediate history average', () => {
+    expect(stateMachine.getCurrentState()).toBe(UserActivityState.ACTIVE);
 
-    // Advance time to just before the threshold
-    jest.advanceTimersByTime(
-      (ActivityTimeBounds.HYPER_ACTIVE_THRESHOLD - ActivityTimeBounds.BECOMING_HYPER_ACTIVE_THRESHOLD - 1) * 1000,
+    // Simulate a series of low idle times to build up immediate history
+    for (let i = 0; i < 20; i++) {
+      const eventData = {
+        idleTime: ActivityTimeBounds.HISTORY_BECOMING_HYPER_ACTIVE_THRESHOLD - 1,
+        idleTimeDiff: -2
+      };
+      stateMachine.handleEvent(eventData);
+    }
+
+    expect(stateMachine.getCurrentState()).toBe(UserActivityState.BECOMING_HYPER_ACTIVE);
+    expect(stateMachine.getStateHistory()).toContainEqual({
+      state: UserActivityState.BECOMING_HYPER_ACTIVE,
+      timestamp: expect.any(Number)
+    });
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('from ACTIVE to BECOMING_HYPER_ACTIVE')
     );
+  });
 
-    // User is still active; no state change should occur
-    stateMachine.handleEvent(initialEventData);
+  test('should transition from BECOMING_HYPER_ACTIVE to HYPER_ACTIVE based on immediate history average', () => {
     expect(stateMachine.getCurrentState()).toBe(UserActivityState.BECOMING_HYPER_ACTIVE);
 
-    // Advance time to exceed the threshold
-    jest.advanceTimersByTime(2000); // Advance by an additional 2 seconds
-
-    // Now, the condition for becoming hyper-active should be met
-    stateMachine.handleEvent(initialEventData);
+    // Simulate even lower idle times to trigger HYPER_ACTIVE
+    for (let i = 0; i < 20; i++) {
+      const eventData = {
+        idleTime: ActivityTimeBounds.HISTORY_HYPER_ACTIVE_THRESHOLD - 1,
+        idleTimeDiff: -2
+      };
+      stateMachine.handleEvent(eventData);
+    }
 
     expect(stateMachine.getCurrentState()).toBe(UserActivityState.HYPER_ACTIVE);
-    expect(stateMachine.getStateHistory()).toEqual([
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.GOING_INACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.INACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.AWAY, timestamp: expect.any(Number) },
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.BECOMING_HYPER_ACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.HYPER_ACTIVE, timestamp: expect.any(Number) },
-    ]); // The state history should include the hyper-active state
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('from BECOMING_HYPER_ACTIVE to HYPER_ACTIVE'));
+    expect(stateMachine.getStateHistory()).toContainEqual({
+      state: UserActivityState.HYPER_ACTIVE,
+      timestamp: expect.any(Number)
+    });
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('from BECOMING_HYPER_ACTIVE to HYPER_ACTIVE')
+    );
   });
 
-  test('should transition from HYPER_ACTIVE to ACTIVE when user has been idle for more than HYPER_ACTIVE_THRESHOLD', () => {
+  test('should transition from HYPER_ACTIVE back to BECOMING_HYPER_ACTIVE when activity slightly decreases', () => {
     expect(stateMachine.getCurrentState()).toBe(UserActivityState.HYPER_ACTIVE);
-    const initialEventData = { idleTime: ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD + 1, idleTimeDiff: -2 };
-    stateMachine.handleEvent(initialEventData);
-    expect(stateMachine.getCurrentState()).toBe(UserActivityState.ACTIVE);
-    console.log('stateHistory:', stateMachine.getStateHistory());
-    expect(stateMachine.getStateHistory()).toEqual([
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.GOING_INACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.INACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.AWAY, timestamp: expect.any(Number) },
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.BECOMING_HYPER_ACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.HYPER_ACTIVE, timestamp: expect.any(Number) },
-      { state: UserActivityState.ACTIVE, timestamp: expect.any(Number) },
-    ]);
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('from HYPER_ACTIVE to ACTIVE'));
+
+    // Simulate slightly higher idle times
+    for (let i = 0; i < 20; i++) {
+      const eventData = {
+        idleTime: (ActivityTimeBounds.HISTORY_HYPER_ACTIVE_THRESHOLD +
+                  ActivityTimeBounds.HISTORY_BECOMING_HYPER_ACTIVE_THRESHOLD) / 2,
+        idleTimeDiff: -1
+      };
+      stateMachine.handleEvent(eventData);
+    }
+
+    expect(stateMachine.getCurrentState()).toBe(UserActivityState.BECOMING_HYPER_ACTIVE);
+    expect(stateMachine.getStateHistory()).toContainEqual({
+      state: UserActivityState.BECOMING_HYPER_ACTIVE,
+      timestamp: expect.any(Number)
+    });
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('from HYPER_ACTIVE to BECOMING_HYPER_ACTIVE')
+    );
   });
 
-  test('should reset startedBecomingHyperActiveAt when user is active and idleTime is more than ACTIVE_HYPER_ACTIVE_THRESHOLD', () => {
+  test('should transition from BECOMING_HYPER_ACTIVE to ACTIVE when activity significantly decreases', () => {
+    expect(stateMachine.getCurrentState()).toBe(UserActivityState.BECOMING_HYPER_ACTIVE);
+
+    // Simulate higher idle times that indicate normal activity
+    for (let i = 0; i < 20; i++) {
+      const eventData = {
+        idleTime: (ActivityTimeBounds.HISTORY_BECOMING_HYPER_ACTIVE_THRESHOLD +
+                  ActivityTimeBounds.HISTORY_ACTIVE_THRESHOLD) / 2,
+        idleTimeDiff: -1
+      };
+      stateMachine.handleEvent(eventData);
+    }
+
     expect(stateMachine.getCurrentState()).toBe(UserActivityState.ACTIVE);
-    const initialEventData = { idleTime: ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD + 1, idleTimeDiff: -2 };
-    stateMachine.handleEvent(initialEventData);
-    expect(stateMachine.getCurrentState()).toBe(UserActivityState.ACTIVE);
-    expect(stateMachine['startedBecomingHyperActiveAt']).toBe(0);
+    expect(stateMachine.getStateHistory()).toContainEqual({
+      state: UserActivityState.ACTIVE,
+      timestamp: expect.any(Number)
+    });
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('from BECOMING_HYPER_ACTIVE to ACTIVE')
+    );
   });
 
   test('should not transition if no conditions are met', () => {

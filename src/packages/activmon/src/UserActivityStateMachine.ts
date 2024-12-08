@@ -24,7 +24,7 @@ export interface IUserActivityStateMachine {
 interface StateTransition {
   from: UserActivityState;
   to: UserActivityState;
-  condition: (context: TriciPingEventData) => boolean;
+  condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) => boolean;
 }
 
 export class UserActivityStateMachine extends EventEmitter implements IUserActivityStateMachine {
@@ -33,7 +33,7 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
   private idleTimeHistory: IdleTimeHistory;
   private logger: Logger | IConsoleLogger;
   private transitions: StateTransition[];
-  private startedBecomingHyperActiveAt: number;
+  // private startedBecomingHyperActiveAt: number;
 
   // idleTimeDiff is considered for state transitions
   // when the user has been idle for a certain amount of time
@@ -42,78 +42,90 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
     return [
       {
         from: UserActivityState.AWAY,
-        to: UserActivityState.ACTIVE,
-        condition: (context: TriciPingEventData) => context.idleTimeDiff > ActivityTimeBounds.USER_WENT_AWAY_THRESHOLD,
+        to: UserActivityState.IDLE,
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) =>
+          context.idleTimeDiff > ActivityTimeBounds.USER_WENT_AWAY_THRESHOLD
       },
       {
         from: UserActivityState.INACTIVE,
-        to: UserActivityState.ACTIVE,
-        condition: (context: TriciPingEventData) =>
-          context.idleTimeDiff > ActivityTimeBounds.INACTIVE_ACTIVE_THRESHOLD &&
+        to: UserActivityState.IDLE,
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) =>
+          context.idleTimeDiff > ActivityTimeBounds.INACTIVE_THRESHOLD &&
           context.idleTimeDiff < ActivityTimeBounds.USER_WENT_AWAY_THRESHOLD,
       },
       {
-        from: UserActivityState.ACTIVE,
+        from: UserActivityState.IDLE,
         to: UserActivityState.GOING_INACTIVE,
-        condition: (context: TriciPingEventData) =>
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) =>
           context.idleTime > ActivityTimeBounds.GOING_INACTIVE_THRESHOLD &&
           context.idleTime <= ActivityTimeBounds.GOING_INACTIVE_THRESHOLD + 2,
       },
       {
         from: UserActivityState.GOING_INACTIVE,
-        to: UserActivityState.ACTIVE,
-        condition: (context: TriciPingEventData) =>
+        to: UserActivityState.IDLE,
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) =>
           context.idleTimeDiff > ActivityTimeBounds.GOING_INACTIVE_THRESHOLD &&
-          context.idleTimeDiff < ActivityTimeBounds.INACTIVE_ACTIVE_THRESHOLD,
+          context.idleTimeDiff < ActivityTimeBounds.INACTIVE_THRESHOLD,
       },
       {
         from: UserActivityState.GOING_INACTIVE,
         to: UserActivityState.INACTIVE,
-        condition: (context: TriciPingEventData) => context.idleTime > ActivityTimeBounds.INACTIVE_ACTIVE_THRESHOLD,
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) => context.idleTime > ActivityTimeBounds.INACTIVE_THRESHOLD,
       },
       {
         from: UserActivityState.INACTIVE,
         to: UserActivityState.AWAY,
-        condition: (context: TriciPingEventData) => context.idleTime > ActivityTimeBounds.USER_WENT_AWAY_THRESHOLD,
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) => context.idleTime > ActivityTimeBounds.USER_WENT_AWAY_THRESHOLD,
+      },
+      {
+        from: UserActivityState.IDLE,
+        to: UserActivityState.ACTIVE,
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) =>
+          idleTimeImmediateHistoryAverage < ActivityTimeBounds.HISTORY_ACTIVE_THRESHOLD,
       },
       {
         from: UserActivityState.ACTIVE,
         to: UserActivityState.BECOMING_HYPER_ACTIVE,
-        condition: (context: TriciPingEventData) => {
-          const hyperActiveDurationInSeconds = (Date.now() - this.startedBecomingHyperActiveAt) / 1000;
-          return (
-            hyperActiveDurationInSeconds > ActivityTimeBounds.BECOMING_HYPER_ACTIVE_THRESHOLD &&
-            hyperActiveDurationInSeconds <= ActivityTimeBounds.BECOMING_HYPER_ACTIVE_THRESHOLD + 2
-          );
-        },
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) =>
+          idleTimeImmediateHistoryAverage < ActivityTimeBounds.HISTORY_BECOMING_HYPER_ACTIVE_THRESHOLD &&
+          idleTimeImmediateHistoryAverage > ActivityTimeBounds.HISTORY_HYPER_ACTIVE_THRESHOLD,
       },
       {
         from: UserActivityState.BECOMING_HYPER_ACTIVE,
         to: UserActivityState.HYPER_ACTIVE,
-        condition: (context: TriciPingEventData) => {
-          const hyperActiveDurationInSeconds = (Date.now() - this.startedBecomingHyperActiveAt) / 1000;
-          return (
-            hyperActiveDurationInSeconds > ActivityTimeBounds.HYPER_ACTIVE_THRESHOLD &&
-            hyperActiveDurationInSeconds <= ActivityTimeBounds.HYPER_ACTIVE_THRESHOLD + 2
-          );
-        },
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) =>
+          idleTimeImmediateHistoryAverage < ActivityTimeBounds.HISTORY_HYPER_ACTIVE_THRESHOLD,
       },
       {
         from: UserActivityState.HYPER_ACTIVE,
+        to: UserActivityState.BECOMING_HYPER_ACTIVE,
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) =>
+          idleTimeImmediateHistoryAverage > ActivityTimeBounds.HISTORY_HYPER_ACTIVE_THRESHOLD &&
+          idleTimeImmediateHistoryAverage < ActivityTimeBounds.HISTORY_BECOMING_HYPER_ACTIVE_THRESHOLD,
+      },
+      {
+        from: UserActivityState.BECOMING_HYPER_ACTIVE,
         to: UserActivityState.ACTIVE,
-        condition: (context: TriciPingEventData) => context.idleTime > ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD,
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) =>
+          idleTimeImmediateHistoryAverage > ActivityTimeBounds.HISTORY_BECOMING_HYPER_ACTIVE_THRESHOLD &&
+          idleTimeImmediateHistoryAverage < ActivityTimeBounds.HISTORY_ACTIVE_THRESHOLD,
+      },
+      {
+        from: UserActivityState.ACTIVE,
+        to: UserActivityState.IDLE,
+        condition: (context: TriciPingEventData, idleTimeImmediateHistoryAverage: number) => context.idleTime > ActivityTimeBounds.IDLE_THRESHOLD,
       },
     ];
   }
 
   constructor(logger: Logger | IConsoleLogger) {
     super();
-    this.currentState = UserActivityState.ACTIVE;
+    this.currentState = UserActivityState.IDLE;
     this.stateHistory = [{ state: this.currentState, timestamp: Date.now() }];
     this.idleTimeHistory = new IdleTimeHistory();
     this.logger = logger;
     this.transitions = this.defineTransitions();
-    this.startedBecomingHyperActiveAt = 0;
+    // this.startedBecomingHyperActiveAt = 0;
   }
 
   public getCurrentState(): UserActivityState {
@@ -141,23 +153,26 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
   public handleEvent(data: TriciPingEventData): void {
     this.idleTimeHistory.add(data.idleTime);
     // should
-    this.setIfUserIsStartingToBecomeHyperActive(data);
+    // this.setIfUserIsStartingToBecomeHyperActive(data);
+    const idleTimeImmediateHistory = this.idleTimeHistory.getImmediateHistory();
+    const immediateHistoryAverage =  idleTimeImmediateHistory.length < 20 ? 10 : idleTimeImmediateHistory.reduce((acc, idleTime) => acc + idleTime, 0) / idleTimeImmediateHistory.length;
+    console.log('immediateHistoryAverage', immediateHistoryAverage);
 
     for (const transition of this.transitions) {
-      if (this.currentState === transition.from && transition.condition(data)) {
+      if (this.currentState === transition.from && transition.condition(data, immediateHistoryAverage)) {
         this.transitionTo(transition.to);
         break;
       }
     }
   }
 
-  setIfUserIsStartingToBecomeHyperActive(data: TriciPingEventData) {
-    if (data.idleTime < ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD) {
-      if (this.startedBecomingHyperActiveAt === 0) {
-        this.startedBecomingHyperActiveAt = Date.now();
-      }
-    } else if (data.idleTime > ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD && this.currentState === UserActivityState.ACTIVE) {
-      this.startedBecomingHyperActiveAt = 0;
-    }
-  }
+  // setIfUserIsStartingToBecomeHyperActive(data: TriciPingEventData) {
+  //   if (data.idleTime < ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD) {
+  //     if (this.startedBecomingHyperActiveAt === 0) {
+  //       this.startedBecomingHyperActiveAt = Date.now();
+  //     }
+  //   } else if (data.idleTime > ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD && this.currentState === UserActivityState.ACTIVE) {
+  //     this.startedBecomingHyperActiveAt = 0;
+  //   }
+  // }
 }
