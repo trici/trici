@@ -156,7 +156,7 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
     // this.setIfUserIsStartingToBecomeHyperActive(data);
     const idleTimeImmediateHistory = this.idleTimeHistory.getImmediateHistory();
     const immediateHistoryAverage =  idleTimeImmediateHistory.length < 20 ? 10 : idleTimeImmediateHistory.reduce((acc, idleTime) => acc + idleTime, 0) / idleTimeImmediateHistory.length;
-    console.log('immediateHistoryAverage', immediateHistoryAverage);
+    // console.log('immediateHistoryAverage', immediateHistoryAverage);
 
     for (const transition of this.transitions) {
       if (this.currentState === transition.from && transition.condition(data, immediateHistoryAverage)) {
