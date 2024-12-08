@@ -52,6 +52,7 @@ inputSource.setEventHandler {
         case "exit":
             exit(0)
         default:
+          logger.error("{\"error\": \"Unknown command: \(command)\"}")
             print("{\"error\": \"Unknown command: \(command)\"}")
         }
     }
