@@ -145,7 +145,51 @@ public struct AppObserverMethods {
             FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
         }
 
-    }  
+    }
+  
+  private func dumpAccessibilityHierarchy(of element: AXUIElement, logger: Logger, indent: Int = 0) {
+      // Helper: Get a specified attribute as String
+      func stringValueForAttribute(_ attr: CFString, of element: AXUIElement) -> String? {
+          var valueRef: CFTypeRef?
+          let result = AXUIElementCopyAttributeValue(element, attr, &valueRef)
+          if result == .success {
+              return valueRef as? String
+          }
+          return nil
+      }
+
+      // Helper: Get Role of element
+      func getRole(of element: AXUIElement) -> String? {
+        return stringValueForAttribute(kAXRoleAttribute as CFString, of: element)
+      }
+
+      // Retrieve role
+      let role = getRole(of: element) ?? "UnknownRole"
+      
+      // Attempt to get a title or value
+      let title = stringValueForAttribute(kAXTitleAttribute as CFString, of: element)
+      let value = stringValueForAttribute(kAXValueAttribute as CFString, of: element)
+
+      let indentString = String(repeating: "  ", count: indent)
+      
+      // Log info about current element
+      if let title = title {
+          logger.info("\(indentString)- Role: \(role), Title: \(title)")
+      } else if let value = value {
+          logger.info("\(indentString)- Role: \(role), Value: \(value)")
+      } else {
+          logger.info("\(indentString)- Role: \(role)")
+      }
+
+      // Now look for children
+      var childrenRef: CFTypeRef?
+      let result = AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &childrenRef)
+      if result == .success, let children = childrenRef as? [AXUIElement], !children.isEmpty {
+          for child in children {
+              dumpAccessibilityHierarchy(of: child, logger: logger, indent: indent + 1)
+          }
+      }
+  }
     
     private func getFrontmostBrowserURL() -> String? {
     // Get the frontmost application
@@ -177,9 +221,37 @@ public struct AppObserverMethods {
       logger.error("Frontmost application:\(bundleID) is not a supported browser")
         return nil
     }
+      
+      // Create an accessibility application reference
+      let appRef = AXUIElementCreateApplication(pid)
+//
+      // Get the currently focused window of the application
+      var focusedWindowRef: CFTypeRef?
+      let focusedWindowError = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &focusedWindowRef)
 
+      guard focusedWindowError == .success,
+            let focusedWindow = focusedWindowRef else {
+          logger.error("Could not get the focused window of the frontmost application.")
+          return nil
+      }
+
+      func getWindowTitle(window: AXUIElement) -> String? {
+        var titleRef: CFTypeRef?
+        if AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef) == .success,
+           let title = titleRef as? String {
+          return title
+        }
+        return nil
+      }
+      
+      // Since we know focusedWindow must be an AXUIElement, force cast it
+      let focWindow = focusedWindow as! AXUIElement
+      
+      let focWindowTitle = getWindowTitle(window: focWindow)
+      logger.info("foc Window Title:\(focWindowTitle ?? "Unknown")")
+      
     // Create an accessibility application reference
-    let appRef = AXUIElementCreateApplication(pid)
+//    let appRef = AXUIElementCreateApplication(pid)
 
     // Get the windows of the application
     var windowList: CFTypeRef?
@@ -190,18 +262,26 @@ public struct AppObserverMethods {
       logger.error("Could not get the windows of the frontmost application.")
         return nil
     }
+      
+      logger.info("Windows list:\(windows.count)")
+      for window in windows {
+        var windowTitle = getWindowTitle(window: window)
+        logger.info("Window title:\(windowTitle ?? "Unknown")")
+//        dumpAccessibilityHierarchy(of: window, logger: logger)
+      }
 
     // Assume the first window is the active window
     let frontWindow = windows[0]
 
+//      dumpAccessibilityHierarchy(of: frontWindow, logger: logger)
     // Switch based on the browser type
     switch bundleID {
     case "com.apple.Safari":
-        return getSafariURL(windowElement: frontWindow)
+      return getSafariURL(windowElement: focWindow)
     case "com.google.Chrome":
-        return getChromeURL(windowElement: frontWindow)
+      return getChromeURL(windowElement: focWindow)
     case "org.mozilla.firefox":
-        return getFirefoxURL(windowElement: frontWindow)
+      return getFirefoxURL(windowElement: focWindow)
     default:
       logger.error("Browser not supported.")
         return nil
