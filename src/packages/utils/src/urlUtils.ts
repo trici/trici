@@ -11,6 +11,7 @@ const WORK_URL_PATTERNS = [
   'perl.org',
   'dart.dev',
   'developer.mozilla.org',
+  'developer.apple.com',
   'docs.python.org',
   'docs.microsoft.com',
   'devdocs.io',
