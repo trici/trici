@@ -44,6 +44,15 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
     }
   };
 
+  // const _onChangeGlobalPingFunctionShortcut = (shortcut: string) => {
+  //   const result = _getUpdatedUserPreferencesObject('globalPingFunctionShortcut', shortcut);
+  //   if (result) {
+  //     onSave(result.updatedUserPreferences, result.idOfDocToDelete);
+  //   } else {
+  //     throw new Error('GlobalShortcuts._onChangeGlobalPingFunctionShortcut: result is null');
+  //   }
+  // };
+
   if (!userPreferences) {
     return null;
   }
@@ -61,6 +70,7 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
     config.builtFor === 'dev'
       ? Constants.DEFAULT_GLOBAL_STOP_FOCUS_SESSION_SHORTCUT_DEV
       : Constants.DEFAULT_GLOBAL_STOP_FOCUS_SESSION_SHORTCUT_PROD;
+  const defaultGlobalPingFunctionShortcut = 'CommandOrControl+Shift+F';
 
   return (
     <div className="flex h-full flex-col justify-start gap-5 py-4">
@@ -88,6 +98,14 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
           onShortcutChange={_onChangeGlobalStopFocusSessionShortcut}
         />
       </div>
+      {/* <div>
+        <ConfigureGlobalShortcut
+          label="Ping Function"
+          currentShortcut={userPreferences.globalPingFunctionShortcut}
+          defaultShortcut={defaultGlobalPingFunctionShortcut}
+          onShortcutChange={_onChangeGlobalPingFunctionShortcut}
+        />
+      </div> */}
     </div>
   );
 }

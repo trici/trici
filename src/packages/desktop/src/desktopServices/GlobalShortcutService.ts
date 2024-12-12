@@ -14,6 +14,7 @@ export enum shortcutType {
   START_FOCUS_SESSION_SHORTCUT = 'START_FOCUS_SESSION_SHORTCUT',
   STOP_FOCUS_SESSION_SHORTCUT = 'STOP_FOCUS_SESSION_SHORTCUT',
   RELOAD_OPEN_WINDOWS_SHORTCUT = 'RELOAD_OPEN_WINDOWS_SHORTCUT',
+  PING_FUNCTION_SHORTCUT = 'PING_FUNCTION_SHORTCUT',
 }
 
 export type shortcutRegisteredResult = { isRegistered: boolean; shortcut: string; type: string };
@@ -39,6 +40,11 @@ export class GlobalShortcutService implements IGlobalShortcutService {
     isRegistered: false,
     shortcut: '',
     type: shortcutType.RELOAD_OPEN_WINDOWS_SHORTCUT,
+  };
+  private globalPingFunctionShortcutRegistered: shortcutRegisteredResult = {
+    isRegistered: false,
+    shortcut: '',
+    type: shortcutType.PING_FUNCTION_SHORTCUT,
   };
 
   private determineShortcut(
@@ -118,6 +124,19 @@ export class GlobalShortcutService implements IGlobalShortcutService {
           dispatch({ type: 'END_FOCUS_SESSION' });
         },
       );
+
+      this.globalPingFunctionShortcutRegistered = this.registerShortcutWithConfiguration(
+        global.userPreferences.globalPingFunctionShortcut,
+        'globalPingFunctionShortcut',
+        'CommandOrControl+Shift+F',
+        '', // This is only used for debugging in dev at the moment
+        this.globalPingFunctionShortcutRegistered,
+        () => {
+          dispatch({ type: 'PING_FUNCTION' });
+          // console.log('pingFunction called');
+        },
+      );
+
       this.initialized = true;
     }
   }
@@ -128,6 +147,7 @@ export class GlobalShortcutService implements IGlobalShortcutService {
       this.globalStartFocusSessionShortcutRegistered,
       this.globalStopFocusSessionShortcutRegistered,
       this.reloadOpenWindowsShortcutRegistered,
+      this.globalPingFunctionShortcutRegistered,
     ];
   }
 

@@ -57,4 +57,7 @@ export type TriciAction =
     }
   | {
       type: 'ASK_FOR_ACCESSIBILITY_PERMISSIONS';
+    }
+  | {
+      type: 'PING_FUNCTION';
     };
