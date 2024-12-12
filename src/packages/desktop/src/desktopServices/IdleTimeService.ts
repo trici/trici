@@ -20,7 +20,7 @@ constructor() {
   start: Function = () => {
     const self = this;
     console.log('Starting IdleTimeService');
-    this.timerIntervalId = setInterval(() => { self.triciPing(self); }, 2000);
+    this.timerIntervalId = setInterval(() => { self.triciPing(self); }, 500);
   };
 
   stop: Function = () => {
