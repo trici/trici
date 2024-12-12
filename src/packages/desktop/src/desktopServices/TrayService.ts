@@ -192,7 +192,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
    */
   public createTrayInstance(logger: Logger): void {
     invariant(this.isServiceInitialized, 'TrayService not initialized');
-    const trayIconPath = app.getAppPath() + '/resources/images/trici_tray_icon_amber.png';
+    const trayIconPath = app.getAppPath() + '/resources/images/trici_tray_iconTemplate.png';
     logger.info(`Tray icon path: ${trayIconPath}`);
     this.tray = new Tray(trayIconPath);
     // this._tray.setToolTip(config.trayIconToolTip);
@@ -204,9 +204,13 @@ class TrayService implements ITriciDesktopService, ITrayService {
     invariant(this.isServiceInitialized, 'TrayService not initialized');
     this.trayState = newState;
     if (newState === TrayState.DEFAULT) {
-      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_amber.png');
-    } else if (newState === TrayState.SESSION_IN_PROGRESS) {
+      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_iconTemplate.png');
+    } else if (newState === TrayState.RECORDING) {
       this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_red.png');
+    } else if (newState === TrayState.WORKING) {
+      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_blue.png');
+    } else if (newState === TrayState.ACTIVE) {
+      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_blue.png');
     }
     const contextMenu = this._getTrayContextMenu();
     this.tray?.setContextMenu(contextMenu);

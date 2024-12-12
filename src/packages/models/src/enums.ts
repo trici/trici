@@ -1,6 +1,8 @@
 export enum TrayState {
   DEFAULT = 'DEFAULT',
-  SESSION_IN_PROGRESS = 'SESSION_IN_PROGRESS',
+  ACTIVE = 'ACTIVE',
+  WORKING = 'WORKING',
+  RECORDING = 'RECORDING',
 }
 
 export enum SessionStartedBy {
@@ -62,6 +64,7 @@ export enum TriciAppEvent {
   FOCUS_SESSION_ENDED = 'focus-session-ended',
   USER_CAME_BACK = 'user-came-back',
   USER_WENT_AWAY = 'user-went-away',
+  USER_IDLE = 'user-idle',
   USER_ACTIVE = 'user-active',
   USER_INACTIVE = 'user-inactive',
   USER_GOING_INACTIVE = 'user-going-inactive',
