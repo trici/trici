@@ -7,7 +7,7 @@
  */
 
 import { App, app, Menu, Tray } from 'electron';
-import { SessionStartedBy, SessionStartedFrom, TrayState, TriciAppEvent } from '@trici/models';
+import { SessionStartedBy, SessionStartedFrom, TrayState, TriciAppEvent, UserActivityState } from '@trici/models';
 import type { Logger } from '@trici/logger';
 import { dispatch, IActionDispatcher } from './ActionDispatcher';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
@@ -16,6 +16,7 @@ import { AppEventEmitter } from './AppEventEmitter';
 import { ITriciDesktopService } from '../typedefs/ITriciDesktopService';
 import { invariant } from '@trici/utils';
 import { shortcutRegisteredResult, shortcutType } from './GlobalShortcutService';
+import { UserActivityStateMachine } from '@trici/activmon';
 
 /**
  */
@@ -49,14 +50,16 @@ class TrayService implements ITriciDesktopService, ITrayService {
   eventBus: AppEventEmitter;
   isServiceInitialized: boolean = false;
   receivedRegisteredShortcuts: shortcutRegisteredResult[] | undefined;
+  userActivityStateMachine: UserActivityStateMachine;
 
-  constructor(actionDispatcher: IActionDispatcher<TriciAction>, eventBus: AppEventEmitter) {
+  constructor(actionDispatcher: IActionDispatcher<TriciAction>, eventBus: AppEventEmitter, userActivityStateMachine: UserActivityStateMachine) {
     this.tray = undefined;
     this.trayState = TrayState.DEFAULT;
     this.actionDispatcher = actionDispatcher;
     this.eventBus = eventBus;
     this.isServiceInitialized = false;
     this.receivedRegisteredShortcuts = undefined;
+    this.userActivityStateMachine = userActivityStateMachine;
   }
 
   private _getMenuTemplate(trayState: TrayState): any[] {
@@ -176,6 +179,9 @@ class TrayService implements ITriciDesktopService, ITrayService {
     if (!this.isServiceInitialized) {
       this.registerActionHandlers();
       this.registerAppEventHandlers();
+      this.userActivityStateMachine.on('stateChanged', (newState: UserActivityState) => {
+        this.refreshTrayIcon();
+      });
       this.isServiceInitialized = true;
     }
   }
@@ -203,17 +209,22 @@ class TrayService implements ITriciDesktopService, ITrayService {
   public changeTrayState(newState: TrayState): void {
     invariant(this.isServiceInitialized, 'TrayService not initialized');
     this.trayState = newState;
-    if (newState === TrayState.DEFAULT) {
-      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_iconTemplate.png');
-    } else if (newState === TrayState.RECORDING) {
-      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_red.png');
-    } else if (newState === TrayState.WORKING) {
-      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_blue.png');
-    } else if (newState === TrayState.ACTIVE) {
-      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_blue.png');
-    }
+    this.refreshTrayIcon();
     const contextMenu = this._getTrayContextMenu();
     this.tray?.setContextMenu(contextMenu);
+  }
+
+  private refreshTrayIcon(): void {
+    const userActivityState = this.userActivityStateMachine.getCurrentState();
+    if (this.trayState === TrayState.DEFAULT) {
+      if (userActivityState === UserActivityState.ACTIVE || userActivityState === UserActivityState.BECOMING_HYPER_ACTIVE) {
+        this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_blue.png');
+      } else {
+        this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_iconTemplate.png');
+      }
+    } else if (this.trayState === TrayState.SESSION_IN_PROGRESS) {
+      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_red.png');
+    }
   }
 
   public destroyTrayInstance(): void {

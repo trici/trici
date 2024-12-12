@@ -109,7 +109,8 @@ export const InitializationService: IInitializationService = {
       global.onboardingState = onboardingState;
 
       logger.info('Initialize the TrayService');
-      trayService = new TrayService(actionDispatcher, appEventEmitter);
+      const userActivityStateMachine = UserActivityStateMachineSingleton.getInstance(logger);
+      trayService = new TrayService(actionDispatcher, appEventEmitter, userActivityStateMachine);
       trayService.initService();
 
       processManager = ProcessManagerSingleton.getInstance(logger);
@@ -210,7 +211,7 @@ export const InitializationService: IInitializationService = {
         pluginManager.initialize();
         regiserCorePlugins(pluginManager, triciRecorder, windowManager);
 
-        const userActivityStateMachine = UserActivityStateMachineSingleton.getInstance(logger);
+
 
         // Start the UserActivityMonitor service
         const userActivityMonitorService = new UserActivityMonitorService(

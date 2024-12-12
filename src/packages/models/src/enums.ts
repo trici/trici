@@ -1,8 +1,6 @@
 export enum TrayState {
   DEFAULT = 'DEFAULT',
-  ACTIVE = 'ACTIVE',
-  WORKING = 'WORKING',
-  RECORDING = 'RECORDING',
+  SESSION_IN_PROGRESS = 'SESSION_IN_PROGRESS',
 }
 
 export enum SessionStartedBy {
