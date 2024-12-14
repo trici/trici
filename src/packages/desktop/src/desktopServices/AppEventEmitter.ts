@@ -21,7 +21,7 @@ export class AppEventEmitter extends EventEmitter {
   }
 
   private async saveEvent(eventName: string | symbol, ...args: any[]): Promise<void> {
-    console.log('AppEventEmitter.saveEvent', eventName, args);
+    // console.log('AppEventEmitter.saveEvent', eventName, args);
     if (!this.repoInitialized || this._repo === null) {
       throw new Error('AppEventEmitter.saveEvent: repo not initialized');
     }
@@ -41,12 +41,12 @@ export class AppEventEmitter extends EventEmitter {
         .set('timestamp', timestamp)
         .set('data', args);
     });
-    console.log('AppEventEmitter.saveEvent: event to save', event.toJS());
+    // console.log('AppEventEmitter.saveEvent: event to save', event.toJS());
     await this._repo.save(event.toJS() as IAppEvent);
   }
 
   public emit(eventName: string | symbol, ...args: any[]): boolean {
-    console.log('AppEventEmitter.emit', eventName, args);
+    // console.log('AppEventEmitter.emit', eventName, args);
     if (!this.repoInitialized) {
       throw new Error('AppEventEmitter.emit: repo not initialized');
     }

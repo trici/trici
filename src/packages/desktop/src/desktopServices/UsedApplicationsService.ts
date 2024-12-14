@@ -118,14 +118,14 @@ class UsedApplicationsService implements ITriciDesktopService, IUsedApplications
     if (this.isServiceInitialized === false) {
       throw new Error('Service not initialized');
     }
-    console.log('UsedApplicationsService.updateUsedApplications.usedApplicationRecords:', usedApplicationRecords);
+    // console.log('UsedApplicationsService.updateUsedApplications.usedApplicationRecords:', usedApplicationRecords);
     if (this.usedApplications) {
       // First, check if there are used applications in the
       const usedApplcationsInDb = await this.repo.getUsedApplications();
       const recordsToBeInserted = this.getRecordsToBeInserted(usedApplicationRecords, usedApplcationsInDb);
       const recordsToBeUpdated = this.getRecordsToBeUpdated(usedApplicationRecords, usedApplcationsInDb);
-      console.log('recordsToBeInserted:', recordsToBeInserted);
-      console.log('recordsToBeUpdated:', recordsToBeUpdated);
+      // console.log('recordsToBeInserted:', recordsToBeInserted);
+      // console.log('recordsToBeUpdated:', recordsToBeUpdated);
       // Insert the records to be inserted
       if (recordsToBeInserted.length > 0) {
         await this.repo.insertMany(recordsToBeInserted);
