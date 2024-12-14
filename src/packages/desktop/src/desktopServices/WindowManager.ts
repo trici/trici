@@ -113,6 +113,8 @@ export class WindowManager implements IWindowManager {
       showInspectElement: true,
     });
 
+    this.eventViewerWindow.maximize();
+
     this.eventViewerWindow.on('closed', () => {
       this.eventViewerWindow = null;
     });

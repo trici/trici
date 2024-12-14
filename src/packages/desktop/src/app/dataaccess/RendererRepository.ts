@@ -106,7 +106,7 @@ export class RendererRepository implements IRendererRepository {
    * @param to The end date of the range to retrieve events for.
    * @returns A Promise that resolves with an array of AppEvents.
    */
-  public getEvents(from: number, to: number, type: TriciAppEvent): Promise<AppEvent[]> {
+  public getEvents(from: number, to: number, type: TriciAppEvent | null): Promise<AppEvent[]> {
     return new Promise((fulfill, reject) => {
       const args = { from: from, to: to, type: type };
       window.bridgeApi.query({ handler: 'getEvents', args });

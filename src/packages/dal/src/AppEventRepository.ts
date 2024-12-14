@@ -4,7 +4,7 @@ import { Logger } from '@trici/logger';
 
 export interface IAppEventRepository {
   save(tapEvent: IAppEvent): Promise<void>;
-  getAppEvents(from: number, to: number, type: TriciAppEvent, count: number): Promise<Array<IAppEvent>>;
+  getAppEvents(from: number, to: number, type: TriciAppEvent | null, count: number): Promise<Array<IAppEvent>>;
 }
 
 export class AppEventRepository implements IAppEventRepository {
@@ -40,7 +40,7 @@ export class AppEventRepository implements IAppEventRepository {
   public async getAppEvents(
     from: number,
     to: number,
-    type: TriciAppEvent,
+    type: TriciAppEvent | null,
     count: number = 20,
   ): Promise<Array<IAppEvent>> {
     if (!this.db) {
@@ -48,8 +48,16 @@ export class AppEventRepository implements IAppEventRepository {
       throw new Error('Database not initialized');
     }
 
-    const selectQuery = `SELECT * FROM app_event WHERE timestamp BETWEEN ? AND ? AND type = ? LIMIT ?`;
-    const params = [from, to, type, count];
+    let selectQuery = `SELECT * FROM app_event WHERE timestamp BETWEEN ? AND ?`;
+    const params: any[] = [from, to];
+
+    if (type !== null) {
+      selectQuery += ` AND type = ?`;
+      params.push(type as string);
+    }
+
+    selectQuery += ` LIMIT ?`;
+    params.push(count);
 
     return new Promise((resolve, reject) => {
       this.db!.all(selectQuery, params, (err, rows: any[]) => {

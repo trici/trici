@@ -11,10 +11,11 @@ import { TriciAction } from '../typedefs/TriciAction';
 import UsedApplicationsService from './UsedApplicationsService';
 import { UserActivityStateMachine } from '@trici/activmon';
 import { UserActivityState } from '@trici/models';
-
+import { isUserWorking } from '@trici/utils';
 export interface IUserActivityMonitorService {
   start(): Promise<void>;
   stop(): Promise<void>;
+  getUserActivityState(): UserActivityState;
 }
 
 export class UserActivityMonitorService implements ITriciDesktopService, IUserActivityMonitorService {
@@ -64,13 +65,14 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       idleTimeDiff,
     });
 
-    console.log(
-      'idleTime, lastIdleTime, idleTimeDiff, userActivityState',
-      idleTime,
-      this.lastIdleTime,
-      idleTimeDiff,
-      this.userActivityStateMachine.getCurrentState(),
-    );
+
+    // console.log(
+    //   'idleTime, lastIdleTime, idleTimeDiff, userActivityState',
+    //   idleTime,
+    //   this.lastIdleTime,
+    //   idleTimeDiff,
+    //   this.userActivityStateMachine.getCurrentState(),
+    // );
 
     // if (idleTimeDiff > Constants.USER_WENT_AWAY_THRESHOLD) {
     //   console.log('user-came-back');
@@ -156,6 +158,16 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
         case 'CLEANUP_BEFORE_SHUTDOWN':
           this.stop();
           break;
+        case 'PING_FUNCTION':
+          console.log('PING_FUNCTION called');
+          this.appObserverServiceInstance.getActiveBrowserOpenedURL().then(url => {
+            console.log('Active browser URL:', url);
+            if (url) {
+              const isWorking = isUserWorking(url)
+              console.log('isWorking:', isWorking)
+            }
+          });
+          break;
         default:
           break;
       }
@@ -164,7 +176,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
   registerAppEventHandlers(): void {
     // TODO: Register any app event handlers that this service needs to handle
-    this.appEventEmitter.on(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE, () => {
+    this.appEventEmitter.on(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE, async () => {
       // If the user is using a browser when hyperactive, then we want to know the url that
       // the user is browsing to figure out whether the user is working or leisure.
       // Thus I was thinking that we should enquire what is the url only when the user is hyperactive.
@@ -179,7 +191,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       console.log('UserHyperActive.currentAppCategory:', currentAppCategory);
       if (currentAppCategory === UsedAppCategory.DEFINITELY_WORK) {
         console.log('User started working');
-        this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, currentApplication);
+        // this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, currentApplication);
       } else if (currentAppCategory === UsedAppCategory.DEFINITELY_DISTRACT) {
         console.log('User Fooling around');
       } else if (currentAppCategory === UsedAppCategory.COULD_BE_ANYTHING) {
@@ -188,6 +200,12 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
         // check if the current app is a browser
         if (isWebBrowser(currentApplication?.appName || 'unknown')) {
           console.log('User is browsing');
+          const currentUrl = await this.appObserverServiceInstance.getActiveBrowserOpenedURL();
+          console.log('currentUrl:', currentUrl);
+          if (currentUrl) {
+            const userIsWorking = isUserWorking(currentUrl);
+            console.log('isUserWorking:', userIsWorking);
+          }
         } else {
           console.log('Not sure what to do');
           console.log('currentAppCategory:', currentAppCategory);
@@ -218,6 +236,9 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       case UserActivityState.HYPER_ACTIVE:
         this.appEventEmitter.emit(TriciAppEvent.USER_HYPER_ACTIVE);
         break;
+      case UserActivityState.IDLE:
+        this.appEventEmitter.emit(TriciAppEvent.USER_IDLE);
+        break;
       default:
         console.log('Unknown state');
         break;
@@ -242,6 +263,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       this.logger.info(`UserActivityMonitorService frontmostAppChanged:${JSON.stringify(frontmostAppChangeData)}`);
       this.appEventEmitter.emit(TriciAppEvent.FRONTMOST_APP_CHANGED, frontmostAppChangeData);
     });
+
 
     // IMPORTANT: Earlier I was saving the events in DailyUserActivity, now they are saved in sqlite app_event table.
 
@@ -278,5 +300,9 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.appObserverServiceInstance.stop();
     this.idleTimeServiceInstance.removeAllListeners();
     this.appObserverServiceInstance.removeAllListeners();
+  }
+
+  getUserActivityState(): UserActivityState {
+    return this.userActivityStateMachine.getCurrentState();
   }
 }

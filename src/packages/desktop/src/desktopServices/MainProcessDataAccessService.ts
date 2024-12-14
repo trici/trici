@@ -23,7 +23,7 @@ export interface IMainProcessDataAccessService {
     { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | []
   >;
   getUsedApplications(): Promise<UsedApplication[]>;
-  getTriciAppEvents(fromTime: number, toTime: number, type: TriciAppEvent, count: number): Promise<any>;
+  getTriciAppEvents(fromTime: number, toTime: number, type: TriciAppEvent | null, count: number): Promise<any>;
 }
 
 export class MainProcessDataAccessService implements IMainProcessDataAccessService {
@@ -196,7 +196,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
   public async getTriciAppEvents(
     fromTime: number,
     toTime: number,
-    type: TriciAppEvent = TriciAppEvent.FRONTMOST_APP_CHANGED,
+    type: TriciAppEvent | null,
     count: number = 20,
   ): Promise<any> {
     try {
