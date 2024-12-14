@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.5.0](https://github.com/trici/trici/compare/@trici/app-observer@1.4.0...@trici/app-observer@1.5.0) (2024-12-14)
+
+### Bug Fixes
+
+- **@trici/app-observer:** The url was coming as undefined sometimes with the error could not find address bar. Likely that the frontWindow being selected was not the focused window ([af4de33](https://github.com/trici/trici/commit/af4de3355973a642638bc362c10b93f1c2e9fc3f))
+
+### Features
+
+- **@trici/app-observer:** Added method to return the current url from the browser ([83d134b](https://github.com/trici/trici/commit/83d134b4e33cfeeca13be9f08ec106b501c3110a))
+
 # [1.4.0](https://github.com/trici/trici/compare/@trici/app-observer@1.3.2...@trici/app-observer@1.4.0) (2024-11-05)
 
 ### Bug Fixes

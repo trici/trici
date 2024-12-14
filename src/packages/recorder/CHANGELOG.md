@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.4](https://github.com/trici/trici/compare/@trici/recorder@1.2.3...@trici/recorder@1.2.4) (2024-12-14)
+
+**Note:** Version bump only for package @trici/recorder
+
 ## [1.2.3](https://github.com/trici/trici/compare/@trici/recorder@1.2.2...@trici/recorder@1.2.3) (2024-11-05)
 
 ### Bug Fixes

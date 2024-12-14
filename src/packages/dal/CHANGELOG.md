@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.1.0](https://github.com/trici/trici/compare/@trici/dal@2.0.0...@trici/dal@2.1.0) (2024-12-14)
+
+### Features
+
+- Improved the Event Viewer UI. Added a visualization as well and better filters. ([e774fd5](https://github.com/trici/trici/commit/e774fd5660ed6f52e3a21ff6ef3a8fcde8a13eac))
+
 # [2.0.0](https://github.com/trici/trici/compare/@trici/dal@1.1.1...@trici/dal@2.0.0) (2024-11-05)
 
 ### Bug Fixes

@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.5.0](https://github.com/trici/trici/compare/@trici/models@1.4.0...@trici/models@1.5.0) (2024-12-14)
+
+### Bug Fixes
+
+- Reverting Tray state change as whether Session in progress affects whats shown in the menu. Changing tray icon based on userActivityState ([f87e7bc](https://github.com/trici/trici/commit/f87e7bc51073a25a1d00c9e318213ff471f4ed94))
+- Using template icon for Tray to allow macOS to change icon based on system theme. Also changed TrayStates so as to decouple a bit from Focus Sessions. ([da71342](https://github.com/trici/trici/commit/da7134201a17c21901287e99c9f30ff032a5f018))
+
+### Features
+
+- **@trici/models:** Added an extra state for improved granularity ([bb229ac](https://github.com/trici/trici/commit/bb229ac09c087a9b5c9f1452606dc8f0b0210970))
+
 # [1.4.0](https://github.com/trici/trici/compare/@trici/models@1.3.0...@trici/models@1.4.0) (2024-11-05)
 
 ### Bug Fixes

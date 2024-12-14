@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.8.0](https://github.com/trici/trici/compare/@trici/desktop@0.7.0...@trici/desktop@0.8.0) (2024-12-14)
+
+### Bug Fixes
+
+- **@trici/desktop:** Emit the User Started Working event if the user is becoming hyer active and is using an app that is definitely work. This will change in the future with this decision being based on not just what happened at that instant but also the history ([5e95022](https://github.com/trici/trici/commit/5e95022688459f2434013611fbbaef4c1ce87e14))
+- **@trici/desktop:** Improve the granularity of detecting IdleTime. Missed commit. ([38ef930](https://github.com/trici/trici/commit/38ef930468c3ca3750ce433bd7d57d3a5eff5156))
+- AlertWindow should not be on top of System Prompt/Settings window ([13737b7](https://github.com/trici/trici/commit/13737b7ef5480ce39f832f09f7dd7f64e61a5687))
+- Improved the UI of EventViewer ([347bc06](https://github.com/trici/trici/commit/347bc06cc351d225701d8c613439d0691f62fe11))
+- Reverting Tray state change as whether Session in progress affects whats shown in the menu. Changing tray icon based on userActivityState ([f87e7bc](https://github.com/trici/trici/commit/f87e7bc51073a25a1d00c9e318213ff471f4ed94))
+- Settings Window was blank when opened. ([398bd7a](https://github.com/trici/trici/commit/398bd7a2e1b27916d9f8fc328fae208717999a38))
+- Store session recordings in separate directories ([69dd0ec](https://github.com/trici/trici/commit/69dd0ecb08968159e2b9ad3935d0f8e7d1d4b66a))
+- Using template icon for Tray to allow macOS to change icon based on system theme. Also changed TrayStates so as to decouple a bit from Focus Sessions. ([da71342](https://github.com/trici/trici/commit/da7134201a17c21901287e99c9f30ff032a5f018))
+
+### Features
+
+- Improved the Event Viewer UI. Added a visualization as well and better filters. ([e774fd5](https://github.com/trici/trici/commit/e774fd5660ed6f52e3a21ff6ef3a8fcde8a13eac))
+
 # [0.7.0](https://github.com/trici/trici/compare/@trici/desktop@0.6.0...@trici/desktop@0.7.0) (2024-11-05)
 
 ### Bug Fixes
