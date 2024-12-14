@@ -191,7 +191,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       console.log('UserHyperActive.currentAppCategory:', currentAppCategory);
       if (currentAppCategory === UsedAppCategory.DEFINITELY_WORK) {
         console.log('User started working');
-        // this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, currentApplication);
+        this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, currentApplication);
       } else if (currentAppCategory === UsedAppCategory.DEFINITELY_DISTRACT) {
         console.log('User Fooling around');
       } else if (currentAppCategory === UsedAppCategory.COULD_BE_ANYTHING) {
