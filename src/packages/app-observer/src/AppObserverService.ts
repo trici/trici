@@ -25,14 +25,16 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
   child: any;
   logger: Logger | IConsoleLogger;
   appRoot: string;
+  appObserverLogsDirectory: string;
   currentApp: { appName: string; appIdentifier: string } | null;
   currentAppActiveStartTime: number;
 
-  constructor(logger: Logger, appRoot: string) {
+  constructor(logger: Logger, appRoot: string, appObserverLogsDirectory: string) {
     super();
     this.child = null;
     this.logger = logger ? logger : getConsoleLogger();
     this.appRoot = appRoot;
+    this.appObserverLogsDirectory = appObserverLogsDirectory;
     this.currentApp = null;
     this.currentAppActiveStartTime = 0;
   }
@@ -56,8 +58,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
               : path.join(this.appRoot, 'bin', 'triciobserver');
           this.logger.info(`pathToExecutable:${pathToExecutable}`);
         }
-        this.logger.info(`AppObserverService starting:${pathToExecutable}`);
-        this.child = child_process.spawn(pathToExecutable);
+        this.child = child_process.spawn(pathToExecutable, [this.appObserverLogsDirectory]);
         this.logger.info(`AppObserverService started:${this.child.pid}`);
         this.child.stdout.on('data', function (data: Buffer) {
           const appObserverResponse: AppObserverResponse = JSON.parse(data.toString('utf8'));

@@ -4,7 +4,8 @@ const getConsoleLogger = require('@trici/logger').getConsoleLogger;
 console.log('Instantiating AppObserverService...');
 const consoleLogger = getConsoleLogger();
 const appRoot = __dirname;
-const appObserver = new AppObserverService(consoleLogger, appRoot);
+const appObserverLogsDirectory = '/Users/shashi/Library/Logs/TriciDev';
+const appObserver = new AppObserverService(consoleLogger, appRoot, appObserverLogsDirectory);
 
 appObserver.start();
 
@@ -31,7 +32,7 @@ setTimeout(() => {
 
 //console.log('Getting installed apps...');
 //appObserver.getInstalledApps().then(apps => {
- // console.log(apps);
+// console.log(apps);
 //});
 
 process.on('SIGINT', () => {

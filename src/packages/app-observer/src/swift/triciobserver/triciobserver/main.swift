@@ -13,7 +13,16 @@ let env = ProcessInfo.processInfo.environment["APP_ENV"] ?? "dev"
 
 let isProd = env == "prod"
 
-var logsDirectoryPath = isProd ? "/Library/Logs/trici" :  "/Library/Logs/TriciDev"
+let defaultLogsDirectoryPath = isProd ? "/Library/Logs/trici" :  "/Library/Logs/TriciDev"
+
+var logsDirectoryPath: String
+
+if CommandLine.arguments.count > 1 {
+  print("logsDirPathArg:\(CommandLine.arguments[1])")
+    logsDirectoryPath = CommandLine.arguments[1] // Use the first argument after the app name
+} else {
+    logsDirectoryPath = defaultLogsDirectoryPath // Fallback to default path
+}
 
 LoggingService.initializeLogging(logsDirectoryPath: logsDirectoryPath, logFilePrefix: "trici_observer")
 if (!LoggingService.isInitialized()) {
