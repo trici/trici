@@ -32,7 +32,7 @@
     "build-copy-unbundled": "node copyunbundledfiles.js",
     "build-live": "concurrently \"cross-env NODE_ENV=livedev node esbuild.renderer.live.js\" \"pnpm run build-css-live\"",
     "build-dev": "cross-env NODE_ENV=development pnpm run esbuild-main && cross-env NODE_ENV=development pnpm run esbuild-renderer && pnpm run build-config-dev && pnpm run build-copy-unbundled",
-    "build-prod": "cross-env NODE_ENV=production pnpm run esbuild-main && cross-env NODE_ENV=production pnpm run esbuild-renderer && pnpm run build-config-prod && pnpm run build-css pnpm run build-copy-unbundled",
+    "build-prod": "cross-env NODE_ENV=production pnpm run esbuild-main && cross-env NODE_ENV=production pnpm run esbuild-renderer && pnpm run build-config-prod && pnpm run build-css pnpm run build-copy-unbundled && pnpm run check-types",
     "build-config-dev": "cross-env NODE_ENV=development node buildConfig.js",
     "build-config-prod": "cross-env NODE_ENV=production node buildConfig.js",
     "build-css": "pnpx tailwindcss -i src/tricitailwind.css -o dist/trici.output.css",
