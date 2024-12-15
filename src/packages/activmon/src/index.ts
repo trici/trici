@@ -2,6 +2,7 @@ export { UserActivityStateMachineSingleton } from './UserActivityStateMonitorMac
 
 export {
   UserActivityStateMachine,
+  IUserActivityStateMachine,
   TriciPingEventData as UserActivityStateTransitionContext,
   UserActivityStateHistory,
   UserActivityStateHistoryRecord,
