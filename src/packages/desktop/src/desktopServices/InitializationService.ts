@@ -118,8 +118,9 @@ export const InitializationService: IInitializationService = {
       windowManager.registerActionHandlers();
 
       const mainProcessIpcMessageSender = new MainProcessIpcMessageSender(windowManager);
+      const appObserverLogsDirectory = app.getPath('logs');
       // Instantiate the AppObserver service. It is started inside UserActivityMonitorService
-      const appObserverService = new AppObserverService(logger, app.getAppPath());
+      const appObserverService = new AppObserverService(logger, app.getAppPath(), appObserverLogsDirectory);
 
       permissionsService = new PermissionsService(
         appJsonStorageService,
@@ -177,8 +178,8 @@ export const InitializationService: IInitializationService = {
       const recorderPath = isRunningInAsar
         ? path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'bin', 'Recorder')
         : config.builtFor === 'dev'
-        ? path.join(app.getAppPath(), 'bin', 'dev', 'Recorder')
-        : path.join(app.getAppPath(), 'bin', 'Recorder');
+          ? path.join(app.getAppPath(), 'bin', 'dev', 'Recorder')
+          : path.join(app.getAppPath(), 'bin', 'Recorder');
       const triciRecorder = new TriciRecorder(ffmpegPath, logger, recorderPath);
 
       // Initialize the infra to listen to queries from the renderer process
@@ -210,8 +211,6 @@ export const InitializationService: IInitializationService = {
         const pluginManager = PluginManager.getInstance(logger, appEventEmitter);
         pluginManager.initialize();
         regiserCorePlugins(pluginManager, triciRecorder, windowManager);
-
-
 
         // Start the UserActivityMonitor service
         const userActivityMonitorService = new UserActivityMonitorService(
