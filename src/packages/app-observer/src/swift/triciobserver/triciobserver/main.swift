@@ -13,24 +13,40 @@ let env = ProcessInfo.processInfo.environment["APP_ENV"] ?? "dev"
 
 let isProd = env == "prod"
 
-let defaultLogsDirectoryPath = isProd ? "/Library/Logs/trici" :  "/Library/Logs/TriciDev"
+var defaultLogsDirectoryPath: String
+
+if let libraryDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first {
+
+  let logsDirectory = isProd ? libraryDirectory.appendingPathComponent("Logs/trici") :  libraryDirectory.appendingPathComponent("Logs/TriciDev")
+        defaultLogsDirectoryPath = logsDirectory.path
+    } else {
+        // Fallback to a hardcoded path if the Library directory cannot be resolved
+      defaultLogsDirectoryPath = NSHomeDirectory() + (isProd ? "/Library/Logs/trici" : "/Library/Logs/TriciDev")
+    }
+
+LoggingService.logToStandardOutput(message: ["defaultLogsDirectoryPath": defaultLogsDirectoryPath])
+
 
 var logsDirectoryPath: String
 
 if CommandLine.arguments.count > 1 {
-  print("logsDirPathArg:\(CommandLine.arguments[1])")
+  LoggingService.logToStandardOutput(message: ["logsDirPathArg": "\(CommandLine.arguments[1])"])
+//  print("logsDirPathArg:\(CommandLine.arguments[1])")
     logsDirectoryPath = CommandLine.arguments[1] // Use the first argument after the app name
 } else {
     logsDirectoryPath = defaultLogsDirectoryPath // Fallback to default path
 }
 
+
 LoggingService.initializeLogging(logsDirectoryPath: logsDirectoryPath, logFilePrefix: "trici_observer")
 if (!LoggingService.isInitialized()) {
-  print("Logger not initialized")
-  exit(1)
-} else {
-  logger = LoggingService.getLogger()
+    LoggingService.logToStandardError(message: [
+        "errorMsg": "Logger initialization failed",
+        "path": logsDirectoryPath
+    ])
+    exit(1)
 }
+logger = LoggingService.getLogger()
 
 logger.info("Logger initialized")
 
@@ -62,7 +78,8 @@ inputSource.setEventHandler {
             exit(0)
         default:
           logger.error("{\"error\": \"Unknown command: \(command)\"}")
-            print("{\"error\": \"Unknown command: \(command)\"}")
+          LoggingService.logToStandardError(message: ["errorMsg": "Unknown command: \(command)"])
+//          FileHandle.standardError.write("{\"error\": \"Unknown command: \(command)\"}".data(using: .utf8)!)
         }
     }
 }
