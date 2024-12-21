@@ -61,20 +61,37 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
         this.child = child_process.spawn(pathToExecutable, [this.appObserverLogsDirectory]);
         this.logger.info(`AppObserverService started:${this.child.pid}`);
         this.child.stdout.on('data', function (data: Buffer) {
-          const appObserverResponse: AppObserverResponse = JSON.parse(data.toString('utf8'));
-          let appChangeData: any = {};
-          if (appObserverResponse.type === 'frontmostApp') {
-            appChangeData.timestamp = appObserverResponse.timestamp;
-            appChangeData.frontmostApp = appObserverResponse.response;
-            appChangeData.previousApp = self.currentApp;
-            appChangeData.previousAppActiveTime =
-              self.currentAppActiveStartTime > 0
-                ? Math.round(appChangeData.timestamp - self.currentAppActiveStartTime)
-                : 0;
-            // self.logger.info(`appChangeData:${JSON.stringify(appChangeData)}`);
-            self.currentApp = appObserverResponse.response;
-            self.currentAppActiveStartTime = appObserverResponse.timestamp;
-            self.emit('frontmostAppChanged', appChangeData);
+          const rawData = data.toString('utf8');
+          self.logger.info(` Parsing AppObserverService stdout data:${rawData}`);
+          try {
+            const lines = rawData.split('\n');
+            for (const line of lines) {
+              if (line.trim() === '') {
+                continue;
+              }
+              const appObserverResponse: AppObserverResponse = JSON.parse(line);
+              let appChangeData: any = {};
+              if (appObserverResponse.type === 'frontmostApp') {
+                appChangeData.timestamp = appObserverResponse.timestamp;
+                appChangeData.frontmostApp = appObserverResponse.response;
+                appChangeData.previousApp = self.currentApp;
+                appChangeData.previousAppActiveTime =
+                  self.currentAppActiveStartTime > 0
+                    ? Math.round(appChangeData.timestamp - self.currentAppActiveStartTime)
+                    : 0;
+                // self.logger.info(`appChangeData:${JSON.stringify(appChangeData)}`);
+                self.currentApp = appObserverResponse.response;
+                self.currentAppActiveStartTime = appObserverResponse.timestamp;
+                self.emit('frontmostAppChanged', appChangeData);
+              } else if (appObserverResponse.type === 'stdLog') {
+                self.logger.info(`AppObserverService stdLog:${JSON.stringify(appObserverResponse.response)}`);
+              } else if (appObserverResponse.type === 'stdError') {
+                self.logger.error(`AppObserverService stdError:${JSON.stringify(appObserverResponse.response)}`);
+              }
+            }
+          } catch (error) {
+            self.logger.info(`Failed to parse appObserverResponse:${rawData}`);
+            self.logger.error(`AppObserverService failed to parse appObserverResponse:${error}`);
           }
         });
         this.child.stderr.on('data', function (data: Buffer) {
