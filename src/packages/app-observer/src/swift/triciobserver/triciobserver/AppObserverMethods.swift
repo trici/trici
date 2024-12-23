@@ -12,14 +12,65 @@ import CoreImage
 import Foundation
 import Cocoa
 import ApplicationServices
+import IOKit
 
 public struct AppObserverMethods {
   private let logger: Logger
-  
+
   init(logger:Logger) {
     self.logger = logger
   }
   
+  
+  // Helper function to send JSON response
+  private func sendResponse(_ response: [String: Any]) {
+      if let data = try? JSONSerialization.data(withJSONObject: response),
+         let jsonString = String(data: data, encoding: .utf8) {
+          FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
+      }
+  }
+
+   struct IOHIDIdleTimeStruct {
+      var idleTime: UInt64 = 0
+  }
+
+  
+  
+  func getSystemIdleTime() -> Int? {
+    var iterator: io_iterator_t = 0
+    let matching = IOServiceMatching("IOHIDSystem")
+
+    guard IOServiceGetMatchingServices(kIOMasterPortDefault, matching, &iterator) == KERN_SUCCESS else {
+        return nil
+    }
+    defer { IOObjectRelease(iterator) }
+
+    let entry = IOIteratorNext(iterator)
+    guard entry != 0 else {
+        return nil
+    }
+    defer { IOObjectRelease(entry) }
+
+    guard let idleTimeProperty = IORegistryEntryCreateCFProperty(entry, "HIDIdleTime" as CFString, kCFAllocatorDefault, 0),
+          let idleTime = (idleTimeProperty.takeUnretainedValue() as? NSNumber)?.uint64Value else {
+        return nil
+    }
+    
+    let idleTimeInMilliseconds = Int(idleTime / 1_000_000)
+
+    let response: [String: Any] = [
+      "type": "idleTime",
+      "response": idleTimeInMilliseconds,
+      "timestamp": Date().timeIntervalSince1970,
+    ]
+
+    sendResponse(response)
+    // Convert from nanoseconds to milliseconds
+    return Int(idleTime / 1_000_000)
+  }
+
+
+
   func convertIconToPNGData(_ icon: NSImage, maxWidth: CGFloat = 100, maxHeight: CGFloat = 100) -> Data? {
     guard let tiffRepresentation = icon.tiffRepresentation,
           let bitmapImage = NSBitmapImageRep(data: tiffRepresentation)
@@ -117,7 +168,7 @@ public struct AppObserverMethods {
       logger.error("Error reading from Applications directory: \(error)")
     }
   }
-    
+
     func getActiveBrowserOpenedURL() {
         guard let url = getFrontmostBrowserURL() else {
             let errorResponse: [String: Any] = [
@@ -132,13 +183,13 @@ public struct AppObserverMethods {
             }
             return
         }
-        
+
         let successResponse: [String: Any] = [
             "type": "activeBrowserOpenedUrl",
             "response": url,
             "timestamp": Date().timeIntervalSince1970
         ]
-        
+
         if let data = try? JSONSerialization.data(withJSONObject: successResponse),
            let jsonString = String(data: data, encoding: .utf8)
         {
@@ -146,7 +197,7 @@ public struct AppObserverMethods {
         }
 
     }
-  
+
   private func dumpAccessibilityHierarchy(of element: AXUIElement, logger: Logger, indent: Int = 0) {
       // Helper: Get a specified attribute as String
       func stringValueForAttribute(_ attr: CFString, of element: AXUIElement) -> String? {
@@ -165,13 +216,13 @@ public struct AppObserverMethods {
 
       // Retrieve role
       let role = getRole(of: element) ?? "UnknownRole"
-      
+
       // Attempt to get a title or value
       let title = stringValueForAttribute(kAXTitleAttribute as CFString, of: element)
       let value = stringValueForAttribute(kAXValueAttribute as CFString, of: element)
 
       let indentString = String(repeating: "  ", count: indent)
-      
+
       // Log info about current element
       if let title = title {
           logger.info("\(indentString)- Role: \(role), Title: \(title)")
@@ -190,7 +241,7 @@ public struct AppObserverMethods {
           }
       }
   }
-    
+
     private func getFrontmostBrowserURL() -> String? {
     // Get the frontmost application
     guard let frontmostApp = NSWorkspace.shared.frontmostApplication else {
@@ -200,9 +251,9 @@ public struct AppObserverMethods {
 
     // Get the process identifier (PID) of the frontmost application
     let pid = frontmostApp.processIdentifier
-    
+
       logger.info("frontmostProcessId: \(pid)")
-      
+
     // Get the bundle identifier of the frontmost application
     guard let bundleID = frontmostApp.bundleIdentifier else {
       logger.error("Could not get the bundle identifier.")
@@ -221,7 +272,7 @@ public struct AppObserverMethods {
       logger.error("Frontmost application:\(bundleID) is not a supported browser")
         return nil
     }
-      
+
       // Create an accessibility application reference
       let appRef = AXUIElementCreateApplication(pid)
 //
@@ -243,13 +294,13 @@ public struct AppObserverMethods {
         }
         return nil
       }
-      
+
       // Since we know focusedWindow must be an AXUIElement, force cast it
       let focWindow = focusedWindow as! AXUIElement
-      
+
       let focWindowTitle = getWindowTitle(window: focWindow)
       logger.info("foc Window Title:\(focWindowTitle ?? "Unknown")")
-      
+
     // Create an accessibility application reference
 //    let appRef = AXUIElementCreateApplication(pid)
 
@@ -262,7 +313,7 @@ public struct AppObserverMethods {
       logger.error("Could not get the windows of the frontmost application.")
         return nil
     }
-      
+
       logger.info("Windows list:\(windows.count)")
       for window in windows {
         var windowTitle = getWindowTitle(window: window)
@@ -357,5 +408,5 @@ private func getFirefoxURL(windowElement: AXUIElement) -> String? {
 
         return nil
     }
-    
+
 }

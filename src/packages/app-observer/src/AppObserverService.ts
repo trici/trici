@@ -13,6 +13,7 @@ export interface IAppObserverService {
   getCurrentApp(): { appName: string; appIdentifier: string } | null;
   getInstalledApps(): Promise<{ name: string; iconPath: string; bundleIdentifier: string }[]>;
   getActiveBrowserOpenedURL(): Promise<string | null>;
+  getSystemIdleTime(): Promise<number | null>;
 }
 
 export type AppObserverResponse = {
@@ -37,6 +38,36 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
     this.appObserverLogsDirectory = appObserverLogsDirectory;
     this.currentApp = null;
     this.currentAppActiveStartTime = 0;
+  }
+  getSystemIdleTime(): Promise<number | null> {
+    return new Promise<number | null>((resolve, reject) => {
+      if (!this.child) {
+        this.logger.error('AppObserverService is not started or child process does not exist');
+        return resolve(null);
+      }
+
+      this.child.stdin.write('getSystemIdleTime\n');
+
+      this.child.stdout.once('data', (data: Buffer) => {
+        try {
+          const response = JSON.parse(data.toString('utf8'));
+          if (response.type === 'idleTime') {
+            resolve(response.response);
+          } else {
+            this.logger.error(`Unexpected response type: ${response.type}`);
+            resolve(null);
+          }
+        } catch (error: any) {
+          this.logger.error(`Failed to parse response: ${(error as Error).message}`);
+          resolve(null);
+        }
+      });
+
+      this.child.stderr.once('data', (data: Buffer) => {
+        this.logger.error(`Error from child process: ${data.toString('utf8')}`);
+        resolve(null);
+      });
+    });
   }
 
   start(isRunningInAsar = false): void {

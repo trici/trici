@@ -74,6 +74,8 @@ inputSource.setEventHandler {
             appObserverMethods.outputInstalledApps()
         case "getActiveBrowserOpenedUrl":
             appObserverMethods.getActiveBrowserOpenedURL()
+        case "getSystemIdleTime":
+            appObserverMethods.getSystemIdleTime()
         case "exit":
             exit(0)
         default:
