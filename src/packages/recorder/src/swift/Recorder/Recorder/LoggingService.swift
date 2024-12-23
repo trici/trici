@@ -9,21 +9,17 @@ import CocoaLumberjackSwift
 import Foundation
 
 
-
-
 class Logger {
     // Logging methods
-    func verbose(_ message: String) {
-        let level: DDLogLevel = .verbose
-        let context: Int = 0
-        let file: StaticString = #fileID
-        let function: StaticString = #function
-        let line: UInt = #line
-        let tag: Any? = nil
-        let asynchronous: Bool = true
-
-        // Log the message using DDLogVerbose
-        DDLogVerbose("\(message)",
+    func verbose(_ message: @autoclosure () -> DDLogMessageFormat,
+                    level: DDLogLevel = .all,
+                    context: Int = 0,
+                    file: StaticString = #fileID,
+                    function: StaticString = #function,
+                    line: UInt = #line,
+                    tag: Any? = nil,
+                    asynchronous: Bool = true) {
+        DDLogVerbose(message(),
                      level: level,
                      context: context,
                      file: file,
@@ -33,17 +29,15 @@ class Logger {
                      asynchronous: asynchronous)
     }
 
-    func debug(_ message: String) {
-        let level: DDLogLevel = .debug
-        let context: Int = 0
-        let file: StaticString = #fileID
-        let function: StaticString = #function
-        let line: UInt = #line
-        let tag: Any? = nil
-        let asynchronous: Bool = true
-
-        // Log the message using DDLogDebug
-        DDLogDebug("\(message)",
+    func debug(_ message: @autoclosure () -> DDLogMessageFormat,
+                  level: DDLogLevel = .all,
+                  context: Int = 0,
+                  file: StaticString = #fileID,
+                  function: StaticString = #function,
+                  line: UInt = #line,
+                  tag: Any? = nil,
+                  asynchronous: Bool = true) {
+        DDLogDebug(message(),
                    level: level,
                    context: context,
                    file: file,
@@ -53,17 +47,15 @@ class Logger {
                    asynchronous: asynchronous)
     }
 
-    func info(_ message: String) {
-        let level: DDLogLevel = .info
-        let context: Int = 0
-        let file: StaticString = #fileID
-        let function: StaticString = #function
-        let line: UInt = #line
-        let tag: Any? = nil
-        let asynchronous: Bool = true
-
-        // Log the message using DDLogInfo
-        DDLogInfo("\(message)",
+    func info(_ message: @autoclosure () -> DDLogMessageFormat,
+                 level: DDLogLevel = .all,
+                 context: Int = 0,
+                 file: StaticString = #fileID,
+                 function: StaticString = #function,
+                 line: UInt = #line,
+                 tag: Any? = nil,
+                 asynchronous: Bool = true) {
+        DDLogInfo(message(),
                   level: level,
                   context: context,
                   file: file,
@@ -73,17 +65,15 @@ class Logger {
                   asynchronous: asynchronous)
     }
 
-    func warn(_ message: String) {
-        let level: DDLogLevel = .warning
-        let context: Int = 0
-        let file: StaticString = #fileID
-        let function: StaticString = #function
-        let line: UInt = #line
-        let tag: Any? = nil
-        let asynchronous: Bool = true
-
-        // Log the message using DDLogWarn
-        DDLogWarn("\(message)",
+    func warn(_ message: @autoclosure () -> DDLogMessageFormat,
+                    level: DDLogLevel = .all,
+                    context: Int = 0,
+                    file: StaticString = #fileID,
+                    function: StaticString = #function,
+                    line: UInt = #line,
+                    tag: Any? = nil,
+                    asynchronous: Bool = true) {
+        DDLogWarn(message(),
                   level: level,
                   context: context,
                   file: file,
@@ -93,17 +83,15 @@ class Logger {
                   asynchronous: asynchronous)
     }
 
-    func error(_ message: String) {
-        let level: DDLogLevel = .error
-        let context: Int = 0
-        let file: StaticString = #fileID
-        let function: StaticString = #function
-        let line: UInt = #line
-        let tag: Any? = nil
-        let asynchronous: Bool = false // Errors are typically logged synchronously
-
-        // Log the message using DDLogError
-        DDLogError("\(message)",
+    func error(_ message: @autoclosure () -> DDLogMessageFormat,
+                  level: DDLogLevel = .all,
+                  context: Int = 0,
+                  file: StaticString = #fileID,
+                  function: StaticString = #function,
+                  line: UInt = #line,
+                  tag: Any? = nil,
+                  asynchronous: Bool = false) { // Errors are typically logged synchronously
+        DDLogError(message(),
                    level: level,
                    context: context,
                    file: file,
@@ -159,84 +147,128 @@ class LoggingService {
 
     // Singleton instance
     static let shared = LoggingService()
-    
+
     private let logger = Logger()
-    
+
     private static var initialized = false
 
     // Private initializer to prevent direct instantiation
     private init() {
         // Do nothing here; setupLogging should be called separately
     }
-    
-    static func initializeLogging(logsDirectoryPath:String, logFilePrefix: String) {
+
+    static func initializeLogging(logsDirectoryPath: String, logFilePrefix: String) {
         let fileManager = FileManager.default
-        let homeDirectory = fileManager.homeDirectoryForCurrentUser
-        let logDirectoryURL = homeDirectory.appendingPathComponent(logsDirectoryPath)
-        let logDirectoryPath = logDirectoryURL.path
-        let logFileName =  logFilePrefix
+
+        // Don't append to home directory if an absolute path is provided
+        let logDirectoryPath = logsDirectoryPath.hasPrefix("/") ?
+            logsDirectoryPath :
+            fileManager.homeDirectoryForCurrentUser.appendingPathComponent(logsDirectoryPath).path
 
         // Create the log directory if it doesn't exist
         if !fileManager.fileExists(atPath: logDirectoryPath) {
             do {
                 try fileManager.createDirectory(atPath: logDirectoryPath, withIntermediateDirectories: true, attributes: nil)
-                print("Log directory created at path: \(logDirectoryPath)")
+                logToStandardOutput(message: ["msg": "Log directory created at path: \(logDirectoryPath)"])
             } catch {
-                print("Failed to create log directory: \(error.localizedDescription)")
+                logToStandardError(message: [
+                    "errorMsg": "Failed to create log directory",
+                    "path": logDirectoryPath,
+                    "error": error.localizedDescription
+                ])
                 initialized = false
                 return
             }
         }
 
+        // Verify write permissions
+        if !fileManager.isWritableFile(atPath: logDirectoryPath) {
+            logToStandardError(message: [
+                "errorMsg": "Log directory is not writable",
+                "path": logDirectoryPath
+            ])
+            initialized = false
+            return
+        }
+
+        logToStandardOutput(message: ["msg": "Setting up logging at \(logDirectoryPath)/\(logFilePrefix)"])
+
         // Set up logging
-        shared.setupLogging(logDirectoryPath: logDirectoryPath, logFileName: logFileName)
-        initialized = true
+        do {
+            try shared.setupLogging(logDirectoryPath: logDirectoryPath, logFileName: logFilePrefix)
+            initialized = true
+        } catch {
+            logToStandardError(message: [
+                "errorMsg": "Failed to initialize logging",
+                "path": logDirectoryPath,
+                "error": error.localizedDescription
+            ])
+            initialized = false
+        }
     }
-    
+
     static func isInitialized() -> Bool {
         return initialized
     }
-    
-  ///
-  /// Always call isInitialized before calling this method to ensure that logger is initialized. 
-  ///
+
     static func getLogger() -> Logger {
       return shared.logger
     }
-    
-    
+
+
+  static func logToStandardOutput(message: [String: Any]) {
+    let log: [String: Any] = [
+      "type": "stdLog",
+      "response": message,
+      "timestamp": Date().timeIntervalSince1970
+    ]
+    if let data = try? JSONSerialization.data(withJSONObject: log),
+       let jsonString = String(data: data, encoding: .utf8)
+    {
+      FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
+    }
+  }
+
+  static func logToStandardError(message: [String: Any]) {
+    let log: [String: Any] = [
+      "type": "stdError",
+      "response": message,
+      "timestamp": Date().timeIntervalSince1970
+    ]
+    if let data = try? JSONSerialization.data(withJSONObject: log),
+       let jsonString = String(data: data, encoding: .utf8)
+    {
+      FileHandle.standardError.write("\(jsonString)\n".data(using: .utf8)!)
+    }
+  }
+
     // Method to set up logging destinations
-    func setupLogging(logDirectoryPath: String, logFileName: String) {
+    func setupLogging(logDirectoryPath: String, logFileName: String) throws {
         // Remove existing loggers to prevent duplicates
         DDLog.removeAllLoggers()
 
-        // Optionally, add console logger (logs to Xcode console)
-        DDLog.add(DDOSLogger.sharedInstance) // Uses os_log
+        // Add console logger
+        DDLog.add(DDOSLogger.sharedInstance)
 
-        // Create a custom log file manager with the specified directory and file name
-        let customLogFileManager = CustomLogFileManager(logsDirectory: logDirectoryPath, logFileName: logFileName)
-        
+        let customLogFileManager = DDLogFileManagerDefault(logsDirectory: logDirectoryPath)
         let customFormatter = CustomLogFormatter()
 
-        // Initialize the file logger with the custom log file manager
+        // Initialize the file logger
         let fileLogger = DDFileLogger(logFileManager: customLogFileManager)
-
-        // Configure file logger
-        fileLogger.rollingFrequency = TimeInterval(60 * 60 * 24) // Roll logs every 24 hours
-        fileLogger.logFileManager.maximumNumberOfLogFiles = 7     // Keep logs for 7 days
+        fileLogger.rollingFrequency = TimeInterval(60 * 60 * 24)
+        fileLogger.logFileManager.maximumNumberOfLogFiles = 7
         fileLogger.logFormatter = customFormatter
 
-        // Add the file logger to CocoaLumberjack
         DDLog.add(fileLogger)
 
-        // Optional: Print the log file path for debugging
-        if let currentLogFileInfo = fileLogger.currentLogFileInfo {
-            print("Current log file path: \(currentLogFileInfo.filePath)")
-        } else {
-            print("Could not retrieve the current log file path.")
+        // Verify logging is working
+        if fileLogger.currentLogFileInfo == nil {
+            throw NSError(domain: "LoggingService",
+                         code: 1,
+                         userInfo: [NSLocalizedDescriptionKey: "Failed to create log file"])
         }
     }
-    
+
     // Custom log file manager to specify log file naming and location
     class CustomLogFileManager: DDLogFileManagerDefault {
         let customLogFileName: String
@@ -245,6 +277,7 @@ class LoggingService {
             self.customLogFileName = logFileName
             super.init(logsDirectory: logsDirectory)
         }
+
 
         // Override the method with the correct signature
         override func createNewLogFile() throws -> String {
@@ -282,12 +315,67 @@ class LoggingService {
             }
         }
 
+
+
         override func isLogFile(withName fileName: String) -> Bool {
             // Check if the file name matches the custom log file naming pattern
             return fileName.hasPrefix(customLogFileName) && fileName.hasSuffix(".log")
         }
     }
 
-    
-}
+    // Updated logging methods using the new API
+        func logVerbose(_ message: @autoclosure () -> DDLogMessageFormat,
+                        level: DDLogLevel = .all,
+                        context: Int = 0,
+                        file: StaticString = #fileID,
+                        function: StaticString = #function,
+                        line: UInt = #line,
+                        tag: Any? = nil,
+                        asynchronous: Bool = true) {
+            DDLogVerbose(message(), level: level, context: context, file: file, function: function, line: line, tag: tag, asynchronous: asynchronous)
+        }
 
+        func logDebug(_ message: @autoclosure () -> DDLogMessageFormat,
+                      level: DDLogLevel = .all,
+                      context: Int = 0,
+                      file: StaticString = #fileID,
+                      function: StaticString = #function,
+                      line: UInt = #line,
+                      tag: Any? = nil,
+                      asynchronous: Bool = true) {
+            DDLogDebug(message(), level: level, context: context, file: file, function: function, line: line, tag: tag, asynchronous: asynchronous)
+        }
+
+        func logInfo(_ message: @autoclosure () -> DDLogMessageFormat,
+                     level: DDLogLevel = .all,
+                     context: Int = 0,
+                     file: StaticString = #fileID,
+                     function: StaticString = #function,
+                     line: UInt = #line,
+                     tag: Any? = nil,
+                     asynchronous: Bool = true) {
+            DDLogInfo(message(), level: level, context: context, file: file, function: function, line: line, tag: tag, asynchronous: asynchronous)
+        }
+
+        func logWarning(_ message: @autoclosure () -> DDLogMessageFormat,
+                        level: DDLogLevel = .all,
+                        context: Int = 0,
+                        file: StaticString = #fileID,
+                        function: StaticString = #function,
+                        line: UInt = #line,
+                        tag: Any? = nil,
+                        asynchronous: Bool = true) {
+            DDLogWarn(message(), level: level, context: context, file: file, function: function, line: line, tag: tag, asynchronous: asynchronous)
+        }
+
+        func logError(_ message: @autoclosure () -> DDLogMessageFormat,
+                      level: DDLogLevel = .all,
+                      context: Int = 0,
+                      file: StaticString = #fileID,
+                      function: StaticString = #function,
+                      line: UInt = #line,
+                      tag: Any? = nil,
+                      asynchronous: Bool = false) { // Errors are typically logged synchronously
+            DDLogError(message(), level: level, context: context, file: file, function: function, line: line, tag: tag, asynchronous: asynchronous)
+        }
+}

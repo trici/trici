@@ -13,17 +13,46 @@ let env = ProcessInfo.processInfo.environment["APP_ENV"] ?? "dev"
 
 let isProd = env == "prod"
 
-var logsDirectoryPath = isProd ? "/Library/Logs/trici" :  "/Library/Logs/TriciDev"
+var defaultLogsDirectoryPath: String
 
-LoggingService.initializeLogging(logsDirectoryPath: logsDirectoryPath, logFilePrefix: "trici_recorder")
-if (!LoggingService.isInitialized()) {
-  print("Logger not initialized")
-  exit(1)
+if let libraryDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first {
+
+  let logsDirectory = isProd ? libraryDirectory.appendingPathComponent("Logs/trici") :  libraryDirectory.appendingPathComponent("Logs/TriciDev")
+        defaultLogsDirectoryPath = logsDirectory.path
+    } else {
+        // Fallback to a hardcoded path if the Library directory cannot be resolved
+      defaultLogsDirectoryPath = NSHomeDirectory() + (isProd ? "/Library/Logs/trici" : "/Library/Logs/TriciDev")
+    }
+
+LoggingService.logToStandardOutput(message: ["defaultLogsDirectoryPath": defaultLogsDirectoryPath])
+
+
+var logsDirectoryPath: String
+
+if CommandLine.arguments.count > 1 {
+  LoggingService.logToStandardOutput(message: ["logsDirPathArg": "\(CommandLine.arguments[1])"])
+//  print("logsDirPathArg:\(CommandLine.arguments[1])")
+    logsDirectoryPath = CommandLine.arguments[1] // Use the first argument after the app name
 } else {
-  logger = LoggingService.getLogger()
+    logsDirectoryPath = defaultLogsDirectoryPath // Fallback to default path
 }
 
-logger.info("Logger initialized ")
+//let isProd = env == "prod"
+//
+//var logsDirectoryPath = isProd ? "/Library/Logs/trici" :  "/Library/Logs/TriciDev"
+//
+LoggingService.initializeLogging(logsDirectoryPath: logsDirectoryPath, logFilePrefix: "trici_recorder")
+if (!LoggingService.isInitialized()) {
+    LoggingService.logToStandardError(message: [
+        "errorMsg": "Logger initialization failed",
+        "path": logsDirectoryPath
+    ])
+    exit(1)
+}
+logger = LoggingService.getLogger()
+
+logger.info("Logger initialized")
+
 let now = Date()
 let dateFormatter = DateFormatter()
 
@@ -58,38 +87,43 @@ let inputSource = DispatchSource.makeReadSource(fileDescriptor: STDIN_FILENO, qu
 inputSource.setEventHandler {
     let inputData = FileHandle.standardInput.availableData
     if let strData = String(data: inputData, encoding: .utf8) {
-        let command = strData.trimmingCharacters(in: .whitespacesAndNewlines)
+        let commandLine = strData.trimmingCharacters(in: .whitespacesAndNewlines)
+        let components = commandLine.split(separator: " ", maxSplits: 1)
+        let command = String(components[0])
+
         switch command {
         case "start":
           Task {
             await screenRecorder.start()
           }
-          
-        case "startdebug": 
+
+        case "startdebug":
           Task {
             await screenRecorder.startDebug()
-        }
+          }
         case "stop":
           Task {
             await screenRecorder.stop()
           }
+        case "screenshot":
+          if components.count > 1 {
+              let screenshotPath = String(components[1])
+              Task {
+                  await screenRecorder.takeScreenshot(path: screenshotPath)
+              }
+          } else {
+            LoggingService.logToStandardError(message: ["error": "Screenshot command requires a path"])
+          }
         case "getResolution":
           let resolution = screenRecorder.getHighestScreenResolution()
           let logMessage = "{\"resolution\": \"\(resolution)\"}"
-          logger.info(logMessage)
-          FileHandle.standardOutput.write("\(logMessage)\n".data(using: .utf8)!)
+          LoggingService.logToStandardOutput(message: ["resolution": "\(resolution)"])
         case "getActiveScreen":
           let activeDisplay = screenRecorder.activeDisplay
         case "exit":
             exit(0)
         default:
-          let msg = "{\"error\": \"Unknown command: \(command)\"}"
-          if (screenRecorder.isRunning) {
-            logger.error(msg)
-          } else {
-            print("{\"error\": \"Unknown command: \(command)\"}") 
-          }
-           
+          LoggingService.logToStandardError(message: ["error": "Unknown command: \(command)"])
         }
     }
 }

@@ -9,19 +9,21 @@
 import Foundation
 import ScreenCaptureKit
 import AVFoundation
+import CoreGraphics
+import ImageIO
 
 
 class ScreenRecorder: NSObject {
   private var logger: Logger
   private var namedPipeFileHandle: FileHandle?
   private var captureEngine: CaptureEngine
-    
+
     private(set) var availableDisplays = [SCDisplay]()
-    
+
     var activeDisplay: SCDisplay? {
         didSet { updateEngine() }
     }
-    
+
   init(logger:Logger) {
     self.logger = logger
     self.captureEngine = CaptureEngine(logger:logger)
@@ -32,30 +34,30 @@ class ScreenRecorder: NSObject {
               name: .activeScreenDidChange,
               object: nil
           )
-          
+
       //          setupStreamConfiguration()
       }
-    
+
     var isRunning = false
-  
+
   private var scaleFactor: Int { Int(NSScreen.main?.backingScaleFactor ?? 2) }
-  
-  
+
+
   // Properties for managing the asset writer
   private var assetWriter: AVAssetWriter?
   private var assetWriterInput: AVAssetWriterInput?
   private var pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor?
   private var outputURL: URL?
-  
-    
+
+
     private var streamConfiguration: SCStreamConfiguration {
         let streamConfig = SCStreamConfiguration()
-        
+
         let largestResolution = getHighestScreenResolution()
-      
+
       streamConfig.width = Int(largestResolution.width)
       streamConfig.height = Int(largestResolution.height)
-      
+
       streamConfig.width = 1920
       streamConfig.height = 1080
 //      if let display = activeDisplay {
@@ -64,28 +66,28 @@ class ScreenRecorder: NSObject {
 //      } else {
 //        streamConfig.width = Int(largestResolution.width)
 //        streamConfig.height = Int(largestResolution.height)
-//        
+//
 //      }
-        
+
         streamConfig.showsCursor = true
         streamConfig.pixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
 //        streamConfig.pixelFormat = kCVPixelFormatType_32BGRA
         streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: 12)
         streamConfig.scalesToFit = true
-        
+
         streamConfig.queueDepth = 5
-        
+
         return streamConfig
-        
+
         // capturesAudio etc is available only from Mac 13.0 onwards.
 //        streamConfig.capturesAudio = false
 //        streamConfig.excludesCurrentProcessAudio = true
     }
-    
+
     private var contentFilter : SCContentFilter {
         var filter: SCContentFilter
         guard let display = activeDisplay else { fatalError("No active display found")}
-        
+
         let excludedApps = [SCRunningApplication]()
 //        // If a user chooses to exclude the app from the stream,
 //        // exclude it by matching its bundle identifier.
@@ -97,7 +99,7 @@ class ScreenRecorder: NSObject {
         filter = SCContentFilter(display: display, excludingApplications: excludedApps, exceptingWindows: [])
         return filter
     }
-    
+
 
 
     var canRecord: Bool {
@@ -111,15 +113,15 @@ class ScreenRecorder: NSObject {
             }
         }
     }
-    
+
     func refreshAvailableContent() async {
         do {
             // Retrieve the available screen content to capture.
             let availableContent = try await SCShareableContent.excludingDesktopWindows(false,
                                                                                         onScreenWindowsOnly: true)
             availableDisplays = availableContent.displays
-            
-            
+
+
             if activeDisplay == nil {
                 activeDisplay = availableDisplays.first
             }
@@ -127,7 +129,7 @@ class ScreenRecorder: NSObject {
             logger.error("Failed to get the shareable content: \(error.localizedDescription)")
         }
     }
-  
+
   func setActiveDisplay(activeDisplayId: NSNumber) {
       if let display = availableDisplays.first(where: { $0.displayID == activeDisplayId.uint32Value }) {
           activeDisplay = display
@@ -135,10 +137,10 @@ class ScreenRecorder: NSObject {
         logger.error("Dispaly with ID \(activeDisplayId) not found in availabledDisplays")
       }
   }
-  
-    
-    
-    
+
+
+
+
     /// - Tag: UpdateCaptureConfig
     private func updateEngine() {
       logger.debug("UpdaingCaptureEngine")
@@ -149,7 +151,7 @@ class ScreenRecorder: NSObject {
             await captureEngine.update(configuration: streamConfiguration, filter: filter)
         }
     }
-    
+
     @objc private func handleActiveScreenChange(notification: Notification) {
         logger.info("Inside handleActiveScreenChange")
             if let screen = notification.object as? NSScreen {
@@ -164,11 +166,11 @@ class ScreenRecorder: NSObject {
                         }
             }
         }
-  
- 
-    
+
+
+
     func getHighestScreenResolution() -> CGSize {
-   
+
         let screenSizes = NSScreen.screens.map { $0.frame.size }
            if let largestResolution = screenSizes.max(by: { $0.width * $0.height < $1.width * $1.height }) {
                return largestResolution
@@ -177,19 +179,19 @@ class ScreenRecorder: NSObject {
                return NSScreen.main?.frame.size ?? CGSize.zero
            }
     }
-    
-    
+
+
   func start() async {
       // Exit if already running
       guard !isRunning else { return }
-      
+
       do {
           isRunning = true
           let config = streamConfiguration
           let filter = contentFilter
           logger.info("streamConfig: \(config)")
           logger.info("Opening named pipe")
-          
+
           // Attempt to open the named pipe file handle
           if namedPipeFileHandle == nil {
               let path = "/tmp/tricistream"
@@ -200,10 +202,10 @@ class ScreenRecorder: NSObject {
                   return
               }
           }
-          
+
           // Create a serial dispatch queue for writing
           let writeQueue = DispatchQueue(label: "com.gettrici.Recorder.WriteQueue")
-          
+
           logger.info("Starting capture")
           Task {
               var frameCounter = 0
@@ -211,11 +213,11 @@ class ScreenRecorder: NSObject {
               do {
                   for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
                     let frameReceivedTime = Date()
-                        
+
                     // create a copy of the data so that the object is discarded and the surface is returned to the pool
                     // this prevents frame loss
                     let copiedData = Data(rawData)
-                    
+
                         // Dispatch the write operation to the writeQueue
                         writeQueue.async {
                             self.namedPipeFileHandle?.write(copiedData)
@@ -227,9 +229,9 @@ class ScreenRecorder: NSObject {
                         }
                         let frameProcessedTime = Date()
                         let processingTime = frameProcessedTime.timeIntervalSince(frameReceivedTime)
-                        
+
 //                        self.logger.info("Frame \(frameCounter) processing time: \(processingTime) seconds")
-                        
+
                         frameCounter += 1
 //                      // Dispatch the write operation to the writeQueue
 //                      writeQueue.async {
@@ -241,9 +243,9 @@ class ScreenRecorder: NSObject {
 //                          }
 //                      }
 //                      frameCounter += 1
-                      
+
                   }
-                  
+
                   // Wait for all pending write operations to complete
                   writeQueue.sync {
                       // All write operations have completed
@@ -267,11 +269,11 @@ class ScreenRecorder: NSObject {
           isRunning = false
       }
   }
-  
+
 //  func startDebug() async {
 //      // Exit if already running
 //      guard !isRunning else { return }
-//      
+//
 //      do {
 //        isRunning = true
 //        let config = streamConfiguration
@@ -283,25 +285,25 @@ class ScreenRecorder: NSObject {
 //                   logger.error("Failed to open raw data file for writing.")
 //                   return
 //               }
-//        
+//
 //        logger.info("Starting Debug capture")
 //        Task {
 //          var frameCount = 0;
 //          let expectedSize = config.width * config.height * 3 / 2
 //          logger.info("Expected frame size:\(expectedSize) bytes")
 //          logger.info("Configured resolution:\(config.width)x\(config.height)")
-//          
+//
 //          for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
 //            fileHandle.write(rawData)
 //            frameCount += 1
-//            
+//
 //            if (frameCount == 1 || frameCount == 40) {
 //              let actualWidth = rawData.count/(config.height * 3/2)
 //              logger.info("Actual capture width (based on data size): \(actualWidth)")
 //              logger.info("Actual capture height (based on config): \(config.height)")
 //              logger.info("Actual data size: \(rawData.count)")
 //            }
-//            
+//
 //            if frameCount % 30 == 0 {  // Log every 30 frames
 //              logger.info("Processed \(frameCount) frames. Last frame size: \(rawData.count)")
 //            }
@@ -311,18 +313,18 @@ class ScreenRecorder: NSObject {
 //          fileHandle.closeFile()
 //            logger.info("Finished writing raw data to \(rawFilePath)")
 //        }
-//       
+//
 //      } catch {
 //          logger.error("\(error.localizedDescription)")
 //          // Unable to start the stream. Set the running state to false.
 //          isRunning = false
 //      }
 //  }
-  
+
   func startDebug() async {
       // Exit if already running
       guard !isRunning else { return }
-      
+
       do {
           isRunning = true
           let config = streamConfiguration
@@ -334,7 +336,7 @@ class ScreenRecorder: NSObject {
               logger.error("Failed to open raw data file for writing.")
               return
           }
-          
+
           let writeQueue = DispatchQueue(label: "com.gettrici.Recorder.WriteQueue")
           logger.info("Starting Debug capture")
           Task {
@@ -342,59 +344,59 @@ class ScreenRecorder: NSObject {
               let expectedFrameSize = config.width * config.height * 3 / 2
               logger.info("Expected frame size: \(expectedFrameSize) bytes")
               logger.info("Configured resolution: \(config.width)x\(config.height)")
-              
+
               // Log the start time
               let startTime = Date()
               logger.info("Capture started at: \(startTime)")
-              
+
               for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
                 writeQueue.async {
                   fileHandle.write(rawData)
                 }
                   frameCount += 1
-                  
+
                   if frameCount == 1 || frameCount == 40 {
                       let actualWidth = rawData.count / (config.height * 3 / 2)
                       logger.info("Actual capture width (based on data size): \(actualWidth)")
                       logger.info("Actual capture height (based on config): \(config.height)")
                       logger.info("Actual data size: \(rawData.count) bytes")
                   }
-                  
+
                   if frameCount % 30 == 0 {  // Log every 30 frames
                       logger.info("Processed \(frameCount) frames. Last frame size: \(rawData.count) bytes")
                   }
               }
-            
+
             writeQueue.sync {
               logger.info("Finished writing queue contents")
             }
-              
+
               // Log the end time
               let endTime = Date()
               logger.info("Capture ended at: \(endTime)")
-              
+
               // Calculate total duration
               let totalDuration = endTime.timeIntervalSince(startTime)  // Duration in seconds
               logger.info("Total duration: \(totalDuration) seconds")
-              
+
               // Calculate expected frames
               let frameRate: Double = 7.0  // Frame rate is 7 fps
               let expectedFrames = totalDuration * frameRate
               logger.info("Expected frames (Total Duration x Frame Rate): \(expectedFrames)")
-              
+
               logger.info("Total frames written: \(frameCount)")
               logger.info("Capture Engine stopped frames")
               fileHandle.closeFile()
               logger.info("Finished writing raw data to \(rawFilePath)")
           }
-          
+
       } catch {
           logger.error("\(error.localizedDescription)")
           // Unable to start the stream. Set the running state to false.
           isRunning = false
       }
   }
-  
+
   func stop() async {
       guard isRunning else { return }
 
@@ -404,8 +406,8 @@ class ScreenRecorder: NSObject {
         logger.debug("Stopping Capture")
           await captureEngine.stopCapture()
           isRunning = false
-        
-        
+
+
         logger.info("Stopped Recording")
 
 //           Assuming fileHandle is managed and should be closed after stopping the capture
@@ -419,5 +421,63 @@ class ScreenRecorder: NSObject {
           logger.error("Failed to stop capture: \(error.localizedDescription)")
       }
   }
-    
+
+  func takeScreenshot(path: String) async {
+      guard let display = activeDisplay else {
+          let errorResponse: [String: Any] = [
+              "type": "screenshot",
+              "response": ["error": "No active display found"],
+              "timestamp": Date().timeIntervalSince1970
+          ]
+          sendResponse(errorResponse)
+          return
+      }
+
+      if let image = CGDisplayCreateImage(display.displayID) {
+          let url = URL(fileURLWithPath: path)
+
+          if let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil) {
+              CGImageDestinationAddImage(destination, image, nil)
+
+              if CGImageDestinationFinalize(destination) {
+                  let successResponse: [String: Any] = [
+                      "type": "screenshot",
+                      "response": ["status": "success", "path": path],
+                      "timestamp": Date().timeIntervalSince1970
+                  ]
+                  sendResponse(successResponse)
+              } else {
+                  let errorResponse: [String: Any] = [
+                      "type": "screenshot",
+                      "response": ["error": "Failed to save screenshot"],
+                      "timestamp": Date().timeIntervalSince1970
+                  ]
+                  sendResponse(errorResponse)
+              }
+          } else {
+              let errorResponse: [String: Any] = [
+                  "type": "screenshot",
+                  "response": ["error": "Failed to create image destination"],
+                  "timestamp": Date().timeIntervalSince1970
+              ]
+              sendResponse(errorResponse)
+          }
+      } else {
+          let errorResponse: [String: Any] = [
+              "type": "screenshot",
+              "response": ["error": "Failed to capture screenshot"],
+              "timestamp": Date().timeIntervalSince1970
+          ]
+          sendResponse(errorResponse)
+      }
+  }
+
+  // Helper function to send JSON response
+  private func sendResponse(_ response: [String: Any]) {
+      if let data = try? JSONSerialization.data(withJSONObject: response),
+         let jsonString = String(data: data, encoding: .utf8) {
+          FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
+      }
+  }
+
 }

@@ -17,6 +17,7 @@ export interface ITriciRecorder {
   ): void;
   stopLiveRecording(): void;
   isRecording(): boolean;
+  takeScreenshot(screenShotFileName: string, screenShotStorageLocation: string): Promise<void>;
 }
 
 /**
@@ -281,6 +282,40 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
 
   isRecording(): boolean {
     return this.#isRecording;
+  }
+
+  async takeScreenshot(screenShotFileName: string, screenShotStorageLocation: string): Promise<void> {
+    const screenshotPath = `${screenShotStorageLocation}/${screenShotFileName}`;
+
+    if (!this.recordingProcess) {
+      this.recordingProcess = spawn(this.#recorderBinPath);
+      this.recordingProcess.on('error', (error: any) => {
+        this.logger.error(`TriciRecorder process error: ${error}`);
+        throw error;
+      });
+
+      this.recordingProcess.stderr.on('data', (data: any) => {
+        this.logger.error(`Screenshot process error: ${data}`);
+      });
+    }
+
+    return new Promise((resolve, reject) => {
+      const responseHandler = (data: Buffer) => {
+        const response = data.toString().trim();
+        this.logger.info(`Screenshot response: ${response}`);
+
+        if (response.includes('Screenshot saved')) {
+          this.recordingProcess.stdout.removeListener('data', responseHandler);
+          resolve();
+        } else if (response.includes('error')) {
+          this.recordingProcess.stdout.removeListener('data', responseHandler);
+          reject(new Error(response));
+        }
+      };
+
+      this.recordingProcess.stdout.on('data', responseHandler);
+      this.recordingProcess.stdin.write(`screenshot ${screenshotPath}\n`);
+    });
   }
 
   // async stopLiveRecording(): Promise<void> {
