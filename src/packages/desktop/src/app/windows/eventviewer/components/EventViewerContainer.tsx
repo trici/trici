@@ -57,24 +57,36 @@ export function EventViewerContainer() {
 
   const events = eventViewerQuery.data || [];
   const eventTypes = [...new Set(events.map(event => event.type))];
-  const typeToYPosition = Object.fromEntries(
-    eventTypes.map((type, index) => [type, index + 1])
-  );
+  const typeToYPosition = Object.fromEntries(eventTypes.map((type, index) => [type, index + 1]));
 
   const prepareChartData = (events: AppEvent[]) => {
     return events.map(event => ({
       timestamp: event.timestamp,
       type: event.type,
-      y: typeToYPosition[event.type]
+      y: typeToYPosition[event.type],
     }));
   };
 
   const eventColors = Object.fromEntries(
     Object.values(TriciAppEvent).map((type, index) => [
       type,
-      [`#1f77b4`, `#ff7f0e`, `#2ca02c`, `#d62728`, `#9467bd`, `#8c564b`][index % 6]
-    ])
+      [`#1f77b4`, `#ff7f0e`, `#2ca02c`, `#d62728`, `#9467bd`, `#8c564b`][index % 6],
+    ]),
   );
+
+  // Add this helper function to calculate the time range value
+  const getTimeRangeValue = (from: number, to: number): string => {
+    const diff = to - from;
+    const minutes = diff / (60 * 1000);
+
+    if (minutes === 15) return '15m';
+    if (minutes === 30) return '30m';
+    if (minutes === 60) return '1h';
+    if (minutes === 120) return '2h';
+    if (minutes === 360) return '6h';
+    if (minutes === 720) return '12h';
+    return '1h'; // default
+  };
 
   return (
     <>
@@ -84,7 +96,9 @@ export function EventViewerContainer() {
             <div className="flex flex-row items-center gap-2 text-sm">
               <div className="w-[100px] font-medium">Filters:</div>
               <div className="w-[300px]">
-                <label htmlFor="eventTypeFilter" className="block text-sm text-gray-700 mb-1">Event Type</label>
+                <label htmlFor="eventTypeFilter" className="mb-1 block text-sm text-gray-700">
+                  Event Type
+                </label>
                 <select
                   id="eventTypeFilter"
                   aria-label="Event Type Filter"
@@ -106,18 +120,20 @@ export function EventViewerContainer() {
                 </select>
               </div>
               <div className="w-[300px]">
-                <label htmlFor="timeRangeFilter" className="block text-sm text-gray-700 mb-1">Time Range</label>
+                <label htmlFor="timeRangeFilter" className="mb-1 block text-sm text-gray-700">
+                  Time Range
+                </label>
                 <select
                   id="timeRangeFilter"
                   aria-label="Time Range Filter"
                   className="w-full rounded border border-gray-300 px-2 py-1"
-                  defaultValue="1h"
+                  value={getTimeRangeValue(state.from, state.to)}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                     const now = new Date().getTime();
                     const value = e.target.value;
                     let timeInMillis;
 
-                    switch(value) {
+                    switch (value) {
                       case '15m':
                         timeInMillis = 15 * 60 * 1000;
                         break;
@@ -143,7 +159,7 @@ export function EventViewerContainer() {
                     setState({
                       ...state,
                       from: now - timeInMillis,
-                      to: now
+                      to: now,
                     });
                   }}
                 >
@@ -173,7 +189,7 @@ export function EventViewerContainer() {
                   dataKey="timestamp"
                   type="number"
                   domain={['dataMin', 'dataMax']}
-                  tickFormatter={(unixTime) => new Date(unixTime).toLocaleTimeString()}
+                  tickFormatter={unixTime => new Date(unixTime).toLocaleTimeString()}
                   name="Time"
                 />
                 <YAxis
@@ -181,7 +197,7 @@ export function EventViewerContainer() {
                   dataKey="y"
                   name="Event Type"
                   ticks={Object.values(typeToYPosition)}
-                  tickFormatter={(value) => {
+                  tickFormatter={value => {
                     const type = Object.entries(typeToYPosition).find(([_, y]) => y === value)?.[0] || '';
                     return type;
                   }}
@@ -192,11 +208,9 @@ export function EventViewerContainer() {
                     if (payload && payload.length > 0) {
                       const data = payload[0].payload;
                       return (
-                        <div className="bg-white p-2 shadow rounded border">
+                        <div className="rounded border bg-white p-2 shadow">
                           <p className="text-sm">Type: {data.type}</p>
-                          <p className="text-sm">
-                            Time: {new Date(data.timestamp).toLocaleString()}
-                          </p>
+                          <p className="text-sm">Time: {new Date(data.timestamp).toLocaleString()}</p>
                         </div>
                       );
                     }
