@@ -43,11 +43,10 @@ export class IdleTimeHistory {
     this.queue.enqueue(idleTime);
   }
 
-  getHistory(): number[] {
-    return this.queue.getQueue();
-  }
-
-  getImmediateHistory(): number[] {
-    return this.queue.getQueue().slice(-20);
+  getHistory(numberOfItems: number): number[] {
+    if (numberOfItems > this.queue.getLength()) {
+      return this.queue.getQueue();
+    }
+    return this.queue.getQueue().slice(-numberOfItems);
   }
 }
