@@ -1,4 +1,3 @@
-import { IdleTimeServiceInstance } from './IdleTimeService';
 import { AppObserverService } from '@trici/app-observer';
 import type { Logger } from '@trici/logger';
 import { Constants, DailyUserActivity, TriciAppEvent, UsedAppCategory } from '@trici/models';
@@ -19,7 +18,6 @@ export interface IUserActivityMonitorService {
 }
 
 export class UserActivityMonitorService implements ITriciDesktopService, IUserActivityMonitorService {
-  idleTimeServiceInstance: IdleTimeServiceInstance;
   appObserverServiceInstance: AppObserverService;
   logger: Logger;
   userActivityStateMachine: UserActivityStateMachine;
@@ -33,7 +31,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
   constructor(
     logger: Logger,
-    idleTimeServiceInstance: IdleTimeServiceInstance,
     appObserverServiceInstance: AppObserverService,
     appJsonStorageService: IAppJsonStorageService,
     appEventEmitter: AppEventEmitter,
@@ -42,7 +39,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     userActivityStateMachine: UserActivityStateMachine,
   ) {
     this.logger = logger;
-    this.idleTimeServiceInstance = idleTimeServiceInstance;
     this.appObserverServiceInstance = appObserverServiceInstance;
     this.userActivityStateMachine = userActivityStateMachine;
     this.lastIdleTime = -1;
@@ -65,89 +61,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       idleTimeDiff,
     });
 
-
-    // console.log(
-    //   'idleTime, lastIdleTime, idleTimeDiff, userActivityState',
-    //   idleTime,
-    //   this.lastIdleTime,
-    //   idleTimeDiff,
-    //   this.userActivityStateMachine.getCurrentState(),
-    // );
-
-    // if (idleTimeDiff > Constants.USER_WENT_AWAY_THRESHOLD) {
-    //   console.log('user-came-back');
-    //   this.appEventEmitter.emit(TriciAppEvent.USER_CAME_BACK);
-    //   // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userCameBack', data: {} });
-    //   this.userCameBackAt = Date.now();
-    //   this.userBecameActiveAt = this.userCameBackAt;
-    //   this.userBecameSuperActiveAt = this.userCameBackAt;
-    //   this.userWentAwayAt = 0;
-    //   this.userBecameInactiveAt = 0;
-    //   // NotificationService.showUserCameBackNotification();
-    // } else if (idleTimeDiff > Constants.INACTIVE_ACTIVE_THRESHOLD) {
-    //   console.log('user-active');
-    //   this.appEventEmitter.emit(TriciAppEvent.USER_ACTIVE);
-    //   // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userActive', data: {} });
-    //   this.userBecameActiveAt = Date.now();
-    //   this.userBecameSuperActiveAt = this.userBecameActiveAt;
-    //   this.userBecameInactiveAt = 0;
-    // }
-    // if (idleTime > Constants.USER_WENT_AWAY_THRESHOLD) {
-    //   if (this.userWentAwayAt === 0) {
-    //     this.userWentAwayAt = Date.now();
-    //     // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userWentAway', data: {} });
-    //     console.log('user-went-away');
-    //     this.appEventEmitter.emit(TriciAppEvent.USER_WENT_AWAY);
-    //   }
-    // } else if (idleTime > Constants.INACTIVE_ACTIVE_THRESHOLD) {
-    //   if (this.userBecameInactiveAt === 0) {
-    //     // NotificationService.showSessionEndedNotification();
-    //     console.log('user-inactive');
-    //     this.appEventEmitter.emit(TriciAppEvent.USER_INACTIVE);
-    //     // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userInactive', data: {} });
-    //     this.userBecameInactiveAt = Date.now();
-    //   }
-    // } else if (idleTime > Constants.GOING_INACTIVE_THRESHOLD && idleTime <= Constants.GOING_INACTIVE_THRESHOLD + 2) {
-    //   console.log('user-going-inactive');
-    //   this.appEventEmitter.emit(TriciAppEvent.USER_GOING_INACTIVE);
-    //   // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userGoingInactive', data: {} });
-    //   // NotificationService.showGoingInactiveNotification();
-    // } else if (idleTime < Constants.HYPER_ACTIVE_THRESHOLD) {
-    //   if (this.userBecameHyperActiveAt === 0) {
-    //     this.userBecameHyperActiveAt = Date.now();
-    //   } else {
-    //     this.userHyperActiveForInSeconds = (Date.now() - this.userBecameHyperActiveAt) / 1000;
-    //     if (
-    //       this.userHyperActiveForInSeconds > Constants.HYPER_ACTIVE_ZONE_BEGIN_TIME_IN_SECONDS &&
-    //       this.userHyperActiveForInSeconds <= Constants.HYPER_ACTIVE_ZONE_BEGIN_TIME_IN_SECONDS + 2
-    //     ) {
-    //       console.log('user-becoming-hyper-active');
-    //       console.log(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE);
-    //       this.appEventEmitter.emit(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE, {});
-    //       // NotificationService.useTrayToPromptToStart();
-    //     } else if (
-    //       this.userHyperActiveForInSeconds > Constants.HYPER_ACTIVE_ZONE_TIME_IN_SECONDS &&
-    //       this.userHyperActiveForInSeconds <= Constants.HYPER_ACTIVE_ZONE_TIME_IN_SECONDS + 2
-    //     ) {
-    //       console.log('user-hyper-active');
-    //       this.appEventEmitter.emit(TriciAppEvent.USER_HYPER_ACTIVE);
-    //       // mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userHyperActive', data: {} });
-    //       // NotificationService.useTrayToPromptToStart();
-    //       // NotificationService.showPromptToStartFocusSession();
-    //       // set userBecameHyperActiveAt to zero after 5 minutes
-    //       const self = this;
-    //       setTimeout(() => {
-    //         self.userBecameHyperActiveAt = 0;
-    //       }, 300000);
-    //     }
-    //   }
-    // } else if (this.userBecameHyperActiveAt !== 0) {
-    //   this.userBecameHyperActiveAt = 0;
-    //   this.userHyperActiveForInSeconds = (Date.now() - this.userBecameHyperActiveAt) / 1000;
-    //   if (this.userHyperActiveForInSeconds > Constants.HYPER_ACTIVE_ZONE_TIME_IN_SECONDS) {
-    //     //mainWindow.webContents.send('receiveMessageRenderer', { handler: 'userHyperActiveEnd', data: {} });
-    //   }
-    // }
     this.lastIdleTime = idleTime;
   };
 
@@ -163,8 +76,8 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
           this.appObserverServiceInstance.getActiveBrowserOpenedURL().then(url => {
             console.log('Active browser URL:', url);
             if (url) {
-              const isWorking = isUserWorking(url)
-              console.log('isWorking:', isWorking)
+              const isWorking = isUserWorking(url);
+              console.log('isWorking:', isWorking);
             }
           });
           break;
@@ -191,7 +104,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       console.log('UserHyperActive.currentAppCategory:', currentAppCategory);
       if (currentAppCategory === UsedAppCategory.DEFINITELY_WORK) {
         console.log('User started working');
-        this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, currentApplication);
+        // this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, currentApplication);
       } else if (currentAppCategory === UsedAppCategory.DEFINITELY_DISTRACT) {
         console.log('User Fooling around');
       } else if (currentAppCategory === UsedAppCategory.COULD_BE_ANYTHING) {
@@ -257,13 +170,12 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
   async start(): Promise<void> {
     //Register event handlers to handle events from the services.
-    this.idleTimeServiceInstance.on('triciping', idleTime => this.handleTriciPing(idleTime));
+    this.appObserverServiceInstance.on('idleTime', idleTime => this.handleTriciPing(idleTime));
 
     this.appObserverServiceInstance.on('frontmostAppChanged', (frontmostAppChangeData: any) => {
       this.logger.info(`UserActivityMonitorService frontmostAppChanged:${JSON.stringify(frontmostAppChangeData)}`);
       this.appEventEmitter.emit(TriciAppEvent.FRONTMOST_APP_CHANGED, frontmostAppChangeData);
     });
-
 
     // IMPORTANT: Earlier I was saving the events in DailyUserActivity, now they are saved in sqlite app_event table.
 
@@ -291,14 +203,11 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     // } catch (err) {
     //   this.logger.error(`UserActivityMonitorService: Error while fetching today's user activity: ${err}`);
     // }
-    this.idleTimeServiceInstance.start();
     this.appObserverServiceInstance.start(isRunningInAsar);
   }
 
   async stop(): Promise<void> {
-    this.idleTimeServiceInstance.stop();
     this.appObserverServiceInstance.stop();
-    this.idleTimeServiceInstance.removeAllListeners();
     this.appObserverServiceInstance.removeAllListeners();
   }
 

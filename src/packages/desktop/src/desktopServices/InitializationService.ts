@@ -18,7 +18,6 @@ import {
 } from '@trici/dal';
 import { AppEventRepository, IAppEventRepository } from '@trici/dal';
 import { SqliteDbManager, ISqliteDbManager } from '@trici/dal';
-import IdleTimeService from './IdleTimeService';
 import { AppObserverService } from '@trici/app-observer';
 import { UserActivityMonitorService } from './UserActivityMonitorService';
 import { TriciRecorder } from '@trici/recorder';
@@ -198,42 +197,40 @@ export const InitializationService: IInitializationService = {
 
       mainProcessIpcMessageHandlerService.initialize();
 
-      if (triciApp.hasCompletedOnboarding) {
-        // This should be called after the app is started
-        const shortcutService = new GlobalShortcutService();
-        shortcutService.initService();
-
-        focusSessionService = new FocusSessionService(repo, appEventEmitter, actionDispatcher);
-        focusSessionService.initService();
-        cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
-        cliMessageHandlerService.registerCliMessageHandlers();
-
-        const pluginManager = PluginManager.getInstance(logger, appEventEmitter);
-        pluginManager.initialize();
-        regiserCorePlugins(pluginManager, triciRecorder, windowManager);
-
-        // Start the UserActivityMonitor service
-        const userActivityMonitorService = new UserActivityMonitorService(
-          logger,
-          IdleTimeService,
-          appObserverService,
-          appJsonStorageService,
-          appEventEmitter,
-          actionDispatcher,
-          usedApplicationsService,
-          userActivityStateMachine,
-        );
-        userActivityMonitorService.initService();
-        userActivityMonitorService.start();
-      } else {
+      if (!triciApp.hasCompletedOnboarding) {
+        return;
       }
+
+      // This should be called after the app is started
+      const shortcutService = new GlobalShortcutService();
+      shortcutService.initService();
+
+      focusSessionService = new FocusSessionService(repo, appEventEmitter, actionDispatcher);
+      focusSessionService.initService();
+      cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
+      cliMessageHandlerService.registerCliMessageHandlers();
+
+      const pluginManager = PluginManager.getInstance(logger, appEventEmitter);
+      pluginManager.initialize();
+      regiserCorePlugins(pluginManager, triciRecorder, windowManager);
+
+      // Start the UserActivityMonitor service
+      const userActivityMonitorService = new UserActivityMonitorService(
+        logger,
+        appObserverService,
+        appJsonStorageService,
+        appEventEmitter,
+        actionDispatcher,
+        usedApplicationsService,
+        userActivityStateMachine,
+      );
+      userActivityMonitorService.initService();
+      userActivityMonitorService.start();
 
       // console.log('global.userDataDirectoryCheckResult: ', global.userDataDirectoryCheckResult);
       // console.log(global.userDataDirectoryCheckResult.dataDir.path);
 
       // Register
-
-      // Start the Idletime service
     } catch (error) {
       logger.error('Error while starting the app', error);
       app.quit();
