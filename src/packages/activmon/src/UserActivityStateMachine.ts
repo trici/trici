@@ -206,7 +206,6 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
       // If required, can add stateExitActions
       // this.handleStateExitActions(prevState)
       this.logger.info(`UserActivityStateMachine transitioning from ${this.currentState} to ${newState}`);
-      console.log('transitioning from', this.currentState, 'to', newState);
       this.currentState = newState;
       this.stateHistory.push({ state: this.currentState, timestamp: Date.now() });
 
@@ -239,18 +238,11 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
     const nearHistoryAverage = this.getIdleTimeNearHistoryAverage();
     const immediateHistoryAverage = this.getIdleTimeImmediateHistoryAverage();
 
-    if (this.currentState === UserActivityState.ACTIVE) {
-      console.log('inearHistoryAverage', nearHistoryAverage);
-      console.log('iimmediateHistoryAverage', immediateHistoryAverage);
-    }
-
     for (const transition of this.transitions) {
       if (
         this.currentState === transition.from &&
         transition.condition(data, nearHistoryAverage, immediateHistoryAverage)
       ) {
-        console.log('nearHistoryAverage', nearHistoryAverage);
-        console.log('immediateHistoryAverage', immediateHistoryAverage);
         this.transitionTo(transition.to);
         break;
       }
