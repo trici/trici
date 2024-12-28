@@ -1,3 +1,5 @@
+import { IsUserWorking } from '@trici/models';
+
 const WORK_URL_PATTERNS = [
   'python.org',
   'nodejs.org',
@@ -93,11 +95,29 @@ const WORK_URL_PATTERNS = [
   'khanacademy.org',
   'codecademy.com',
   'freecodecamp.org',
-  'microsoft.com'
+  'microsoft.com',
 ];
 
-export function isUserWorking(url: string): boolean {
-  if (!url) return false;
-  return WORK_URL_PATTERNS.some((pattern) => url.includes(pattern)) ||
-         WORK_URL_PATTERNS.some((pattern) => url.startsWith(pattern));
+export function isUserWorking(url: string): IsUserWorking {
+  if (!url) return IsUserWorking.NO;
+  if (
+    WORK_URL_PATTERNS.some(pattern => url.includes(pattern)) ||
+    WORK_URL_PATTERNS.some(pattern => url.startsWith(pattern))
+  ) {
+    return IsUserWorking.YES;
+  }
+
+  // Updated search engine patterns to handle country-specific domains
+  const searchEngines = [
+    'google.', // Will match google.com, google.co.in, google.co.uk, etc.
+    'bing.', // Will match bing.com, bing.co.uk, etc.
+    'yahoo.', // Will match yahoo.com, yahoo.co.jp, etc.
+    'duckduckgo.',
+    'baidu.',
+  ];
+
+  if (searchEngines.some(engine => url.includes(engine))) {
+    return IsUserWorking.MAYBE;
+  }
+  return IsUserWorking.NO;
 }

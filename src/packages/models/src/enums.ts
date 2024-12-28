@@ -51,9 +51,9 @@ export enum ActivityTimeBounds {
   INACTIVE_THRESHOLD = 200,
   GOING_INACTIVE_THRESHOLD = 90,
   IDLE_THRESHOLD = 30,
-  HISTORY_ACTIVE_THRESHOLD = 6,
-  HISTORY_BECOMING_HYPER_ACTIVE_THRESHOLD = 3,
-  HISTORY_HYPER_ACTIVE_THRESHOLD = 0.5,
+  NEAR_HISTORY_ACTIVE_THRESHOLD = 6,
+  IMMEDIATE_HISTORY_BECOMING_HYPER_ACTIVE_THRESHOLD = 2,
+  IMMEDIATE_HISTORY_HYPER_ACTIVE_THRESHOLD = 0.555,
 }
 
 export enum TriciAppEvent {
@@ -73,6 +73,12 @@ export enum TriciAppEvent {
   USER_STARTED_WORKING = 'user-started-working',
   USER_STOPPED_WORKING = 'user-stopped-working',
   USER_MAY_BE_WORKING = 'user-may-be-working',
+}
+
+export enum IsUserWorking {
+  YES = 'YES',
+  NO = 'NO',
+  MAYBE = 'MAYBE',
 }
 
 export enum NodeEnv {

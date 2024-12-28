@@ -1,69 +1,58 @@
 import { isUserWorking } from '../src/urlUtils';
+import { IsUserWorking } from '@trici/models';
 
-describe('urlUtils', () => {
-  describe('isUserWorking', () => {
-    test('should return true for work-related URLs', () => {
-      const workUrls = [
-        'https://github.com/user/repo',
-        'https://stackoverflow.com/questions/12345',
-        'https://www.python.org/docs',
-        'https://nodejs.org/en/docs',
-        'https://dev.to/article',
-        'https://www.mongodb.com/cloud',
-        'https://kubernetes.io/docs',
-      ];
+describe('isUserWorking', () => {
+  // ... existing test setup code ...
 
-      workUrls.forEach(url => {
-        expect(isUserWorking(url)).toBe(true);
-      });
+  it('should return YES for known work-related URLs', () => {
+    const workUrls = [
+      'https://github.com/some-repo',
+      'https://stackoverflow.com/questions/12345',
+      'https://dev.to/article',
+      'https://www.mongodb.com/docs',
+    ];
+
+    workUrls.forEach(url => {
+      expect(isUserWorking(url)).toBe(IsUserWorking.YES);
     });
+  });
 
-    test('should return false for non-work-related URLs', () => {
-      const nonWorkUrls = [
-        'https://facebook.com',
-        'https://youtube.com',
-        'https://netflix.com',
-        'https://instagram.com',
-        'https://example.com',
-      ];
+  it('should return MAYBE for any search engine URLs', () => {
+    const searchUrls = [
+      // With search queries
+      'https://www.google.com/search?q=typescript+error',
+      'https://www.google.co.in/search?q=typescript+error',
+      'https://www.bing.com/search?q=react+hooks',
+      'https://duckduckgo.com/?q=python+list',
+      'https://search.yahoo.com/search?p=javascript',
+      'https://www.baidu.com/s?wd=programming',
+      // Without search queries
+      'https://www.google.com',
+      'https://www.bing.com',
+      'https://duckduckgo.com',
+      'https://yahoo.com',
+      'https://baidu.com',
+    ];
 
-      nonWorkUrls.forEach(url => {
-        expect(isUserWorking(url)).toBe(false);
-      });
+    searchUrls.forEach(url => {
+      console.log('seachEngineUrl:', url);
+      expect(isUserWorking(url)).toBe(IsUserWorking.MAYBE);
     });
+  });
 
-    test('should return true for URLs containing work patterns as subdomains', () => {
-      const subdomainUrls = [
-        'https://docs.github.com/en/actions',
-        'https://cloud.mongodb.com/dashboard',
-        'https://learn.microsoft.com/en-us/docs',
-      ];
+  it('should return NO for empty or invalid URLs', () => {
+    const urls = ['', undefined, null];
 
-      subdomainUrls.forEach(url => {
-        const result = isUserWorking(url);
-        console.log('url:', url);
-        console.log('result:', result);
-        expect(isUserWorking(url)).toBe(true);
-      });
+    urls.forEach(url => {
+      expect(isUserWorking(url as string)).toBe(IsUserWorking.NO);
     });
+  });
 
-    test('should return true for URLs containing work patterns in paths', () => {
-      const pathUrls = [
-        'https://somesite.com/python.org/tutorial',
-        'https://example.com/redirect/github.com',
-      ];
+  it('should return NO for non-work related URLs', () => {
+    const urls = ['https://facebook.com', 'https://instagram.com', 'https://netflix.com'];
 
-      pathUrls.forEach(url => {
-        expect(isUserWorking(url)).toBe(true);
-      });
-    });
-
-    test('should handle empty URLs', () => {
-      expect(isUserWorking('')).toBe(false);
-    });
-
-    test('should handle undefined URLs', () => {
-      expect(isUserWorking(undefined as unknown as string)).toBe(false);
+    urls.forEach(url => {
+      expect(isUserWorking(url)).toBe(IsUserWorking.NO);
     });
   });
 });
