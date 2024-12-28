@@ -13,7 +13,6 @@ export interface IAppObserverService {
   getCurrentApp(): { appName: string; appIdentifier: string } | null;
   getInstalledApps(): Promise<{ name: string; iconPath: string; bundleIdentifier: string }[]>;
   getActiveBrowserOpenedURL(): Promise<string | null>;
-  getSystemIdleTime(): Promise<number | null>;
 }
 
 export type AppObserverResponse = {
@@ -29,6 +28,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
   appObserverLogsDirectory: string;
   currentApp: { appName: string; appIdentifier: string } | null;
   currentAppActiveStartTime: number;
+  idleTimeIntervalId: NodeJS.Timeout | null;
 
   constructor(logger: Logger, appRoot: string, appObserverLogsDirectory: string) {
     super();
@@ -38,36 +38,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
     this.appObserverLogsDirectory = appObserverLogsDirectory;
     this.currentApp = null;
     this.currentAppActiveStartTime = 0;
-  }
-  getSystemIdleTime(): Promise<number | null> {
-    return new Promise<number | null>((resolve, reject) => {
-      if (!this.child) {
-        this.logger.error('AppObserverService is not started or child process does not exist');
-        return resolve(null);
-      }
-
-      this.child.stdin.write('getSystemIdleTime\n');
-
-      this.child.stdout.once('data', (data: Buffer) => {
-        try {
-          const response = JSON.parse(data.toString('utf8'));
-          if (response.type === 'idleTime') {
-            resolve(response.response);
-          } else {
-            this.logger.error(`Unexpected response type: ${response.type}`);
-            resolve(null);
-          }
-        } catch (error: any) {
-          this.logger.error(`Failed to parse response: ${(error as Error).message}`);
-          resolve(null);
-        }
-      });
-
-      this.child.stderr.once('data', (data: Buffer) => {
-        this.logger.error(`Error from child process: ${data.toString('utf8')}`);
-        resolve(null);
-      });
-    });
+    this.idleTimeIntervalId = null;
   }
 
   start(isRunningInAsar = false): void {
@@ -93,7 +64,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
         this.logger.info(`AppObserverService started:${this.child.pid}`);
         this.child.stdout.on('data', function (data: Buffer) {
           const rawData = data.toString('utf8');
-          self.logger.info(` Parsing AppObserverService stdout data:${rawData}`);
+          // self.logger.info(` Parsing AppObserverService stdout data:${rawData}`);
           try {
             const lines = rawData.split('\n');
             for (const line of lines) {
@@ -118,6 +89,8 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
                 self.logger.info(`AppObserverService stdLog:${JSON.stringify(appObserverResponse.response)}`);
               } else if (appObserverResponse.type === 'stdError') {
                 self.logger.error(`AppObserverService stdError:${JSON.stringify(appObserverResponse.response)}`);
+              } else if (appObserverResponse.type === 'idleTime') {
+                self.emit('idleTime', appObserverResponse.response);
               }
             }
           } catch (error) {
@@ -131,6 +104,9 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
         this.child.on('exit', function (code: number) {
           self.logger.info('AppObserver child process exited with code ' + code);
         });
+        this.idleTimeIntervalId = setInterval(() => {
+          self.child.stdin.write('getSystemIdleTime\n');
+        }, 500);
       }
     } catch (error) {
       this.logger.error(`AppObserverService failed to start:${error}`);
@@ -142,6 +118,10 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
     // kill the child process
     // TOOD: Write code to close the AppObserverService gracefully.
     this.child.kill();
+    if (this.idleTimeIntervalId) {
+      clearInterval(this.idleTimeIntervalId);
+      this.idleTimeIntervalId = null;
+    }
   }
 
   getCurrentApp(): { appName: string; appIdentifier: string } | null {

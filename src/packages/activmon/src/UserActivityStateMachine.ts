@@ -248,14 +248,4 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
       }
     }
   }
-
-  // setIfUserIsStartingToBecomeHyperActive(data: TriciPingEventData) {
-  //   if (data.idleTime < ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD) {
-  //     if (this.startedBecomingHyperActiveAt === 0) {
-  //       this.startedBecomingHyperActiveAt = Date.now();
-  //     }
-  //   } else if (data.idleTime > ActivityTimeBounds.ACTIVE_HYPER_ACTIVE_THRESHOLD && this.currentState === UserActivityState.ACTIVE) {
-  //     this.startedBecomingHyperActiveAt = 0;
-  //   }
-  // }
 }
