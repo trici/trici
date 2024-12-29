@@ -20,8 +20,8 @@ public struct AppObserverMethods {
   init(logger:Logger) {
     self.logger = logger
   }
-  
-  
+
+
   // Helper function to send JSON response
   private func sendResponse(_ response: [String: Any]) {
       if let data = try? JSONSerialization.data(withJSONObject: response),
@@ -34,8 +34,8 @@ public struct AppObserverMethods {
       var idleTime: UInt64 = 0
   }
 
-  
-  
+
+
   func getSystemIdleTime() -> Int? {
     var iterator: io_iterator_t = 0
     let matching = IOServiceMatching("IOHIDSystem")
@@ -55,7 +55,7 @@ public struct AppObserverMethods {
           let idleTime = (idleTimeProperty.takeUnretainedValue() as? NSNumber)?.uint64Value else {
         return nil
     }
-    
+
     let idleTimeInMilliseconds = Int(idleTime / 1_000_000)
 
     let response: [String: Any] = [
@@ -242,153 +242,227 @@ public struct AppObserverMethods {
       }
   }
 
+    private func checkAccessibilityPermissions() -> Bool {
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+        let accessibilityEnabled = AXIsProcessTrustedWithOptions(options as CFDictionary)
+
+        if !accessibilityEnabled {
+            logger.error("Accessibility permissions not granted")
+        }
+
+        return accessibilityEnabled
+    }
+
+    private func reestablishAccessibilityConnection(for pid: pid_t) -> AXUIElement? {
+        logger.info("Attempting to reestablish accessibility connection for pid: \(pid)")
+
+        // Release existing connection if any
+        let newAppRef = AXUIElementCreateApplication(pid)
+
+        // Verify the connection
+        var temp: AnyObject?
+        let verifyResult = AXUIElementCopyAttributeValue(newAppRef, kAXRoleAttribute as CFString, &temp)
+
+        if verifyResult == .success {
+            logger.info("Successfully reestablished accessibility connection")
+            return newAppRef
+        } else {
+            logger.error("Failed to reestablish accessibility connection: \(verifyResult)")
+            return nil
+        }
+    }
+
+    private func getFocusedWindow(for appRef: AXUIElement) -> AXUIElement? {
+        var focusedWindowRef: CFTypeRef?
+        let focusedWindowError = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &focusedWindowRef)
+
+        if focusedWindowError != .success {
+            logger.error("Failed to get focused window: \(focusedWindowError)")
+            return nil
+        }
+
+        // Since we know focusedWindowRef must be an AXUIElement, force cast it
+        return (focusedWindowRef as! AXUIElement)
+    }
+
+    private func getValidWindowElement(from appRef: AXUIElement) -> AXUIElement? {
+        // First try focused window
+        var focusedWindowRef: CFTypeRef?
+        let focusedWindowError = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &focusedWindowRef)
+
+        if focusedWindowError == .success {
+            let focusedWindow = focusedWindowRef as! AXUIElement
+            // Verify the window
+            var roleRef: CFTypeRef?
+            let roleResult = AXUIElementCopyAttributeValue(focusedWindow, kAXRoleAttribute as CFString, &roleRef)
+
+            if roleResult == .success, let role = roleRef as? String, role == kAXWindowRole {
+                logger.info("Successfully found valid focused window")
+                return focusedWindow
+            }
+        }
+
+        // If focused window fails, try getting all windows
+        var windowsRef: CFTypeRef?
+        let windowsError = AXUIElementCopyAttributeValue(appRef, kAXWindowsAttribute as CFString, &windowsRef)
+
+        if windowsError == .success, let windows = windowsRef as? [AXUIElement], !windows.isEmpty {
+            // Try each window until we find a valid one
+            for window in windows {
+                var roleRef: CFTypeRef?
+                let roleResult = AXUIElementCopyAttributeValue(window, kAXRoleAttribute as CFString, &roleRef)
+
+                if roleResult == .success, let role = roleRef as? String, role == kAXWindowRole {
+                    // Additional validation: try to get the window title
+                    var titleRef: CFTypeRef?
+                    let titleResult = AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef)
+
+                    if titleResult == .success {
+                        logger.info("Found valid window from windows list")
+                        return window
+                    }
+                }
+            }
+        }
+
+        logger.error("Could not find any valid window elements")
+        return nil
+    }
+
     private func getFrontmostBrowserURL() -> String? {
-    // Get the frontmost application
-    guard let frontmostApp = NSWorkspace.shared.frontmostApplication else {
-      logger.error("Could not get the frontmost application.")
-        return nil
-    }
-
-    // Get the process identifier (PID) of the frontmost application
-    let pid = frontmostApp.processIdentifier
-
-      logger.info("frontmostProcessId: \(pid)")
-
-    // Get the bundle identifier of the frontmost application
-    guard let bundleID = frontmostApp.bundleIdentifier else {
-      logger.error("Could not get the bundle identifier.")
-        return nil
-    }
-
-    // Define supported browsers
-    let supportedBrowsers = [
-        "com.apple.Safari",
-        "com.google.Chrome",
-        "org.mozilla.firefox"
-    ]
-
-    // Check if the frontmost application is a supported browser
-    guard supportedBrowsers.contains(bundleID) else {
-      logger.error("Frontmost application:\(bundleID) is not a supported browser")
-        return nil
-    }
-
-      // Create an accessibility application reference
-      let appRef = AXUIElementCreateApplication(pid)
-//
-      // Get the currently focused window of the application
-      var focusedWindowRef: CFTypeRef?
-      let focusedWindowError = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &focusedWindowRef)
-
-      guard focusedWindowError == .success,
-            let focusedWindow = focusedWindowRef else {
-          logger.error("Could not get the focused window of the frontmost application.")
-          return nil
-      }
-
-      func getWindowTitle(window: AXUIElement) -> String? {
-        var titleRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef) == .success,
-           let title = titleRef as? String {
-          return title
+        guard let frontmostApp = NSWorkspace.shared.frontmostApplication else {
+            logger.error("Could not get the frontmost application.")
+            return nil
         }
-        return nil
-      }
 
-      // Since we know focusedWindow must be an AXUIElement, force cast it
-      let focWindow = focusedWindow as! AXUIElement
+        let pid = frontmostApp.processIdentifier
+        logger.info("frontmostProcessId: \(pid)")
 
-      let focWindowTitle = getWindowTitle(window: focWindow)
-      logger.info("foc Window Title:\(focWindowTitle ?? "Unknown")")
+        guard let bundleID = frontmostApp.bundleIdentifier else {
+            logger.error("Could not get the bundle identifier.")
+            return nil
+        }
 
-    // Create an accessibility application reference
-//    let appRef = AXUIElementCreateApplication(pid)
+        let supportedBrowsers = [
+            "com.apple.Safari",
+            "com.google.Chrome",
+            "org.mozilla.firefox"
+        ]
 
-    // Get the windows of the application
-    var windowList: CFTypeRef?
-    let windowsError = AXUIElementCopyAttributeValue(appRef, kAXWindowsAttribute as CFString, &windowList)
-    guard windowsError == .success,
-          let windows = windowList as? [AXUIElement],
-          !windows.isEmpty else {
-      logger.error("Could not get the windows of the frontmost application.")
-        return nil
-    }
+        guard supportedBrowsers.contains(bundleID) else {
+            logger.error("Frontmost application:\(bundleID) is not a supported browser")
+            return nil
+        }
 
-      logger.info("Windows list:\(windows.count)")
-      for window in windows {
-        var windowTitle = getWindowTitle(window: window)
-        logger.info("Window title:\(windowTitle ?? "Unknown")")
-//        dumpAccessibilityHierarchy(of: window, logger: logger)
-      }
+        // Try to establish/reestablish accessibility connection
+        guard let appRef = reestablishAccessibilityConnection(for: pid) else {
+            logger.error("Failed to establish accessibility connection")
+            return nil
+        }
 
-    // Assume the first window is the active window
-    let frontWindow = windows[0]
+        // Implement retry logic for getting a valid window
+        var validWindow: AXUIElement?
+        for attempt in 1...3 {
+            if let window = getValidWindowElement(from: appRef) {
+                validWindow = window
+                break
+            }
+            logger.info("Attempt \(attempt) failed to get valid window, retrying...")
+            Thread.sleep(forTimeInterval: TimeInterval(0.5 * pow(2.0, Double(attempt - 1))))
+        }
 
-//      dumpAccessibilityHierarchy(of: frontWindow, logger: logger)
-    // Switch based on the browser type
-    switch bundleID {
-    case "com.apple.Safari":
-      return getSafariURL(windowElement: focWindow)
-    case "com.google.Chrome":
-      return getChromeURL(windowElement: focWindow)
-    case "org.mozilla.firefox":
-      return getFirefoxURL(windowElement: focWindow)
-    default:
-      logger.error("Browser not supported.")
-        return nil
-    }
-}
+        guard let window = validWindow else {
+            logger.error("Failed to get valid window after all attempts")
+            return nil
+        }
 
-// Function to get URL from Safari
-private func getSafariURL(windowElement: AXUIElement) -> String? {
-    // In Safari, the address bar is an AXTextField within the window
-    if let addressBarElement = findElement(ofType: kAXTextFieldRole, in: windowElement) {
-        // Get the value attribute, which contains the URL
-        var urlRef: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(addressBarElement, kAXValueAttribute as CFString, &urlRef)
-        if result == .success, let urlString = urlRef as? String {
-            return urlString
+        // Get URL based on browser type
+        switch bundleID {
+        case "com.apple.Safari":
+            return getSafariURL(windowElement: window)
+        case "com.google.Chrome":
+            return getChromeURL(windowElement: window)
+        case "org.mozilla.firefox":
+            return getFirefoxURL(windowElement: window)
+        default:
+            return nil
         }
     }
-  logger.error("Could not find the address bar in Safari.")
-    return nil
-}
 
-// Function to get URL from Google Chrome
-private func getChromeURL(windowElement: AXUIElement) -> String? {
-    // In Chrome, the address bar is an AXTextField within the window
-    if let addressBarElement = findElement(ofType: kAXTextFieldRole, in: windowElement) {
-        // Get the value attribute, which contains the URL
-        var urlRef: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(addressBarElement, kAXValueAttribute as CFString, &urlRef)
-        if result == .success, let urlString = urlRef as? String {
-            return urlString
+    // Function to get URL from Safari
+    private func getSafariURL(windowElement: AXUIElement) -> String? {
+        // In Safari, the address bar is an AXTextField within the window
+        if let addressBarElement = findElement(ofType: kAXTextFieldRole, in: windowElement) {
+            // Get the value attribute, which contains the URL
+            var urlRef: CFTypeRef?
+            let result = AXUIElementCopyAttributeValue(addressBarElement, kAXValueAttribute as CFString, &urlRef)
+            if result == .success, let urlString = urlRef as? String {
+                return urlString
+            }
         }
+      logger.error("Could not find the address bar in Safari.")
+        return nil
     }
-  logger.error("Could not find the address bar in Google Chrome.")
-    return nil
-}
 
-// Function to get URL from Firefox
-private func getFirefoxURL(windowElement: AXUIElement) -> String? {
-    // In Firefox, the address bar is an AXTextField within the window
-    if let addressBarElement = findElement(ofType: kAXTextFieldRole, in: windowElement) {
-        // Get the value attribute, which contains the URL
-        var urlRef: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(addressBarElement, kAXValueAttribute as CFString, &urlRef)
-        if result == .success, let urlString = urlRef as? String {
-            return urlString
+    // Function to get URL from Google Chrome
+    private func getChromeURL(windowElement: AXUIElement) -> String? {
+        // Validate window element first
+        guard isWindowElementValid(windowElement) else {
+            logger.error("Invalid window element")
+            return nil
         }
+
+        // Try up to 3 times with increasing delays
+        for attempt in 1...3 {
+            if let addressBarElement = findElement(ofType: kAXTextFieldRole, in: windowElement) {
+                var urlRef: CFTypeRef?
+                let result = AXUIElementCopyAttributeValue(addressBarElement, kAXValueAttribute as CFString, &urlRef)
+                if result == .success, let urlString = urlRef as? String {
+                    return urlString
+                }
+            }
+
+            logger.info("Attempt \(attempt) failed to find address bar, waiting before retry...")
+            // Exponential backoff: 0.5s, 1s, 2s
+            Thread.sleep(forTimeInterval: TimeInterval(0.5 * pow(2.0, Double(attempt - 1))))
+
+            // Try to refresh the window element's state
+            var temp: AnyObject?
+            _ = AXUIElementCopyAttributeValue(windowElement, kAXRoleAttribute as CFString, &temp)
+        }
+
+        logger.error("Could not find the address bar in Google Chrome after 3 attempts.")
+        return nil
     }
-  logger.error("Could not find the address bar in Firefox.")
-    return nil
-}
+
+    // Function to get URL from Firefox
+    private func getFirefoxURL(windowElement: AXUIElement) -> String? {
+        // In Firefox, the address bar is an AXTextField within the window
+        if let addressBarElement = findElement(ofType: kAXTextFieldRole, in: windowElement) {
+            // Get the value attribute, which contains the URL
+            var urlRef: CFTypeRef?
+            let result = AXUIElementCopyAttributeValue(addressBarElement, kAXValueAttribute as CFString, &urlRef)
+            if result == .success, let urlString = urlRef as? String {
+                return urlString
+            }
+        }
+      logger.error("Could not find the address bar in Firefox.")
+        return nil
+    }
 
     // Helper function to recursively find an element of a specific type
     private func findElement(ofType type: String, in element: AXUIElement) -> AXUIElement? {
+        // First verify we can access the element
         var roleRef: AnyObject?
         let roleResult = AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleRef)
-        guard roleResult == .success, let role = roleRef as? String else {
+
+        if roleResult != .success {
+            logger.error("Failed to get role for element: \(roleResult)")
+            return nil
+        }
+
+        guard let role = roleRef as? String else {
+            logger.error("Could not cast role to String")
             return nil
         }
 
@@ -398,15 +472,50 @@ private func getFirefoxURL(windowElement: AXUIElement) -> String? {
 
         var childrenRef: AnyObject?
         let childrenResult = AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &childrenRef)
-        if childrenResult == .success, let children = childrenRef as? [AXUIElement] {
-            for child in children {
-                if let found = findElement(ofType: type, in: child) {
-                    return found
-                }
+
+        if childrenResult != .success {
+            // Try to get more specific error information
+            switch childrenResult {
+            case .apiDisabled:
+                logger.error("Accessibility API is disabled")
+            case .invalidUIElement:
+                logger.error("Invalid UI Element")
+            case .cannotComplete:
+                logger.error("Cannot complete the operation")
+            case .notImplemented:
+                logger.error("Not implemented")
+            default:
+                logger.error("Failed to get children with error: \(childrenResult)")
+            }
+            return nil
+        }
+
+        guard let children = childrenRef as? [AXUIElement] else {
+            logger.error("Could not cast children to [AXUIElement]")
+            return nil
+        }
+
+        for child in children {
+            if let found = findElement(ofType: type, in: child) {
+                return found
             }
         }
 
         return nil
+    }
+
+    private func isWindowElementValid(_ element: AXUIElement) -> Bool {
+        var roleRef: AnyObject?
+        let roleResult = AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleRef)
+
+        guard roleResult == .success,
+              let role = roleRef as? String,
+              role == kAXWindowRole else {
+            logger.error("Window element validation failed with error: \(roleResult)")
+            return false
+        }
+
+        return true
     }
 
 }

@@ -23,18 +23,11 @@ appObserver.on('frontmostAppChanged', data => {
   console.log(data);
 });
 
-let idleTimeInterval = setInterval(() => {
-  appObserver.getSystemIdleTime().then(idleTime => {
-    console.log('System idle time:', idleTime);
-  });
-}, 500);
-
 console.log('Calling getActiveBrowserOpenedURL in 3 seconds...');
 setTimeout(() => {
   appObserver.getActiveBrowserOpenedURL().then(url => {
     console.log('Active browser opened URL:', url);
   });
-  clearInterval(idleTimeInterval);
 }, 3000);
 
 //console.log('Getting installed apps...');
