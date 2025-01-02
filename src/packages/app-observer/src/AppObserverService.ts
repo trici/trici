@@ -177,9 +177,12 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
       const responseHandler = (data: Buffer) => {
         try {
           const appObserverResponse: AppObserverResponse = JSON.parse(data.toString('utf8'));
-          if (appObserverResponse.type === 'activeBrowserOpenedUrl') {
+          if (appObserverResponse.type === 'activeBrowserOpenedUrlSuccess') {
             this.child.stdout.off('data', responseHandler);
             resolve(appObserverResponse.response);
+          } else if (appObserverResponse.type === 'activeBrowserOpenedUrlError') {
+            this.child.stdout.off('data', responseHandler);
+            reject(new Error(appObserverResponse.response));
           }
         } catch (error) {
           reject(error);

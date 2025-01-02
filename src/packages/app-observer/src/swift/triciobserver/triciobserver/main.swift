@@ -63,27 +63,42 @@ print(isReadable)  // true if readable, false otherwise
 
 frontmostObserver.startObserver()
 
+
+
 // Setup input handler using DispatchSource
 let inputSource = DispatchSource.makeReadSource(fileDescriptor: STDIN_FILENO, queue: DispatchQueue.main)
 inputSource.setEventHandler {
-    let inputData = FileHandle.standardInput.availableData
-    if let strData = String(data: inputData, encoding: .utf8) {
-        let command = strData.trimmingCharacters(in: .whitespacesAndNewlines)
-        switch command {
-        case "getInstalledApps":
-            appObserverMethods.outputInstalledApps()
-        case "getActiveBrowserOpenedUrl":
-            appObserverMethods.getActiveBrowserOpenedURL()
-        case "getSystemIdleTime":
-            appObserverMethods.getSystemIdleTime()
-        case "exit":
-            exit(0)
-        default:
-          logger.error("{\"error\": \"Unknown command: \(command)\"}")
-          LoggingService.logToStandardError(message: ["errorMsg": "Unknown command: \(command)"])
-//          FileHandle.standardError.write("{\"error\": \"Unknown command: \(command)\"}".data(using: .utf8)!)
-        }
-    }
+  let inputData = FileHandle.standardInput.availableData
+  if let strData = String(data: inputData, encoding: .utf8) {
+      let lines = strData.components(separatedBy: .newlines)
+      for line in lines {
+          let command = line.trimmingCharacters(in: .whitespacesAndNewlines)
+          if command.isEmpty { continue }   // skip empty lines if needed
+          
+          switch command {
+              case "getInstalledApps":
+                  Task {
+                      appObserverMethods.outputInstalledApps()
+                  }
+              case "getActiveBrowserOpenedUrl":
+                  Task {
+                      appObserverMethods.getActiveBrowserOpenedURL()
+                  }
+              case "getSystemIdleTime":
+                  Task {
+                      appObserverMethods.getSystemIdleTime()
+                  }
+              case "exit":
+                  exit(0)
+              default:
+                  logger.error("{\"error\": \"Unknown command: \(command)\"}")
+                  LoggingService.logToStandardError(
+                    message: ["errorMsg": "Unknown command: \(command)"]
+                  )
+          }
+      }
+  }
+
 }
 inputSource.resume()
 

@@ -170,32 +170,35 @@ public struct AppObserverMethods {
   }
 
     func getActiveBrowserOpenedURL() {
-        guard let url = getFrontmostBrowserURL() else {
-            let errorResponse: [String: Any] = [
-                "type": "activeBrowserOpenedUrl",
-                "response": "undefined",
+        let result = getFrontmostBrowserURL()
+      
+      logger.debug("result\(result)")
+
+        if let url = result.url {
+            // Success case
+            let successResponse: [String: Any] = [
+                "type": "activeBrowserOpenedUrlSuccess",
+                "response": url,
                 "timestamp": Date().timeIntervalSince1970
             ]
-            if let data = try? JSONSerialization.data(withJSONObject: errorResponse),
-               let jsonString = String(data: data, encoding: .utf8)
-            {
+
+            if let data = try? JSONSerialization.data(withJSONObject: successResponse),
+               let jsonString = String(data: data, encoding: .utf8) {
                 FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
             }
-            return
+        } else {
+            // Error case
+            let errorResponse: [String: Any] = [
+                "type": "activeBrowserOpenedUrlError",
+                "response": result.error?.description ?? "Unknown error",
+                "timestamp": Date().timeIntervalSince1970
+            ]
+
+            if let data = try? JSONSerialization.data(withJSONObject: errorResponse),
+               let jsonString = String(data: data, encoding: .utf8) {
+                FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
+            }
         }
-
-        let successResponse: [String: Any] = [
-            "type": "activeBrowserOpenedUrl",
-            "response": url,
-            "timestamp": Date().timeIntervalSince1970
-        ]
-
-        if let data = try? JSONSerialization.data(withJSONObject: successResponse),
-           let jsonString = String(data: data, encoding: .utf8)
-        {
-            FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
-        }
-
     }
 
   private func dumpAccessibilityHierarchy(of element: AXUIElement, logger: Logger, indent: Int = 0) {
@@ -286,6 +289,8 @@ public struct AppObserverMethods {
     }
 
     private func getValidWindowElement(from appRef: AXUIElement) -> AXUIElement? {
+//      logger.info("AccessibilityHierarchy of App")
+//      dumpAccessibilityHierarchy(of: appRef, logger: logger)
         // First try focused window
         var focusedWindowRef: CFTypeRef?
         let focusedWindowError = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &focusedWindowRef)
@@ -295,6 +300,12 @@ public struct AppObserverMethods {
             // Verify the window
             var roleRef: CFTypeRef?
             let roleResult = AXUIElementCopyAttributeValue(focusedWindow, kAXRoleAttribute as CFString, &roleRef)
+
+//          logger.info("AccesiibilityHierarchy of Window")
+//          dumpAccessibilityHierarchy(of: focusedWindow, logger: logger)
+
+          let role = roleRef as? String
+          logger.info("focusedWindowRole:\(role)")
 
             if roleResult == .success, let role = roleRef as? String, role == kAXWindowRole {
                 logger.info("Successfully found valid focused window")
@@ -311,6 +322,9 @@ public struct AppObserverMethods {
             for window in windows {
                 var roleRef: CFTypeRef?
                 let roleResult = AXUIElementCopyAttributeValue(window, kAXRoleAttribute as CFString, &roleRef)
+
+              let role = roleRef as? String
+              logger.info("Window role:\(role)")
 
                 if roleResult == .success, let role = roleRef as? String, role == kAXWindowRole {
                     // Additional validation: try to get the window title
@@ -329,18 +343,51 @@ public struct AppObserverMethods {
         return nil
     }
 
-    private func getFrontmostBrowserURL() -> String? {
+    enum BrowserURLError {
+        case noFrontmostApp
+        case noBundleIdentifier
+        case unsupportedBrowser(String)
+        case accessibilityConnectionFailed
+        case noValidWindow
+        case addressBarNotFound
+        case other(String)
+
+        var description: String {
+            switch self {
+                case .noFrontmostApp: return "Could not get the frontmost application"
+                case .noBundleIdentifier: return "Could not get the bundle identifier"
+                case .unsupportedBrowser(let id): return "Unsupported browser: \(id)"
+                case .accessibilityConnectionFailed: return "Failed to establish accessibility connection"
+                case .noValidWindow: return "Failed to get valid window"
+                case .addressBarNotFound: return "Could not find the address bar"
+                case .other(let message): return message
+            }
+        }
+    }
+
+    struct BrowserURLResult {
+        let url: String?
+        let error: BrowserURLError?
+
+        static func success(_ url: String) -> BrowserURLResult {
+            return BrowserURLResult(url: url, error: nil)
+        }
+
+        static func failure(_ error: BrowserURLError) -> BrowserURLResult {
+            return BrowserURLResult(url: nil, error: error)
+        }
+    }
+
+    private func getFrontmostBrowserURL() -> BrowserURLResult {
         guard let frontmostApp = NSWorkspace.shared.frontmostApplication else {
-            logger.error("Could not get the frontmost application.")
-            return nil
+            return .failure(.noFrontmostApp)
         }
 
         let pid = frontmostApp.processIdentifier
         logger.info("frontmostProcessId: \(pid)")
 
         guard let bundleID = frontmostApp.bundleIdentifier else {
-            logger.error("Could not get the bundle identifier.")
-            return nil
+            return .failure(.noBundleIdentifier)
         }
 
         let supportedBrowsers = [
@@ -350,103 +397,86 @@ public struct AppObserverMethods {
         ]
 
         guard supportedBrowsers.contains(bundleID) else {
-            logger.error("Frontmost application:\(bundleID) is not a supported browser")
-            return nil
+            return .failure(.unsupportedBrowser(bundleID))
         }
 
-        // Try to establish/reestablish accessibility connection
         guard let appRef = reestablishAccessibilityConnection(for: pid) else {
-            logger.error("Failed to establish accessibility connection")
-            return nil
+            return .failure(.accessibilityConnectionFailed)
         }
 
         // Implement retry logic for getting a valid window
         var validWindow: AXUIElement?
-        for attempt in 1...3 {
             if let window = getValidWindowElement(from: appRef) {
                 validWindow = window
-                break
-            }
-            logger.info("Attempt \(attempt) failed to get valid window, retrying...")
-            Thread.sleep(forTimeInterval: TimeInterval(0.5 * pow(2.0, Double(attempt - 1))))
         }
 
         guard let window = validWindow else {
-            logger.error("Failed to get valid window after all attempts")
-            return nil
+            return .failure(.noValidWindow)
         }
 
         // Get URL based on browser type
         switch bundleID {
         case "com.apple.Safari":
-            return getSafariURL(windowElement: window)
+            if let url = getSafariURL(windowElement: window) {
+                return .success(url)
+            }
+            return .failure(.addressBarNotFound)
         case "com.google.Chrome":
-            return getChromeURL(windowElement: window)
+            if let url = getChromeURL(windowElement: window) {
+                return .success(url)
+            }
+            if let url = getChromeURLViaAppleScript() {
+                return .success(url)
+            }
+            return .failure(.addressBarNotFound)
         case "org.mozilla.firefox":
-            return getFirefoxURL(windowElement: window)
+            if let url = getFirefoxURL(windowElement: window) {
+                return .success(url)
+            }
+            return .failure(.addressBarNotFound)
         default:
-            return nil
+            return .failure(.other("Unexpected browser type"))
         }
     }
 
     // Function to get URL from Safari
     private func getSafariURL(windowElement: AXUIElement) -> String? {
-        // In Safari, the address bar is an AXTextField within the window
         if let addressBarElement = findElement(ofType: kAXTextFieldRole, in: windowElement) {
-            // Get the value attribute, which contains the URL
             var urlRef: CFTypeRef?
             let result = AXUIElementCopyAttributeValue(addressBarElement, kAXValueAttribute as CFString, &urlRef)
             if result == .success, let urlString = urlRef as? String {
                 return urlString
             }
         }
-      logger.error("Could not find the address bar in Safari.")
         return nil
     }
 
     // Function to get URL from Google Chrome
     private func getChromeURL(windowElement: AXUIElement) -> String? {
-        // Validate window element first
         guard isWindowElementValid(windowElement) else {
-            logger.error("Invalid window element")
             return nil
         }
 
-        // Try up to 3 times with increasing delays
-        for attempt in 1...3 {
-            if let addressBarElement = findElement(ofType: kAXTextFieldRole, in: windowElement) {
-                var urlRef: CFTypeRef?
-                let result = AXUIElementCopyAttributeValue(addressBarElement, kAXValueAttribute as CFString, &urlRef)
-                if result == .success, let urlString = urlRef as? String {
-                    return urlString
-                }
-            }
-
-            logger.info("Attempt \(attempt) failed to find address bar, waiting before retry...")
-            // Exponential backoff: 0.5s, 1s, 2s
-            Thread.sleep(forTimeInterval: TimeInterval(0.5 * pow(2.0, Double(attempt - 1))))
-
-            // Try to refresh the window element's state
-            var temp: AnyObject?
-            _ = AXUIElementCopyAttributeValue(windowElement, kAXRoleAttribute as CFString, &temp)
-        }
-
-        logger.error("Could not find the address bar in Google Chrome after 3 attempts.")
-        return nil
-    }
-
-    // Function to get URL from Firefox
-    private func getFirefoxURL(windowElement: AXUIElement) -> String? {
-        // In Firefox, the address bar is an AXTextField within the window
         if let addressBarElement = findElement(ofType: kAXTextFieldRole, in: windowElement) {
-            // Get the value attribute, which contains the URL
             var urlRef: CFTypeRef?
             let result = AXUIElementCopyAttributeValue(addressBarElement, kAXValueAttribute as CFString, &urlRef)
             if result == .success, let urlString = urlRef as? String {
                 return urlString
             }
         }
-      logger.error("Could not find the address bar in Firefox.")
+
+        return nil
+    }
+
+    // Function to get URL from Firefox
+    private func getFirefoxURL(windowElement: AXUIElement) -> String? {
+        if let addressBarElement = findElement(ofType: kAXTextFieldRole, in: windowElement) {
+            var urlRef: CFTypeRef?
+            let result = AXUIElementCopyAttributeValue(addressBarElement, kAXValueAttribute as CFString, &urlRef)
+            if result == .success, let urlString = urlRef as? String {
+                return urlString
+            }
+        }
         return nil
     }
 
@@ -516,6 +546,28 @@ public struct AppObserverMethods {
         }
 
         return true
+    }
+
+    // Add this new function
+    private func getChromeURLViaAppleScript() -> String? {
+        let script = """
+        tell application "Google Chrome"
+            if windows is not {} then
+                get URL of active tab of first window
+            end if
+        end tell
+        """
+
+        let appleScript = NSAppleScript(source: script)
+        var error: NSDictionary?
+
+        if let result = appleScript?.executeAndReturnError(&error).stringValue {
+            return result
+        } else if let error = error {
+            logger.error("AppleScript error: \(error)")
+        }
+
+        return nil
     }
 
 }
