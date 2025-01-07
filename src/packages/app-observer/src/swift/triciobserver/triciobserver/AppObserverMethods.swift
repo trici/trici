@@ -171,7 +171,7 @@ public struct AppObserverMethods {
 
     func getActiveBrowserOpenedURL() {
         let result = getFrontmostBrowserURL()
-      
+
       logger.debug("result\(result)")
 
         if let url = result.url {
@@ -410,19 +410,22 @@ public struct AppObserverMethods {
                 validWindow = window
         }
 
-        guard let window = validWindow else {
-            return .failure(.noValidWindow)
+        let usingAccessibility = validWindow != nil
+
+        if !usingAccessibility {
+            logger.info("No valid window found via AX. Will try AppleScript methods")
         }
 
         // Get URL based on browser type
         switch bundleID {
         case "com.apple.Safari":
-            if let url = getSafariURL(windowElement: window) {
+            if usingAccessibility, let window = validWindow, let url = getSafariURL(windowElement: window) {
                 return .success(url)
             }
+            // TODO: Implement Safari AppleScript method
             return .failure(.addressBarNotFound)
         case "com.google.Chrome":
-            if let url = getChromeURL(windowElement: window) {
+            if usingAccessibility, let window = validWindow, let url = getChromeURL(windowElement: window) {
                 return .success(url)
             }
             if let url = getChromeURLViaAppleScript() {
@@ -430,9 +433,10 @@ public struct AppObserverMethods {
             }
             return .failure(.addressBarNotFound)
         case "org.mozilla.firefox":
-            if let url = getFirefoxURL(windowElement: window) {
+            if usingAccessibility, let window = validWindow, let url = getFirefoxURL(windowElement: window) {
                 return .success(url)
             }
+            // TODO: Implement Firefox AppleScript method
             return .failure(.addressBarNotFound)
         default:
             return .failure(.other("Unexpected browser type"))
