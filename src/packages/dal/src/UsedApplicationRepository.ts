@@ -4,7 +4,7 @@ import { Logger } from '@trici/logger';
 import { error } from 'console';
 
 export interface IUsedApplicationRepository {
-  save(usedApplication: IUsedApplication): Promise<void>;
+  save(usedApplication: IUsedApplication): Promise<IUsedApplication>;
   get(applicationName: string): Promise<IUsedApplication | null>;
   insertMany(usedApplications: IUsedApplication[]): Promise<void>;
   getUsedApplications(): Promise<IUsedApplication[]>;
@@ -20,12 +20,15 @@ export class UsedApplicationRepository implements IUsedApplicationRepository {
   }
 
   // Insert or update the used application
-  public async save(usedApplication: IUsedApplication): Promise<void> {
+  public async save(usedApplication: IUsedApplication): Promise<IUsedApplication> {
     if (!this.db) {
       this.logger?.error('Database not initialized');
       throw new Error('Database not initialized');
     }
-    const insertQuery = `INSERT OR REPLACE INTO used_application (application_name, app_identifier, app_category, duration_used, icon_path) VALUES (?, ?, ?, ?, ?)`;
+    const insertQuery = `
+      INSERT OR REPLACE INTO used_application (application_name, app_identifier, app_category, duration_used, icon_path)
+      VALUES (?, ?, ?, ?, ?)
+      RETURNING *`;
     const params = [
       usedApplication.applicationName,
       usedApplication.appIdentifier,
@@ -35,12 +38,18 @@ export class UsedApplicationRepository implements IUsedApplicationRepository {
     ];
 
     return new Promise((resolve, reject) => {
-      this.db!.run(insertQuery, params, err => {
+      this.db!.get(insertQuery, params, (err, row: any) => {
         if (err) {
           this.logger?.error('Error saving used application to the database', err);
           reject(err);
         } else {
-          resolve();
+          resolve({
+            applicationName: row.application_name,
+            appIdentifier: row.app_identifier,
+            appCategory: row.app_category,
+            durationUsed: row.duration_used,
+            iconPath: row.icon_path,
+          });
         }
       });
     });

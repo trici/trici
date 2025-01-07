@@ -1,62 +1,22 @@
 import { AppEventRepository } from '../src/AppEventRepository';
-import { SqliteDbManager } from '../src/SqliteDbManager';
 import sqlite3 from 'sqlite3';
 import type { Logger } from '@trici/logger';
-import LoggingService from '@trici/logger';
 import { IAppEvent, TriciAppEvent } from '@trici/models';
-import path from 'path';
-import { deleteDirectoryWithContents } from '@trici/utils';
 import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs';
-import knexfile from './knex/knexfile';
+import { beforeAllInitCommon, afterAllInitCommon } from './TestHelpers';
 
 describe('AppEventRepository', () => {
   let repository: AppEventRepository;
   let db: sqlite3.Database;
   let logger: Logger;
-  let dbManager: SqliteDbManager;
 
   beforeAll(async () => {
-    const logsDirPath = path.join(__dirname, 'logs');
-    const testDbDirPath = path.join(__dirname, 'testAppData');
-
-    try {
-      console.log('Cleaning test logs directory');
-      await deleteDirectoryWithContents(logsDirPath);
-      console.log('Cleaned test logs directory');
-      console.log('Cleaning test db directory');
-      await deleteDirectoryWithContents(testDbDirPath);
-
-      if (!fs.existsSync(testDbDirPath)) {
-        fs.mkdirSync(testDbDirPath, { recursive: true });
-        console.log('Test db directory created');
-      }
-    } catch (err) {
-      console.log('Error iniitializing logger: ', err);
-    }
-
-    // Assuming you have a test database setup for this purpose
-    logger = LoggingService.init(logsDirPath, 'testsql-%DATE%.log', {
-      installationId: 'test-installation-id',
-      appDetails: 'darwin-dev-2.2.2',
-    });
-
-    dbManager = new SqliteDbManager(logger);
-
-    const dbDirPath = path.join(__dirname, 'testAppData');
-
-    try {
-      await dbManager.init(dbDirPath, knexfile);
-    } catch (err) {
-      console.log('Error initializing dbManager: ', err);
-    }
-    db = dbManager.getDb();
-
+    const { db, logger } = await beforeAllInitCommon();
     repository = new AppEventRepository(db, logger);
   });
 
   afterAll(async () => {
-    await dbManager.close();
+    await afterAllInitCommon();
   });
 
   describe('save and getAppEvents', () => {
