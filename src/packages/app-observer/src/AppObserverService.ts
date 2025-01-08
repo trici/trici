@@ -6,11 +6,12 @@ const child_process = require('child_process');
 import { EventEmitter } from 'events';
 import { Buffer } from 'buffer';
 import { isWebBrowser } from '@trici/utils';
+import { AppChangeHistoryRecord, AppChangeHistory } from './AppChangeHistory';
 
 export interface IAppObserverService {
   start(isRunningInAsar: boolean): void;
   stop(): void;
-  getCurrentApp(): { appName: string; appIdentifier: string } | null;
+  getCurrentApp(): { appName: string; appIdentifier: string; timestamp: number } | null;
   getInstalledApps(): Promise<{ name: string; iconPath: string; bundleIdentifier: string }[]>;
   getActiveBrowserOpenedURL(): Promise<string | null>;
 }
@@ -26,9 +27,8 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
   logger: Logger | IConsoleLogger;
   appRoot: string;
   appObserverLogsDirectory: string;
-  currentApp: { appName: string; appIdentifier: string } | null;
-  currentAppActiveStartTime: number;
   idleTimeIntervalId: NodeJS.Timeout | null;
+  appChangeHistory: AppChangeHistory;
 
   constructor(logger: Logger, appRoot: string, appObserverLogsDirectory: string) {
     super();
@@ -36,9 +36,8 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
     this.logger = logger ? logger : getConsoleLogger();
     this.appRoot = appRoot;
     this.appObserverLogsDirectory = appObserverLogsDirectory;
-    this.currentApp = null;
-    this.currentAppActiveStartTime = 0;
     this.idleTimeIntervalId = null;
+    this.appChangeHistory = new AppChangeHistory();
   }
 
   start(isRunningInAsar = false): void {
@@ -72,19 +71,35 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
                 continue;
               }
               const appObserverResponse: AppObserverResponse = JSON.parse(line);
-              let appChangeData: any = {};
+              let frontmostAppChangedData: any = {};
+              let appChangeHistoryRecord: AppChangeHistoryRecord = {
+                appName: '',
+                appIdentifier: '',
+                timestamp: 0,
+              };
+
               if (appObserverResponse.type === 'frontmostApp') {
-                appChangeData.timestamp = appObserverResponse.timestamp;
-                appChangeData.frontmostApp = appObserverResponse.response;
-                appChangeData.previousApp = self.currentApp;
-                appChangeData.previousAppActiveTime =
-                  self.currentAppActiveStartTime > 0
-                    ? Math.round(appChangeData.timestamp - self.currentAppActiveStartTime)
-                    : 0;
-                // self.logger.info(`appChangeData:${JSON.stringify(appChangeData)}`);
-                self.currentApp = appObserverResponse.response;
-                self.currentAppActiveStartTime = appObserverResponse.timestamp;
-                self.emit('frontmostAppChanged', appChangeData);
+                frontmostAppChangedData.timestamp = appObserverResponse.timestamp;
+                frontmostAppChangedData.frontmostApp = appObserverResponse.response;
+
+                const previousRecord = self.appChangeHistory.getLatestRecord();
+                frontmostAppChangedData.previousApp = previousRecord
+                  ? {
+                      appName: previousRecord.appName,
+                      appIdentifier: previousRecord.appIdentifier,
+                    }
+                  : null;
+
+                frontmostAppChangedData.previousAppActiveTime = previousRecord
+                  ? Math.round(frontmostAppChangedData.timestamp - previousRecord.timestamp)
+                  : 0;
+
+                appChangeHistoryRecord.appName = frontmostAppChangedData.frontmostApp.appName;
+                appChangeHistoryRecord.appIdentifier = frontmostAppChangedData.frontmostApp.appIdentifier;
+                appChangeHistoryRecord.timestamp = frontmostAppChangedData.timestamp;
+                self.appChangeHistory.add(appChangeHistoryRecord);
+
+                self.emit('frontmostAppChanged', frontmostAppChangedData);
               } else if (appObserverResponse.type === 'stdLog') {
                 self.logger.info(`AppObserverService stdLog:${JSON.stringify(appObserverResponse.response)}`);
               } else if (appObserverResponse.type === 'stdError') {
@@ -124,8 +139,15 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
     }
   }
 
-  getCurrentApp(): { appName: string; appIdentifier: string } | null {
-    return this.currentApp;
+  getCurrentApp(): { appName: string; appIdentifier: string; timestamp: number } | null {
+    const latestRecord = this.appChangeHistory.getLatestRecord();
+    return latestRecord
+      ? {
+          appName: latestRecord.appName,
+          appIdentifier: latestRecord.appIdentifier,
+          timestamp: latestRecord.timestamp,
+        }
+      : null;
   }
 
   // TODO: the return type here should not use bundleIdentifier as it is specific for MacOS. It should be appIdentifier.
