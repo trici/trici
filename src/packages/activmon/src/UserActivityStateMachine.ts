@@ -209,7 +209,12 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
       this.currentState = newState;
       this.stateHistory.push({ state: this.currentState, timestamp: Date.now() });
 
-      this.emit('stateChanged', newState);
+      this.emit(
+        'stateChanged',
+        newState,
+        this.getIdleTimeNearHistoryAverage(),
+        this.getIdleTimeImmediateHistoryAverage(),
+      );
     }
   }
 
