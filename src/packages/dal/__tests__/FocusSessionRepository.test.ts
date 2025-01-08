@@ -37,6 +37,15 @@ describe('FocusSessionRepository', () => {
       const savedFocusSession = await repository.save(newFocusSession);
       expect(savedFocusSession.id).not.toBe(-1);
       expect(savedFocusSession.startTime).toBe(newFocusSession.startTime);
+
+      const sessionToModify = new FocusSession(savedFocusSession);
+      const modifiedFocusSession = sessionToModify.withMutations(obj => {
+        obj.set('endTime', Date.now()).set('name', 'Test Focus Session');
+      });
+      const savedModifiedFocusSession = await repository.save(modifiedFocusSession);
+      expect(savedModifiedFocusSession.id).toBe(savedFocusSession.id);
+      expect(savedModifiedFocusSession.endTime).toBe(modifiedFocusSession.endTime);
+      expect(savedModifiedFocusSession.name).toBe(modifiedFocusSession.name);
     });
   });
 

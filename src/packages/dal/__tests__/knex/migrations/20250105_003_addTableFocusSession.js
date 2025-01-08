@@ -9,7 +9,7 @@
  */
 exports.up = function (knex) {
   return knex.schema.createTable('focus_session', table => {
-    table.bigInteger('id').primary();
+    table.increments('id').primary().notNullable();
     table.bigInteger('start_time').notNullable();
     table.bigInteger('end_time').defaultTo(0);
     table.string('name').defaultTo('');

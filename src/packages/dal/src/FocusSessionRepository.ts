@@ -42,8 +42,8 @@ export class FocusSessionRepository implements IFocusSessionRepository {
 
     if (focusSession.id && focusSession.id > 0) {
       // Update
-      const updateQuery = `UPDATE focus_sessions SET start_time = ?, end_time = ?, name = ?, session_did_start = ?, recording_process_crashed_on_start = ?,
-       display_units = ?, should_have_recording = ?, started_by = ?, started_from = ?, session_start_metadata = ? WHERE _id = ? RETURNING *`;
+      const updateQuery = `UPDATE focus_session SET start_time = ?, end_time = ?, name = ?, session_did_start = ?, recording_process_crashed_on_start = ?,
+       display_units = ?, should_have_recording = ?, started_by = ?, started_from = ?, session_start_metadata = ? WHERE id = ? RETURNING *`;
       const params = [
         focusSession.startTime,
         focusSession.endTime,
