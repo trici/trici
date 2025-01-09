@@ -1,6 +1,6 @@
 {
   "name": "@trici/recorder",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "description": "> TODO: description",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",
@@ -20,8 +20,14 @@
     "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js ",
     "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js ",
     "build-types": "tsc && node ../../scripts/flatten-types.js .",
-    "build-dev": "pnpm run build-types && pnpm run esbuild-dev",
-    "build-prod": "pnpm run esbuild-prod",
+    "build-dev": "run-script-os",
+    "build-dev:darwin": "pnpm run buildBinary-dev:darwin && pnpm run esbuild-dev && pnpm run build-types",
+    "build-dev:win32": "pnpm run buildBinary-dev:win32 && pnpm run esbuild-dev && pnpm run build-types",
+    "buildBinary-dev:darwin": "if [ -f 'bin/dev/Recorder' ]; then rm -rf bin/dev/Recorder; fi && xcodebuild -project src/swift/Recorder/Recorder.xcodeproj -scheme Recorder -configuration Debug -derivedDataPath src/swift/Recorder/build && cp src/swift/Recorder/build/Build/Products/Debug/Recorder bin/dev/Recorder && shasum -a 256 bin/dev/Recorder > dist/Recorder.sha256",
+    "buildBinary-prod:darwin": "if [ -f 'bin/Recorder' ]; then rm -rf bin/Recorder; fi && xcodebuild -project src/swift/Recorder/Recorder.xcodeproj -scheme Recorder -configuration Release -derivedDataPath src/swift/Recorder/build && cp src/swift/Recorder/build/Build/Products/Release/Recorder bin/Recorder && shasum -a 256 bin/Recorder > dist/Recorder.sha256",
+    "build-prod": "run-script-os",
+    "build-prod:darwin": "pnpm run buildBinary-prod:darwin && pnpm run esbuild-prod && pnpm run build-types",
+    "build-prod:win32": "pnpm run buildBinary-prod:win32 && pnpm run esbuild-prod && pnpm run build-types",
     "test": "node ./__tests__/recorder.test.js"
   },
   "bugs": {
@@ -29,10 +35,12 @@
   },
   "devDependencies": {
     "@trici/utils": "workspace:^",
-    "cross-env": "^7.0.3"
+    "cross-env": "^7.0.3",
+    "run-script-os": "^1.1.6"
   },
   "dependencies": {
     "@trici/logger": "workspace:^",
-    "ffmpeg-static": "^5.1.0"
+    "ffmpeg-static": "^5.2.0",
+    "mkfifo": "^2.1.0"
   }
 }

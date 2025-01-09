@@ -1,0 +1,35 @@
+This project is a monorepo managed by pnpm and nx/lerna.
+
+The root of the monorepo is src folder (which is not the git root). The builds folder contains the builds for the different platforms.
+
+The docs folder contains the documentation for the project.
+.
+├── builds
+│   └── darwin
+├── docs
+├── src
+│   ├── node_modules
+│   ├── packages
+│   └── scripts
+└── venv
+    ├── bin
+    ├── include
+    └── lib
+
+
+
+Each package has its own tests which is located in the __tests__ folder. For example:
+
+├── packages
+│   ├── activmon
+│   │   ├── __tests__
+│   │   ├── dist
+│   │   └── src
+│   ├── app-observer
+│   │   ├── __tests__
+│   │   ├── bin
+│   │   │   └── dev
+│   │   ├── dist
+│   │   ├── logs
+│   │   └── src
+│   │       └── swift

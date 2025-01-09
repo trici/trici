@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { MantineProvider, Grid } from '@mantine/core';
+// import { MantineProvider, Grid } from '@mantine/core';
 import { SettingsContainer } from './SettingsContainer';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { IMessageFromMain } from '../../../../typedefs/preload';
 import { SettingsKey } from '../typedefs/SettingsWindowTypes';
 import log from 'loglevel';
+// import { triciThemeOverride } from '../../shared/themes';
 
 const queryClient = new QueryClient();
 
 function SettingsRoot() {
   const initValues = window.bridgeApi.getInitValues();
-  let activeSettingsItem = SettingsKey.SHORTCUTS;
+  let activeSettingsItem = SettingsKey.APPLICATIONS;
   if (initValues) {
     const openSettingsSectionMessage = initValues.find(
       (value: IMessageFromMain) => value.handler === 'openSettingsSection',
@@ -21,11 +21,9 @@ function SettingsRoot() {
     }
   }
   return (
-    <MantineProvider withGlobalStyles withNormalizeCSS>
-      <QueryClientProvider client={queryClient}>
-        <SettingsContainer activeSettingsItem={activeSettingsItem} />
-      </QueryClientProvider>
-    </MantineProvider>
+    <QueryClientProvider client={queryClient}>
+      <SettingsContainer activeSettingsItem={activeSettingsItem} />
+    </QueryClientProvider>
   );
 }
 const rootElement = document.getElementById('root');

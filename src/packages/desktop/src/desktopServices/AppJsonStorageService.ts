@@ -1,7 +1,13 @@
 import storage from 'electron-json-storage';
-import { TriciApp, LastSavedEntityIds } from '@trici/models';
+import {
+  TriciApp,
+  LastSavedEntityIds,
+  ILastSavedEntityIdsType,
+  OnboardingState,
+  IOnboardingState,
+  ITriciApp,
+} from '@trici/models';
 import { Constants } from '@trici/models';
-import { app } from 'electron';
 
 export interface IAppJsonStorageService {
   init(): void;
@@ -9,6 +15,9 @@ export interface IAppJsonStorageService {
   setTriciAppObject(triciApp: TriciApp): Promise<void>;
   getLastSavedEntityIds(): Promise<LastSavedEntityIds>;
   setLastSavedEntityIds(lastSavedEntityIds: LastSavedEntityIds): Promise<void>;
+  updateLastSavedEntityIds(fieldToUpdate: keyof ILastSavedEntityIdsType, value: string): Promise<void>;
+  getOnboardingState(): Promise<OnboardingState>;
+  setOnboardingState(onboardingState: OnboardingState): Promise<void>;
 }
 
 class AppJsonStorageService implements IAppJsonStorageService {
@@ -24,16 +33,18 @@ class AppJsonStorageService implements IAppJsonStorageService {
 
   public async getTriciAppObject(): Promise<TriciApp> {
     return new Promise((resolve, reject) => {
+      console.log('getting triciApp');
+      console.log(storage);
       storage.get('triciApp', (error, data) => {
         if (error) {
           reject(error);
         }
-        console.log("data: ", data);
+        console.log('data: ', data);
         let triciApp;
         if (Object.keys(data).length === 0) {
           triciApp = new TriciApp();
         } else {
-          triciApp = new TriciApp(data);
+          triciApp = new TriciApp(data as ITriciApp);
         }
         resolve(triciApp);
       });
@@ -47,7 +58,44 @@ class AppJsonStorageService implements IAppJsonStorageService {
    */
   public async setTriciAppObject(triciApp: TriciApp): Promise<void> {
     return new Promise((resolve, reject) => {
-      storage.set('triciApp', triciApp.toJS(), (error) => {
+      storage.set('triciApp', triciApp.toJS(), error => {
+        if (error) {
+          reject(error);
+        }
+        resolve();
+      });
+    });
+  }
+
+  /**
+   * Get the onboarding state
+   * @returns Promise<OnboardingState>
+   */
+  public async getOnboardingState(): Promise<OnboardingState> {
+    return new Promise((resolve, reject) => {
+      storage.get('onboardingState', (error, data) => {
+        if (error) {
+          reject(error);
+        } else {
+          let onboardingState;
+          if (Object.keys(data).length === 0) {
+            onboardingState = new OnboardingState();
+          } else {
+            onboardingState = new OnboardingState(data as IOnboardingState);
+          }
+          resolve(onboardingState);
+        }
+      });
+    });
+  }
+
+  /**
+   *  Save the onboarding state
+   * @returns Promise<void>
+   */
+  public async setOnboardingState(onboardingState: OnboardingState): Promise<void> {
+    return new Promise((resolve, reject) => {
+      storage.set('onboardingState', onboardingState.toJS(), error => {
         if (error) {
           reject(error);
         }
@@ -66,7 +114,7 @@ class AppJsonStorageService implements IAppJsonStorageService {
           if (Object.keys(data).length === 0) {
             lastSavedEntityIds = new LastSavedEntityIds();
           } else {
-            lastSavedEntityIds = new LastSavedEntityIds(data);
+            lastSavedEntityIds = new LastSavedEntityIds(data as ILastSavedEntityIdsType);
           }
           resolve(lastSavedEntityIds);
         }
@@ -76,14 +124,19 @@ class AppJsonStorageService implements IAppJsonStorageService {
 
   public async setLastSavedEntityIds(lastSavedEntityIds: LastSavedEntityIds): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log(" saving lastSavedEntityIds: ", lastSavedEntityIds.toJS());
-      storage.set('lastSavedEntityIds', lastSavedEntityIds.toJS(), (error) => {
+      storage.set('lastSavedEntityIds', lastSavedEntityIds.toJS(), error => {
         if (error) {
           reject(error);
         }
         resolve();
       });
     });
+  }
+
+  public async updateLastSavedEntityIds(fieldToUpdate: keyof ILastSavedEntityIdsType, value: string): Promise<void> {
+    const lastSavedEntityIds = await this.getLastSavedEntityIds();
+    const updatedLastSavedEntityIds = lastSavedEntityIds.set(fieldToUpdate, value);
+    await this.setLastSavedEntityIds(updatedLastSavedEntityIds);
   }
 }
 

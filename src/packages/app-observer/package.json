@@ -1,6 +1,6 @@
 {
   "name": "@trici/app-observer",
-  "version": "1.3.2",
+  "version": "1.5.0",
   "description": "> TODO: description",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",
@@ -22,17 +22,17 @@
     "url": "git+https://github.com/trici/trici.git"
   },
   "scripts": {
-    "start": "node start.js",
+    "start": "cross-env NODE_ENV=development node start.js",
     "build": "run-script-os",
     "build-dev": "run-script-os",
     "build-prod": "run-script-os",
     "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
-    "esbuild-dev": "cross-env NODE_ENV=developement node esbuild.js",
+    "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
     "build-types": "tsc && node ../../scripts/flatten-types.js .",
     "build-prod:darwin": "pnpm run buildBinary-prod:darwin && pnpm run esbuild-prod",
     "build-dev:darwin": "pnpm run buildBinary-dev:darwin && pnpm run esbuild-dev && pnpm run build-types",
-    "buildBinary-prod:darwin": "if [ -f 'bin/MacFrontmostObserver' ]; then rm bin/MacFrontmostObserver; fi && swift build -c release --package-path src/swift/MacFrontmostObserver && cp src/swift/MacFrontmostObserver/.build/release/MacFrontmostObserver bin/MacFrontmostObserver && shasum -a 256 bin/MacFrontmostObserver > dist/MacFrontmostObserver.sha256",
-    "buildBinary-dev:darwin": "if [ -f 'bin/dev/MacFrontmostObserver' ]; then rm bin/dev/MacFrontmostObserver; fi && swift build -c debug --package-path src/swift/MacFrontmostObserver && cp src/swift/MacFrontmostObserver/.build/debug/MacFrontmostObserver bin/dev/MacFrontmostObserver && shasum -a 256 bin/dev/MacFrontmostObserver > dist/MacFrontmostObserver.sha256"
+    "buildBinary-prod:darwin": "if [ -f 'bin/triciobserver' ]; then rm bin/triciobserver; fi && xcodebuild -project src/swift/triciobserver/triciobserver.xcodeproj -scheme triciobserver -configuration Release -derivedDataPath src/swift/triciobserver/build && cp src/swift/triciobserver/build/Build/Products/Release/triciobserver bin/triciobserver && shasum -a 256 bin/dev/triciobserver > dist/triciobserver.sha256",
+    "buildBinary-dev:darwin": "if [ -f 'bin/dev/triciobserver' ]; then rm bin/dev/triciobserver; fi && xcodebuild -project src/swift/triciobserver/triciobserver.xcodeproj -scheme triciobserver -configuration Debug -derivedDataPath src/swift/triciobserver/build  && cp src/swift/triciobserver/build/Build/Products/Debug/triciobserver bin/dev/triciobserver && shasum -a 256 bin/dev/triciobserver > dist/triciobserver.sha256"
   },
   "bugs": {
     "url": "https://github.com/trici/trici/issues"
@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@trici/config": "workspace:^",
-    "@trici/logger": "workspace:^"
+    "@trici/logger": "workspace:^",
+    "@trici/utils": "workspace:^"
   }
 }

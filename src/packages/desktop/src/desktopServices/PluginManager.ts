@@ -1,5 +1,5 @@
 import { AppEventEmitter } from './AppEventEmitter';
-import { TRICI_APP_EVENT } from '@trici/models';
+import { TriciAppEvent } from '@trici/models';
 import { ITriciPlugin } from '../typedefs/ITriciPlugin';
 import { IPluginManager } from '../typedefs/IPluginManager';
 import type { Logger } from '@trici/logger';
@@ -27,7 +27,7 @@ export class PluginManager implements IPluginManager {
   }
 
   public initialize(): void {
-    Object.values(TRICI_APP_EVENT).forEach(event => {
+    Object.values(TriciAppEvent).forEach(event => {
       console.log('PluginManager.initialize', event);
       const self = this;
       this.eventBus.on(event, (...args: any[]) => {
@@ -45,7 +45,7 @@ export class PluginManager implements IPluginManager {
     // plugin.initialize(this);
   }
 
-  public emit<E extends TRICI_APP_EVENT>(event: E, ...args: any[]): void {
+  public emit<E extends TriciAppEvent>(event: E, ...args: any[]): void {
     console.log('PluginManager.emit', event, args);
     this.plugins.forEach(plugin => {
       plugin.handleEvent(event, ...args);

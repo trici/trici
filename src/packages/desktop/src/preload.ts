@@ -1,12 +1,12 @@
 import { IBridgeAPIInterface } from './typedefs/preload';
-import { NODE_ENV, PLATFORM } from '@trici/models';
+import { NodeEnv, Platform } from '@trici/models';
 
 const { contextBridge, ipcRenderer } = require('electron');
 
 console.log('Loading preload.js');
 
-const node_env = process.env.NODE_ENV as NODE_ENV | undefined;
-const platform = process.platform as PLATFORM | undefined;
+const node_env = process.env.NODE_ENV as NodeEnv | undefined;
+const platform = process.platform as Platform | undefined;
 
 const appPath = ipcRenderer.sendSync('getAppPath', {});
 const triciConfig = ipcRenderer.sendSync('getConfig', {});

@@ -1,0 +1,28 @@
+{
+  "name": "@trici/activmon",
+  "version": "1.1.0",
+  "description": "Capture the state of user activity",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "test": "__tests__"
+  },
+  "scripts": {
+    "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
+    "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
+    "build-dev": "pnpm run build-types && pnpm run esbuild-dev",
+    "build-prod": "pnpm run build-types && pnpm run esbuild-prod",
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles"
+  },
+  "keywords": [],
+  "author": "Shashi Singh",
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "run-script-os": "^1.1.6"
+  },
+  "dependencies": {
+    "@trici/logger": "workspace:^",
+    "@trici/models": "workspace:^"
+  }
+}

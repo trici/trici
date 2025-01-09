@@ -1,5 +1,5 @@
 __tests__/logs
-__tests__/testAppData
+__tests__/testAppData*
 .DS_STORE
 *.log
 *.map

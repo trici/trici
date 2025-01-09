@@ -1,0 +1,8 @@
+// knexfile.d.ts
+import { Knex } from 'knex';
+
+declare const config: {
+  [env: string]: Knex.Config;
+};
+
+export = config;

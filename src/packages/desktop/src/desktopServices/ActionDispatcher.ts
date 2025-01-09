@@ -129,7 +129,7 @@ export default instance;
 
 function dispatchWithLog(action: TriciAction): void {
   console.log(`dispatching action ${JSON.stringify(action.type)}`);
-  console.log(instance.isDispatching());
+  // console.log(instance.isDispatching());
   instance.dispatch(action);
 }
 

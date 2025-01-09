@@ -3,6 +3,58 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.8.0](https://github.com/trici/trici/compare/@trici/desktop@0.7.0...@trici/desktop@0.8.0) (2024-12-14)
+
+### Bug Fixes
+
+- **@trici/desktop:** Emit the User Started Working event if the user is becoming hyer active and is using an app that is definitely work. This will change in the future with this decision being based on not just what happened at that instant but also the history ([5e95022](https://github.com/trici/trici/commit/5e95022688459f2434013611fbbaef4c1ce87e14))
+- **@trici/desktop:** Improve the granularity of detecting IdleTime. Missed commit. ([38ef930](https://github.com/trici/trici/commit/38ef930468c3ca3750ce433bd7d57d3a5eff5156))
+- AlertWindow should not be on top of System Prompt/Settings window ([13737b7](https://github.com/trici/trici/commit/13737b7ef5480ce39f832f09f7dd7f64e61a5687))
+- Improved the UI of EventViewer ([347bc06](https://github.com/trici/trici/commit/347bc06cc351d225701d8c613439d0691f62fe11))
+- Reverting Tray state change as whether Session in progress affects whats shown in the menu. Changing tray icon based on userActivityState ([f87e7bc](https://github.com/trici/trici/commit/f87e7bc51073a25a1d00c9e318213ff471f4ed94))
+- Settings Window was blank when opened. ([398bd7a](https://github.com/trici/trici/commit/398bd7a2e1b27916d9f8fc328fae208717999a38))
+- Store session recordings in separate directories ([69dd0ec](https://github.com/trici/trici/commit/69dd0ecb08968159e2b9ad3935d0f8e7d1d4b66a))
+- Using template icon for Tray to allow macOS to change icon based on system theme. Also changed TrayStates so as to decouple a bit from Focus Sessions. ([da71342](https://github.com/trici/trici/commit/da7134201a17c21901287e99c9f30ff032a5f018))
+
+### Features
+
+- Improved the Event Viewer UI. Added a visualization as well and better filters. ([e774fd5](https://github.com/trici/trici/commit/e774fd5660ed6f52e3a21ff6ef3a8fcde8a13eac))
+
+# [0.7.0](https://github.com/trici/trici/compare/@trici/desktop@0.6.0...@trici/desktop@0.7.0) (2024-11-05)
+
+### Bug Fixes
+
+- **@trici/desktop---AppService:** fixed type to disable hardware acceleration ([df420f9](https://github.com/trici/trici/commit/df420f973b62ffce071ffb9f30cb06e3cbeb1260))
+- **@trici/desktop-UsedApplications-was-returning-null/empty:** Used applications was returning null because the lastSavedEntityId did not have a matching document. This was possibly due to missing await and thus the last saved entity id not getting updated before the application shut down. ([dabddcf](https://github.com/trici/trici/commit/dabddcf989bca07145bbdbff0e3db25a932f352c))
+- **@trici/desktop:** Open settings and alert window in correct screen ([1e5ddee](https://github.com/trici/trici/commit/1e5ddee7e901e5bf50021b4c99a4283688ad3f06))
+- **@trici/desktop:** Use the correct path for the Recorder Binary ([2afb3ff](https://github.com/trici/trici/commit/2afb3ff9c1919a784d4ebf8ec355b6e801206b62))
+- **@trici/desktop:** Use the correct path to Recorder for dev ([05cf7c7](https://github.com/trici/trici/commit/05cf7c7fec2f30ae58814082ae41343155d7d7c9))
+- Add a command to enable type checking ([35d384b](https://github.com/trici/trici/commit/35d384b7c04856512db7dcf94dd20cc5c94b7937))
+- Fix the settings window after removing mantine and using proactive ([fa900dd](https://github.com/trici/trici/commit/fa900dd965ed5cac75ed8479379ba91863d2e2bc))
+- Fix the updbin script to copy the correct file ([9845f81](https://github.com/trici/trici/commit/9845f81844da4daf4f99121ecbb096b0d9132f36))
+- Fix UI of alert window to use tailwind and proactive ([2dd093e](https://github.com/trici/trici/commit/2dd093ea55a326d1240b124470db94555e54a05d))
+- Minor UI Fixes for Settings Window. ([e9cbfaa](https://github.com/trici/trici/commit/e9cbfaa847e4350da88fd46938aaef8531ba5aca))
+- Missed checkin of OnboardingWizardSteps ([238c44a](https://github.com/trici/trici/commit/238c44a4e5050ce56555ca4a3ccd6c517edaa8df))
+- Page should occupy full window height. Change the title of the Settings window. ([dd9e32c](https://github.com/trici/trici/commit/dd9e32c470c945d6ee6004b0b2478ddd13b794e7))
+- Removed saving of daily user activity and just raising events ([821c473](https://github.com/trici/trici/commit/821c473496f59c5e421ce3b087f37e09ffebd602))
+- Use the new Recorder binary ([b546ce8](https://github.com/trici/trici/commit/b546ce8d0fc8632410fe6b7dec5c619fe5b7e33e))
+
+### Features
+
+- **@trici/desktop-WindowManager:** Place the window at the center of the bigger screen when multiple displays available ([385b549](https://github.com/trici/trici/commit/385b54957397cf4f164bb25e7cab316ce7ba6ce9))
+- **@trici/desktop:** Ask for accessibility permissions ([4b0857c](https://github.com/trici/trici/commit/4b0857ce1ea81da8e8c3cecd0833ce488e2b20f1))
+- **@trici/desktop:** Guess from the User activity whether the user is working ([1bac8ff](https://github.com/trici/trici/commit/1bac8ff437d6a3eab1fa8972cdf234e6978fec58))
+- **@trici/desktop:** Use the new activmon package to handle UserActivityStateTransitions. ([f1b60a8](https://github.com/trici/trici/commit/f1b60a8ece9150e25af74c848eaddf852e922a5d))
+- Added an Applications Section in the Settings ([b64a602](https://github.com/trici/trici/commit/b64a60281da93506b6c1da52179e14016b6be4e7))
+- Added Onboarding ([4c4c602](https://github.com/trici/trici/commit/4c4c602fe6d8bc9fe0cf83ca3e9645f6e88fa80b))
+- Added tailwind and proactive as dependencies ([630aff8](https://github.com/trici/trici/commit/630aff8bc7aaa52095ed2fefb5f8cb147c059398))
+- register global shortcuts when the app loads ([027022b](https://github.com/trici/trici/commit/027022bbeb83cd38f156eeaa1776587deb770686))
+- register global shortcuts when the app loads ([cef4e6c](https://github.com/trici/trici/commit/cef4e6c6ffed5c464b2aabda4a3d877ac719dec9))
+- Removed Asking which Screen to Record ([44b6553](https://github.com/trici/trici/commit/44b6553035a061d93e7e98b83efa71ad37eca2a2))
+- Save events in Sqlite3 ([04534e6](https://github.com/trici/trici/commit/04534e69f2d28c05857fcc807fb9a1d74d099b37))
+- show accelerators in tray menu ([ffd1e4c](https://github.com/trici/trici/commit/ffd1e4c96b2b65d0430aed0b4b5d0ba7c7b87f75))
+- UsedApplicationsService to save a list of applications used by the user ([cfd117c](https://github.com/trici/trici/commit/cfd117c9a4de18121469fae75d7ea7373d815cdc))
+
 # [0.6.0](https://github.com/trici/trici/compare/@trici/desktop@0.5.1...@trici/desktop@0.6.0) (2023-09-12)
 
 ### Features

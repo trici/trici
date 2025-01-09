@@ -10,13 +10,25 @@ async function buildJs() {
   esbuild.build({
     entryPoints: [path.join(ROOT_DIR, 'src', 'desktopServices', 'desktopServices.ts')],
     bundle: true,
-    outfile: !isProdBuild ? path.join(ROOT_DIR, 'dist', 'dev', 'desktopServices.js') : path.join(ROOT_DIR, 'dist', 'desktopServices.js'),
+    outfile: !isProdBuild
+      ? path.join(ROOT_DIR, 'dist', 'dev', 'desktopServices.js')
+      : path.join(ROOT_DIR, 'dist', 'desktopServices.js'),
     platform: 'node',
     sourcemap: !isProdBuild,
     target: 'node16',
     minify: isProdBuild,
     tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
-    external: ['pouchdb', 'winston', 'macos-notification-state', 'electron', 'shelljs', 'mac-screen-capture-permissions']
+    external: [
+      'pouchdb',
+      'sqlite3',
+      'winston',
+      'macos-notification-state',
+      'electron',
+      'shelljs',
+      'mac-screen-capture-permissions',
+      'node-mac-permissions',
+      'knex',
+    ],
   });
 }
 
@@ -28,7 +40,7 @@ async function build(args) {
       .then(() => {
         console.log('✅ Build JS complete');
       })
-      .catch((err) => {
+      .catch(err => {
         console.error('❌ Build JS failed', err);
       }),
   ]);

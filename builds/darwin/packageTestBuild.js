@@ -27,18 +27,15 @@ const options = {
   },
   ignore: [
     'forge.config.js',
-    'logs',
-    'dist/dev',
+    /^logs$/,
     '__tests__',
-    'bin/dev',
-    'dist/live',
     'cleanTestBuild.js',
     'installTestBuild.js',
     'packageTestBuild.js',
     'entitlements.plist',
     'prepackage.js',
     'package-lock.json',
-    'out',
+    /^out$/,
   ],
 };
 
@@ -50,5 +47,7 @@ async function packageTestBuild() {
     console.error(err);
   }
 }
+
+console.log('packageTestBuild option:', options);
 
 packageTestBuild();

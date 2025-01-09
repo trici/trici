@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { SettingsNav } from './SettingsNav';
-import { AppShell } from '@mantine/core';
 import { UserPreferences } from '@trici/models';
-import { IconSettings } from '@tabler/icons-react';
 import { SettingsKey, ISettingsItem } from '../typedefs/SettingsWindowTypes';
 import { GlobalShortcuts } from './GlobalShortcuts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RendererRepository } from '../../../dataaccess/RendererRepository';
 import { IBridgeAPIInterface } from '../../../../typedefs/preload';
-import { SelectScreenToRecord } from './SelectScreenToRecord';
 import { IMessageFromMain } from '../../../../typedefs/preload';
+import { Surface } from '@singhshashi/proactive';
+import { Applications } from './Applications';
 
 const bridgeApi: IBridgeAPIInterface = window.bridgeApi;
 
@@ -36,66 +35,59 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
       {
         key: SettingsKey.SHORTCUTS,
         label: 'Shortcuts',
-        icon: IconSettings,
+        icon: 'Keyboard',
         isActive: isSettingsItemActive(SettingsKey.SHORTCUTS),
       },
       {
-        key: SettingsKey.SCREEN_TO_RECORD,
-        label: 'Screen to Record',
-        icon: IconSettings,
-        isActive: isSettingsItemActive(SettingsKey.SCREEN_TO_RECORD),
+        key: SettingsKey.APPLICATIONS,
+        label: 'Applications',
+        icon: 'Window',
+        isActive: isSettingsItemActive(SettingsKey.APPLICATIONS),
       },
       {
         key: SettingsKey.FOCUS_SESSION,
         label: 'Focus Session',
-        icon: IconSettings,
+        icon: 'HourglassSplit',
         isActive: isSettingsItemActive(SettingsKey.FOCUS_SESSION),
       },
       {
         key: SettingsKey.WEBSITE_BLOCKING,
         label: 'Website Blocking',
-        icon: IconSettings,
+        icon: 'XOctagonFill',
         isActive: isSettingsItemActive(SettingsKey.WEBSITE_BLOCKING),
       },
       {
         key: SettingsKey.STORAGE,
         label: 'Storage',
-        icon: IconSettings,
+        icon: 'HddFill',
         isActive: isSettingsItemActive(SettingsKey.STORAGE),
       },
       {
         key: SettingsKey.SOUNDS,
         label: 'Sounds',
-        icon: IconSettings,
+        icon: 'MegaphoneFill',
         isActive: isSettingsItemActive(SettingsKey.SOUNDS),
       },
       {
         key: SettingsKey.UPDATES,
         label: 'Updates',
-        icon: IconSettings,
+        icon: 'ArrowClockwise',
         isActive: isSettingsItemActive(SettingsKey.UPDATES),
       },
       {
         key: SettingsKey.LOGGING,
         label: 'Logging',
-        icon: IconSettings,
+        icon: 'Clipboard',
         isActive: isSettingsItemActive(SettingsKey.LOGGING),
       },
-      { key: SettingsKey.ABOUT, label: 'About', icon: IconSettings, isActive: isSettingsItemActive(SettingsKey.ABOUT) },
+      { key: SettingsKey.ABOUT, label: 'About', icon: 'InfoCircle', isActive: isSettingsItemActive(SettingsKey.ABOUT) },
     ];
     return settingsItems;
   };
 
-  const [state, setState] = useState({
+  const [state, setState] = useState<SettingsContainerState>({
     settingsItems: _getSettingsItems(),
   });
-
-  // useEffect(() => {
-  //   console.log('SettingsContainer useEffect');
-  //   if (activeSettingsItem) {
-  //     _changeActiveSettingItem(activeSettingsItem);
-  //   }
-  // }, []);
 
   const queryClient = useQueryClient();
 
@@ -117,8 +109,6 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
   });
 
   const _updateUserPreferences = (userPreferences: UserPreferences, idOfDocToDelete: string) => {
-    // console.log('updatedUserPreferences', userPreferences.toJS());
-    // console.log('idOfDocToDelete', idOfDocToDelete);
     mutation.mutate({ userPreferences, idOfDocToDelete });
   };
 
@@ -152,21 +142,34 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
 
   return (
     <>
-      <AppShell navbar={<SettingsNav items={state.settingsItems} onChangeNavItem={_changeActiveSettingItem} />}>
-        {activeItem && activeItem.key === SettingsKey.SHORTCUTS && (
-          <GlobalShortcuts userPreferences={userPreferencesQuery.data} onSave={_updateUserPreferences} />
-        )}
-        {activeItem && activeItem.key === SettingsKey.SCREEN_TO_RECORD && (
-          <SelectScreenToRecord userPreferences={userPreferencesQuery.data} onSave={_updateUserPreferences} />
-        )}
-        {activeItem && activeItem.key === SettingsKey.FOCUS_SESSION && <div>Focus Session</div>}
-        {activeItem && activeItem.key === SettingsKey.WEBSITE_BLOCKING && <div>Website Blocking</div>}
-        {activeItem && activeItem.key === SettingsKey.STORAGE && <div>Storage</div>}
-        {activeItem && activeItem.key === SettingsKey.SOUNDS && <div>Sounds</div>}
-        {activeItem && activeItem.key === SettingsKey.UPDATES && <div>Updates</div>}
-        {activeItem && activeItem.key === SettingsKey.LOGGING && <div>Logging</div>}
-        {activeItem && activeItem.key === SettingsKey.ABOUT && <div>About</div>}
-      </AppShell>
+      <Surface shade="light" type="glossy">
+        <div className="flex h-full w-full flex-row justify-start align-top">
+          <div className="h-full w-[300px]">
+            <Surface shade="dark" type="translucent">
+              <div className="px-4 py-4">
+                <SettingsNav
+                  items={state.settingsItems}
+                  // activeSettingsItem={activeSettingsItem}
+                  onChangeNavItem={_changeActiveSettingItem}
+                />
+              </div>
+            </Surface>
+          </div>
+          <div className="h-full w-full px-3 py-2 shadow-sm">
+            {activeItem && activeItem.key === SettingsKey.SHORTCUTS && (
+              <GlobalShortcuts userPreferences={userPreferencesQuery.data} onSave={_updateUserPreferences} />
+            )}
+            {activeItem && activeItem.key === SettingsKey.APPLICATIONS && <Applications />}
+            {activeItem && activeItem.key === SettingsKey.FOCUS_SESSION && <div>Focus Session</div>}
+            {activeItem && activeItem.key === SettingsKey.WEBSITE_BLOCKING && <div>Website Blocking</div>}
+            {activeItem && activeItem.key === SettingsKey.STORAGE && <div>Storage</div>}
+            {activeItem && activeItem.key === SettingsKey.SOUNDS && <div>Sounds</div>}
+            {activeItem && activeItem.key === SettingsKey.UPDATES && <div>Updates</div>}
+            {activeItem && activeItem.key === SettingsKey.LOGGING && <div>Logging</div>}
+            {activeItem && activeItem.key === SettingsKey.ABOUT && <div>About</div>}
+          </div>
+        </div>
+      </Surface>
     </>
   );
 }

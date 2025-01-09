@@ -1,4 +1,3 @@
-
 /**
  * This file contains utility functions that use the shelljs library
  * Sheljs uses dynamic require so it cannot be bundled and has to be
@@ -9,15 +8,14 @@
  * unable to import other utility functions from the utils package because
  * the code would fail when it tried to import shelljs.
  */
-import fs from "fs";
-import * as path from "path";
-import { promisify } from "util";
-import { exec, ExecException } from "child_process";
+import fs from 'fs';
+import * as path from 'path';
+import { promisify } from 'util';
+import { exec, ExecException } from 'child_process';
 
 const mkdirAsync = promisify(fs.mkdir);
 const accessAsync = promisify(fs.access);
 const execAsync = promisify(exec);
-
 
 export declare type userDataDirectoryCheckResult = {
   workspacesDir: { exists: boolean; path: string; created: boolean };
@@ -38,12 +36,15 @@ export declare type userDataDirectoryCheckResult = {
  *  dataDir: { exists: false, path: "/Users/username/Library/Application Support/Trici/workspaces/default/data", created: true },
  * }
  */
-export async function checkUserDataDirectory(userDataDirectoryPath: string, workspaceName: string = "default"): Promise<userDataDirectoryCheckResult> {
+export async function checkUserDataDirectory(
+  userDataDirectoryPath: string,
+  workspaceName: string = 'default',
+): Promise<userDataDirectoryCheckResult> {
   const result = {
-    workspacesDir: { exists: false, path: "", created: false },
-    workspaceDir: { exists: false, path: "", created: false },
-    recordingsDir: { exists: false, path: "", created: false },
-    dataDir: { exists: false, path: "", created: false },
+    workspacesDir: { exists: false, path: '', created: false },
+    workspaceDir: { exists: false, path: '', created: false },
+    recordingsDir: { exists: false, path: '', created: false },
+    dataDir: { exists: false, path: '', created: false },
   };
 
   const workspacesDir = `${userDataDirectoryPath}/workspaces`;
@@ -51,7 +52,7 @@ export async function checkUserDataDirectory(userDataDirectoryPath: string, work
 
   try {
     await accessAsync(workspacesDir, fs.constants.F_OK);
-    console.log("Trici workspaces data directory exists");
+    console.log('Trici workspaces data directory exists');
     result.workspacesDir.exists = true;
   } catch {
     await mkdirAsync(workspacesDir, { recursive: true });
@@ -63,7 +64,6 @@ export async function checkUserDataDirectory(userDataDirectoryPath: string, work
 
   try {
     await accessAsync(workspaceDir, fs.constants.F_OK);
-    console.log("Workspace directory already exists");
     result.workspaceDir.exists = true;
   } catch {
     await mkdirAsync(workspaceDir, { recursive: true });
@@ -75,7 +75,6 @@ export async function checkUserDataDirectory(userDataDirectoryPath: string, work
 
   try {
     await accessAsync(recordingsDir, fs.constants.F_OK);
-    console.log("Recording directory already exists");
     result.recordingsDir.exists = true;
   } catch {
     await mkdirAsync(recordingsDir, { recursive: true });
@@ -87,7 +86,6 @@ export async function checkUserDataDirectory(userDataDirectoryPath: string, work
 
   try {
     await accessAsync(dataDir, fs.constants.F_OK);
-    console.log("Data directory already exists");
     result.dataDir.exists = true;
   } catch {
     await mkdirAsync(dataDir, { recursive: true });
@@ -107,22 +105,20 @@ export async function execShellCommandAsync(command: string, timeoutInSeconds: n
   }
 }
 
-
 /**
  * Get the version of the app based on the VERSION file
  * @returns {string} - The version of the package
  */
 export function getVersion(): string {
-  const versionFilePath = path.join(process.cwd(), "VERSION");
+  const versionFilePath = path.join(process.cwd(), 'VERSION');
 
   if (fs.existsSync(versionFilePath)) {
-    const version = fs.readFileSync(versionFilePath, "utf-8");
+    const version = fs.readFileSync(versionFilePath, 'utf-8');
     return version.trim();
   } else {
-    return "NaN";
+    return 'NaN';
   }
 }
-
 
 /**
  * Deletes aa directory and the content inside it
@@ -133,12 +129,12 @@ export function deleteDirectoryWithContents(dirPath: string) {
   return new Promise((resolve, reject) => {
     // delete the logs directory
     try {
-      fs.rm(dirPath, { recursive: true }, (err) => {
+      fs.rm(dirPath, { recursive: true }, err => {
         if (err) {
           // throw err;
           reject(err);
         }
-        console.log("Deleted logs directory");
+        console.log('Deleted logs directory');
         resolve(true);
       });
     } catch (err) {

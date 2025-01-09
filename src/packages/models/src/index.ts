@@ -6,4 +6,6 @@ export * from './TriciApp';
 export * from './DailyUserActivity';
 export * from './LastSavedEntityIds';
 export * from './UserPreferences';
-
+export * from './UsedApplication';
+export * from './OnboardingState';
+export * from './AppEvent';

@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.4](https://github.com/trici/trici/compare/@trici/recorder@1.2.3...@trici/recorder@1.2.4) (2024-12-14)
+
+**Note:** Version bump only for package @trici/recorder
+
+## [1.2.3](https://github.com/trici/trici/compare/@trici/recorder@1.2.2...@trici/recorder@1.2.3) (2024-11-05)
+
+### Bug Fixes
+
+- **@trici/recorder:** Fix frame drop issue. Number of frames being outputted by ScreenCaptureKit was throttled as the Frame processing (writing to named pipe) was throttling. ([6464a43](https://github.com/trici/trici/commit/6464a4301d8c9f849923b1482fa5703b0c45d4de))
+- Added correct path of watermark image ([fcc92b7](https://github.com/trici/trici/commit/fcc92b78e3488a0bf984e04f81bff1d3e14e3c92))
+- Recording file duration was less than actual recording duration ([8dc3384](https://github.com/trici/trici/commit/8dc3384ebc835159c73eb59825ef58f545dac714))
+
 ## [1.2.2](https://github.com/trici/trici/compare/@trici/recorder@1.2.1...@trici/recorder@1.2.2) (2023-09-12)
 
 ### Bug Fixes

@@ -58,6 +58,46 @@ async function buildJs() {
   });
 
   console.log(`Serving Alert bundle on http://${alertHost}:${alertPort}`);
+
+  let onboardingWindowContext = await esbuild.context({
+    entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'onboarding', 'onboardingBundleEntry.js')],
+    bundle: true,
+    outfile: path.join(ROOT_DIR, 'dist', 'live', 'onboarding.app.js'),
+    sourcemap: true,
+    target: ['chrome94'],
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+    plugins: [playSoundOnBuildErrorPlugin],
+  });
+
+  await onboardingWindowContext.watch();
+
+  let { host: onboardingHost, port: onboardingPort } = await onboardingWindowContext.serve({
+    servedir: path.join(ROOT_DIR, 'dist', 'live'),
+    port: 8082,
+    host: 'localhost',
+  });
+
+  console.log(`Serving Onboarding bundle on http://${onboardingHost}:${onboardingPort}`);
+
+  let eventViewerWindowContext = await esbuild.context({
+    entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'eventViewer', 'eventViewerBundleEntry.js')],
+    bundle: true,
+    outfile: path.join(ROOT_DIR, 'dist', 'live', 'eventViewer.app.js'),
+    sourcemap: true,
+    target: ['chrome94'],
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+    plugins: [playSoundOnBuildErrorPlugin],
+  });
+
+  await eventViewerWindowContext.watch();
+
+  let { host: eventViewerHost, port: eventViewerPort } = await eventViewerWindowContext.serve({
+    servedir: path.join(ROOT_DIR, 'dist', 'live'),
+    port: 8083,
+    host: 'localhost',
+  });
+
+  console.log(`Serving Event Viewer bundle on http://${eventViewerHost}:${eventViewerPort}`);
 }
 
 async function build(args) {

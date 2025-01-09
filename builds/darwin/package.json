@@ -12,8 +12,8 @@
     "test": "npm run cleanTestBuild && npm run installTestBuild"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Shashi Singh",
+  "license": "https://gettrici.com/terms",
   "devDependencies": {
     "@electron-forge/cli": "^6.4.2",
     "@electron-forge/maker-dmg": "^6.3.0",

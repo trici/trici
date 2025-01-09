@@ -1,51 +1,33 @@
-import { Button, createStyles } from '@mantine/core';
+import { Button } from '@singhshashi/proactive';
 import { SimpleVideoClipPlayer } from '../../shared/components/SimpleVideoClipPlayer';
 
 export function ScreenRecordingPermissionsRequired() {
-  const useStyles = createStyles((theme: Theme) => ({
-    root: {
-      marginTop: 32,
-      marginLeft: 32,
-      marginRight: 32,
-      marginBottom: 32,
-    },
-    illustrationContainer: {
-      margin: 'auto',
-      width: 400,
-    },
-    messageContainer: {
-      marginTop: 32,
-      textAlign: 'center',
-    },
-    messageSubtext: {
-      fontSize: '0.9rem',
-    },
-  }));
-
-  const { classes } = useStyles();
   const videoClipUrl = `file://${window.bridgeApi.appPath}/resources/clips/TriciScreenRecordingPermissions_final.mp4`;
   console.log('videoClipUrl', videoClipUrl);
   return (
-    <div className={classes.root}>
-      <div className={classes.illustrationContainer}>
+    <div className="flex flex-col items-center justify-between gap-5">
+      <div className="">
         <SimpleVideoClipPlayer clipUrl={videoClipUrl} />
       </div>
-      <div className={classes.messageContainer}>
-        <h4>Screen Recording Permissions Required</h4>
-        <p>
-          Trici requires screen recording permissions. Please grant Trici screen recording permissions in System
-          Preferences.
-        </p>
-        <Button
-          variant="filled"
-          color="white"
-          onClick={() => {
-            console.log('Opening System Preferences');
-            window.bridgeApi.sendMessage({ handler: 'openSystemPreferencesAndCloseAlert', args: {} });
-          }}
-        >
-          Open System Preferences
-        </Button>
+      <div className="flex w-[500px] flex-col gap-4">
+        <div className="">
+          <h4 className="text-lg font-bold">Screen Recording Permissions Required</h4>
+          <p className="text-sm">
+            Trici requires screen recording permissions. Please grant Trici screen recording permissions in System
+            Preferences.
+          </p>
+        </div>
+
+        <div>
+          <Button
+            variant="primary"
+            onClick={() => {
+              window.bridgeApi.sendMessage({ handler: 'askForScreenRecordingPermissions', args: {} });
+            }}
+          >
+            Open System Preferences
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -7,10 +7,12 @@ import type { IProcessManager } from '@trici/pm';
 import { checkUserDataDirectory, userDataDirectoryCheckResult } from '@trici/utils';
 import EventEmitter from 'events';
 import { generateUUIDv5 } from '@trici/utils';
-import { hasScreenCapturePermission, hasPromptedForPermission } from 'mac-screen-capture-permissions';
+// import { hasScreenCapturePermission, hasPromptedForPermission } from 'mac-screen-capture-permissions';
 import { dispatch } from './ActionDispatcher';
+import { IPermissionsService } from './PermissionsService';
 
 export interface IAppService {
+  checkUserDataDirectory(): Promise<void>;
   start(): void;
 }
 
@@ -18,13 +20,20 @@ export class AppService implements IAppService {
   #cleanupInitiated: boolean = false;
   #trayService: ITrayService;
   #appJsonStorageService: IAppJsonStorageService;
+  permissionsService: IPermissionsService;
   #processManager: IProcessManager;
   #eventEmitter: EventEmitter;
 
-  constructor(pm: IProcessManager, trayService: ITrayService, appJsonStorageService: IAppJsonStorageService) {
+  constructor(
+    pm: IProcessManager,
+    trayService: ITrayService,
+    appJsonStorageService: IAppJsonStorageService,
+    permissionsService: IPermissionsService,
+  ) {
     this.#processManager = pm;
     this.#trayService = trayService;
     this.#appJsonStorageService = appJsonStorageService;
+    this.permissionsService = permissionsService;
     this.#eventEmitter = new EventEmitter();
   }
 
@@ -119,15 +128,17 @@ export class AppService implements IAppService {
     });
   };
 
+  async checkUserDataDirectory(): Promise<void> {
+    // Check user data directory for required subdirectories. Ex of userDataDirectory: /Users/username/Library/Application Support/Trici
+    let userDataDirectoryCheckResult: userDataDirectoryCheckResult = await checkUserDataDirectory(
+      app.getPath('userData'),
+      'default',
+    );
+    global.userDataDirectoryCheckResult = userDataDirectoryCheckResult;
+  }
+
   async start(): Promise<void> {
     try {
-      // Check user data directory for required subdirectories. Ex of userDataDirectory: /Users/username/Library/Application Support/Trici
-      let userDataDirectoryCheckResult: userDataDirectoryCheckResult = await checkUserDataDirectory(
-        app.getPath('userData'),
-        'default',
-      );
-      global.userDataDirectoryCheckResult = userDataDirectoryCheckResult;
-
       this.#registerAppLifecycleEventHandlersOnStartup();
 
       // if (config.builtFor === 'dev' || config.builtFor === 'livedev') {
@@ -139,9 +150,9 @@ export class AppService implements IAppService {
 
       // }
 
-      logger.debug('AppService.startApp');
+      logger.info('AppService.startApp');
       if (process.platform === 'darwin') {
-        app.commandLine.appendSwitch('--disable-acclereated-video-decode');
+        app.commandLine.appendSwitch('--disable-accelerated-video-decode');
       }
 
       logger.info('Load the TriciApp object as a global');
@@ -167,24 +178,26 @@ export class AppService implements IAppService {
       }
 
       this.#processManager.registerPrimaryProcess(process.pid);
-      // Ask for the user's permission to record the screen on Mac
-      if (process.platform === 'darwin') {
-        // openSystemPreferences();
-        const promptForPermissionWillShow = !hasPromptedForPermission();
-        const screenCapturePermissionAtStartup = hasScreenCapturePermission();
-        if (screenCapturePermissionAtStartup) {
-          logger.info('Screen capture permission already granted');
 
-          // Initialize the tray
-          this.#trayService.createTrayInstance(logger);
-        } else if (promptForPermissionWillShow) {
-          console.log('User should be seeing prompt for permission');
-        } else {
-          console.log('User should not be seeing prompt for permission');
-          dispatch({
-            type: 'SHOW_ALERT_WINDOW',
-            args: { alertType: AlertWindowMessageType.SCREEN_RECORDING_PERMISSION_REVOKED, quitAppOnClose: true },
-          });
+      if (!triciApp.hasCompletedOnboarding) {
+        // Show the onboarding window
+        dispatch({ type: 'OPEN_ONBOARDING_WINDOW' });
+      } else {
+        // Check for screen recording permissions on startup
+        if (process.platform === 'darwin') {
+          // openSystemPreferences();
+          const screenCapturePermissionAtStartup = this.permissionsService.hasScreenRecordingPermissions();
+          if (screenCapturePermissionAtStartup) {
+            logger.info('Screen capture permission already granted');
+            // Initialize the tray
+            this.#trayService.createTrayInstance(logger);
+          } else {
+            console.log('User should not be seeing prompt for permission');
+            dispatch({
+              type: 'SHOW_ALERT_WINDOW',
+              args: { alertType: AlertWindowMessageType.SCREEN_RECORDING_PERMISSION_REVOKED, quitAppOnClose: true },
+            });
+          }
         }
       }
     } catch (e) {

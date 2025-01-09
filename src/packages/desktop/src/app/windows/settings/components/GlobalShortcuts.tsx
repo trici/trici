@@ -44,6 +44,15 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
     }
   };
 
+  // const _onChangeGlobalPingFunctionShortcut = (shortcut: string) => {
+  //   const result = _getUpdatedUserPreferencesObject('globalPingFunctionShortcut', shortcut);
+  //   if (result) {
+  //     onSave(result.updatedUserPreferences, result.idOfDocToDelete);
+  //   } else {
+  //     throw new Error('GlobalShortcuts._onChangeGlobalPingFunctionShortcut: result is null');
+  //   }
+  // };
+
   if (!userPreferences) {
     return null;
   }
@@ -61,28 +70,42 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
     config.builtFor === 'dev'
       ? Constants.DEFAULT_GLOBAL_STOP_FOCUS_SESSION_SHORTCUT_DEV
       : Constants.DEFAULT_GLOBAL_STOP_FOCUS_SESSION_SHORTCUT_PROD;
+  const defaultGlobalPingFunctionShortcut = 'CommandOrControl+Shift+F';
 
   return (
-    <div>
-      <p>Shortcuts</p>
-      <ConfigureGlobalShortcut
-        label="Show/Hide Trici"
-        currentShortcut={userPreferences.globalShowHideShortcut}
-        defaultShortcut={defaultGlobalShowHideShortcut}
-        onShortcutChange={_onChangeGlobalShowHideShortcut}
-      />
-      <ConfigureGlobalShortcut
-        label="Start a Focus Session"
-        currentShortcut={userPreferences.globalStartFocusSessionShortcut}
-        defaultShortcut={defaultGlobalStartFocusSessionShortcut}
-        onShortcutChange={_onChangeGlobalStartFocusSessionShortcut}
-      />
-      <ConfigureGlobalShortcut
-        label="Stop a Focus Session"
-        currentShortcut={userPreferences.globalStopFocusSessionShortcut}
-        defaultShortcut={defaultGlobalStopFocusSessionShortcut}
-        onShortcutChange={_onChangeGlobalStopFocusSessionShortcut}
-      />
+    <div className="flex h-full flex-col justify-start gap-5 py-4">
+      <div>
+        <ConfigureGlobalShortcut
+          label="Show/Hide Trici"
+          currentShortcut={userPreferences.globalShowHideShortcut}
+          defaultShortcut={defaultGlobalShowHideShortcut}
+          onShortcutChange={_onChangeGlobalShowHideShortcut}
+        />
+      </div>
+      <div>
+        <ConfigureGlobalShortcut
+          label="Start a Focus Session"
+          currentShortcut={userPreferences.globalStartFocusSessionShortcut}
+          defaultShortcut={defaultGlobalStartFocusSessionShortcut}
+          onShortcutChange={_onChangeGlobalStartFocusSessionShortcut}
+        />
+      </div>
+      <div>
+        <ConfigureGlobalShortcut
+          label="Stop a Focus Session"
+          currentShortcut={userPreferences.globalStopFocusSessionShortcut}
+          defaultShortcut={defaultGlobalStopFocusSessionShortcut}
+          onShortcutChange={_onChangeGlobalStopFocusSessionShortcut}
+        />
+      </div>
+      {/* <div>
+        <ConfigureGlobalShortcut
+          label="Ping Function"
+          currentShortcut={userPreferences.globalPingFunctionShortcut}
+          defaultShortcut={defaultGlobalPingFunctionShortcut}
+          onShortcutChange={_onChangeGlobalPingFunctionShortcut}
+        />
+      </div> */}
     </div>
   );
 }

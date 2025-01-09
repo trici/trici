@@ -7,6 +7,7 @@ import {
   isTriciIdValidForToday,
   checkUserDataDirectory,
   clearNodeIpcServerSocket,
+  isWebBrowser,
 } from '../dist/index.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -188,5 +189,30 @@ describe('clearNodeIpcServerSocket', () => {
 
     clearNodeIpcServerSocket(socketFile);
     expect(fs.existsSync(socketFile)).toBe(false);
+  });
+});
+
+describe('isWebBrowser', () => {
+  it('returns true if the app name is a web browser', () => {
+    const googleChromeAppName = 'Google Chrome';
+    const firefoxAppName = 'Firefox';
+    const safariAppName = 'Safari';
+    const operaAppName = 'Opera';
+    const edgeAppName = 'Edge';
+    const braveAppName = 'Brave';
+    const arcAppName = 'Arc';
+
+    expect(isWebBrowser(googleChromeAppName)).toBe(true);
+    expect(isWebBrowser(firefoxAppName)).toBe(true);
+    expect(isWebBrowser(safariAppName)).toBe(true);
+    expect(isWebBrowser(operaAppName)).toBe(true);
+    expect(isWebBrowser(edgeAppName)).toBe(true);
+    expect(isWebBrowser(braveAppName)).toBe(true);
+    expect(isWebBrowser(arcAppName)).toBe(true);
+  });
+
+  it('returns false if the app name is not a web browser', () => {
+    const appName = 'Test App';
+    expect(isWebBrowser(appName)).toBe(false);
   });
 });

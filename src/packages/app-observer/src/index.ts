@@ -1,1 +1,1 @@
-export { AppObserverService } from "./AppObserverService";
+export { AppObserverService } from './AppObserverService';

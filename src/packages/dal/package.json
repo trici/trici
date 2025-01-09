@@ -1,6 +1,6 @@
 {
   "name": "@trici/dal",
-  "version": "1.1.1",
+  "version": "2.1.0",
   "description": "> TODO: description",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",
@@ -34,7 +34,6 @@
   "devDependencies": {
     "@trici/logger": "workspace:^",
     "@trici/utils": "workspace:^",
-    "@types/jest": "^29.5.0",
     "@types/pouchdb": "^6.4.0",
     "@types/uuid": "^9.0.1",
     "cross-env": "^7.0.3"
@@ -42,7 +41,9 @@
   "dependencies": {
     "@trici/models": "workspace:^",
     "fast-json-patch": "^3.1.1",
+    "knex": "^3.1.0",
     "pouchdb": "^8.0.1",
+    "sqlite3": "^5.1.6",
     "uuid": "^9.0.0"
   }
 }

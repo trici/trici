@@ -7,7 +7,7 @@
  */
 
 import { App, app, Menu, Tray } from 'electron';
-import { SESSION_STARTED_BY, SESSION_STARTED_FROM, TrayState, TRICI_APP_EVENT } from '@trici/models';
+import { SessionStartedBy, SessionStartedFrom, TrayState, TriciAppEvent, UserActivityState } from '@trici/models';
 import type { Logger } from '@trici/logger';
 import { dispatch, IActionDispatcher } from './ActionDispatcher';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
@@ -16,6 +16,7 @@ import { AppEventEmitter } from './AppEventEmitter';
 import { ITriciDesktopService } from '../typedefs/ITriciDesktopService';
 import { invariant } from '@trici/utils';
 import { shortcutRegisteredResult, shortcutType } from './GlobalShortcutService';
+import { UserActivityStateMachine } from '@trici/activmon';
 
 /**
  */
@@ -49,14 +50,20 @@ class TrayService implements ITriciDesktopService, ITrayService {
   eventBus: AppEventEmitter;
   isServiceInitialized: boolean = false;
   receivedRegisteredShortcuts: shortcutRegisteredResult[] | undefined;
+  userActivityStateMachine: UserActivityStateMachine;
 
-  constructor(actionDispatcher: IActionDispatcher<TriciAction>, eventBus: AppEventEmitter) {
+  constructor(
+    actionDispatcher: IActionDispatcher<TriciAction>,
+    eventBus: AppEventEmitter,
+    userActivityStateMachine: UserActivityStateMachine,
+  ) {
     this.tray = undefined;
     this.trayState = TrayState.DEFAULT;
     this.actionDispatcher = actionDispatcher;
     this.eventBus = eventBus;
     this.isServiceInitialized = false;
     this.receivedRegisteredShortcuts = undefined;
+    this.userActivityStateMachine = userActivityStateMachine;
   }
 
   private _getMenuTemplate(trayState: TrayState): any[] {
@@ -85,15 +92,22 @@ class TrayService implements ITriciDesktopService, ITrayService {
           click: () => {
             dispatch({
               type: 'START_FOCUS_SESSION',
-              startedBy: SESSION_STARTED_BY.USER,
-              startedFrom: SESSION_STARTED_FROM.TRAY,
+              startedBy: SessionStartedBy.USER,
+              startedFrom: SessionStartedFrom.TRAY,
+              sessionStartMetadata: {},
             });
           },
         },
         {
           label: 'Settings',
           click: () => {
-            dispatch({ type: 'OPEN_SETTINGS_WINDOW', args: { section: SettingsKey.SCREEN_TO_RECORD } });
+            dispatch({ type: 'OPEN_SETTINGS_WINDOW', args: { section: SettingsKey.APPLICATIONS } });
+          },
+        },
+        {
+          label: 'Event Viewer',
+          click: () => {
+            dispatch({ type: 'OPEN_EVENT_VIEWER_WINDOW' });
           },
         },
         {
@@ -150,11 +164,11 @@ class TrayService implements ITriciDesktopService, ITrayService {
   }
 
   private registerAppEventHandlers(): void {
-    this.eventBus.on(TRICI_APP_EVENT.FOCUS_SESSION_STARTED, () => {
+    this.eventBus.on(TriciAppEvent.FOCUS_SESSION_STARTED, () => {
       console.log("TrayService: Received event 'FOCUS_SESSION_STARTED'");
       this.changeTrayState(TrayState.SESSION_IN_PROGRESS);
     });
-    this.eventBus.on(TRICI_APP_EVENT.FOCUS_SESSION_ENDED, () => {
+    this.eventBus.on(TriciAppEvent.FOCUS_SESSION_ENDED, () => {
       console.log("TrayService: Received event 'FOCUS_SESSION_ENDED'");
       this.changeTrayState(TrayState.DEFAULT);
     });
@@ -170,6 +184,9 @@ class TrayService implements ITriciDesktopService, ITrayService {
     if (!this.isServiceInitialized) {
       this.registerActionHandlers();
       this.registerAppEventHandlers();
+      this.userActivityStateMachine.on('stateChanged', (newState: UserActivityState) => {
+        this.refreshTrayIcon();
+      });
       this.isServiceInitialized = true;
     }
   }
@@ -186,7 +203,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
    */
   public createTrayInstance(logger: Logger): void {
     invariant(this.isServiceInitialized, 'TrayService not initialized');
-    const trayIconPath = app.getAppPath() + '/resources/images/trici_tray_icon_amber.png';
+    const trayIconPath = app.getAppPath() + '/resources/images/trici_tray_iconTemplate.png';
     logger.info(`Tray icon path: ${trayIconPath}`);
     this.tray = new Tray(trayIconPath);
     // this._tray.setToolTip(config.trayIconToolTip);
@@ -197,13 +214,25 @@ class TrayService implements ITriciDesktopService, ITrayService {
   public changeTrayState(newState: TrayState): void {
     invariant(this.isServiceInitialized, 'TrayService not initialized');
     this.trayState = newState;
-    if (newState === TrayState.DEFAULT) {
-      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_amber.png');
-    } else if (newState === TrayState.SESSION_IN_PROGRESS) {
-      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_red.png');
-    }
+    this.refreshTrayIcon();
     const contextMenu = this._getTrayContextMenu();
     this.tray?.setContextMenu(contextMenu);
+  }
+
+  private refreshTrayIcon(): void {
+    const userActivityState = this.userActivityStateMachine.getCurrentState();
+    if (this.trayState === TrayState.DEFAULT) {
+      if (
+        userActivityState === UserActivityState.ACTIVE ||
+        userActivityState === UserActivityState.BECOMING_HYPER_ACTIVE
+      ) {
+        this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_blue.png');
+      } else {
+        this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_iconTemplate.png');
+      }
+    } else if (this.trayState === TrayState.SESSION_IN_PROGRESS) {
+      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_red.png');
+    }
   }
 
   public destroyTrayInstance(): void {
