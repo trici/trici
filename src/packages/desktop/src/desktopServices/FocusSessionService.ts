@@ -6,16 +6,21 @@ import {
   TriciAppEvent,
   DisplayNotSelectedError,
   SessionStartedFrom,
+  IFocusSession,
 } from '@trici/models';
 import { generateNewTriciId, generateUpdatedTriciId } from '@trici/utils';
 import { screen } from 'electron';
-import { ITriciDocRepository } from '@trici/dal';
+import { IFocusSessionRepository } from '@trici/dal';
 import { AppEventEmitter } from './AppEventEmitter';
 import { TriciAction } from '../typedefs/TriciAction';
 import { IActionDispatcher, dispatch } from './ActionDispatcher';
 import { ITriciDesktopService } from '../typedefs/ITriciDesktopService';
 export interface IFocusSessionService {
-  startFocusSession(startedBy: SessionStartedBy, startedFrom: SessionStartedFrom): Promise<FocusSession>;
+  startFocusSession(
+    startedBy: SessionStartedBy,
+    startedFrom: SessionStartedFrom,
+    sessionStartMetadata?: any,
+  ): Promise<FocusSession>;
   endFocusSession(): Promise<FocusSession>;
   isFocusSessionInProgress(): boolean;
   getCurrentFocusSession(): FocusSession | null;
@@ -24,13 +29,13 @@ export interface IFocusSessionService {
 export class FocusSessionService implements ITriciDesktopService, IFocusSessionService {
   #currentFocusSession: FocusSession | null;
   #focusSessionTimer: NodeJS.Timeout | null;
-  #repository: ITriciDocRepository;
+  #repository: IFocusSessionRepository;
   appEventEmitter: AppEventEmitter;
   actionDispatcher: IActionDispatcher<TriciAction>;
   isServiceInitialized: boolean = false;
 
   constructor(
-    repository: ITriciDocRepository,
+    repository: IFocusSessionRepository,
     appEventEmitter: AppEventEmitter,
     actionDispatcher: IActionDispatcher<TriciAction>,
   ) {
@@ -42,21 +47,31 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
     this.isServiceInitialized = false;
   }
 
-  static #createNewFocusSession = (startedBy: SessionStartedBy, startedFrom: SessionStartedFrom): FocusSession => {
+  static #createNewFocusSession = (
+    startedBy: SessionStartedBy,
+    startedFrom: SessionStartedFrom,
+    sessionStartMetadata: {
+      appName: string;
+      durationOfCurrentApp: number;
+      appEventData: {
+        idleTimeNearHistoryAverage: number;
+        idleTimeImmediateHistoryAverage: number;
+      };
+    },
+  ): FocusSession => {
     const displayUnits = screen.getAllDisplays();
     return new FocusSession({
-      _id: generateNewTriciId(installationId, KeyParts.FOCUS_SESSION),
+      id: -1,
       startTime: Date.now(),
       endTime: 0,
       name: '',
-      idleTimeProfile: [],
       sessionDidStart: true,
       recordingProcessCrashedOnStart: false,
       displayUnits: displayUnits,
       shouldHaveRecording: true,
-      activities: [],
       startedBy: startedBy,
       startedFrom: startedFrom,
+      sessionStartMetadata: sessionStartMetadata,
     });
   };
 
@@ -64,7 +79,7 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
     this.actionDispatcher.register((action: TriciAction) => {
       switch (action.type) {
         case 'START_FOCUS_SESSION':
-          this.#handleStartFocusSession(action.startedBy, action.startedFrom);
+          this.#handleStartFocusSession(action.startedBy, action.startedFrom, action.sessionStartMetadata);
           break;
         case 'END_FOCUS_SESSION':
           this.#handleEndFocusSession();
@@ -81,15 +96,30 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
         dispatch({ type: 'END_FOCUS_SESSION' });
       }
     });
-    this.appEventEmitter.on(TriciAppEvent.USER_STARTED_WORKING, () => {
-      if (!this.isFocusSessionInProgress()) {
-        dispatch({
-          type: 'START_FOCUS_SESSION',
-          startedBy: SessionStartedBy.TRICI_ACTIVITY,
-          startedFrom: SessionStartedFrom.APP_EVENT,
-        });
-      }
-    });
+    this.appEventEmitter.on(
+      TriciAppEvent.USER_STARTED_WORKING,
+      (
+        appName: string,
+        durationOfCurrentApp: number,
+        appEventData: {
+          idleTimeNearHistoryAverage: number;
+          idleTimeImmediateHistoryAverage: number;
+        },
+      ) => {
+        if (!this.isFocusSessionInProgress()) {
+          dispatch({
+            type: 'START_FOCUS_SESSION',
+            startedBy: SessionStartedBy.TRICI_ACTIVITY,
+            startedFrom: SessionStartedFrom.APP_EVENT,
+            sessionStartMetadata: {
+              appName,
+              durationOfCurrentApp,
+              appEventData,
+            },
+          });
+        }
+      },
+    );
   };
 
   initService(): void {
@@ -100,9 +130,20 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
     this.isServiceInitialized = true;
   }
 
-  #handleStartFocusSession = async (startedBy: SessionStartedBy, startedFrom: SessionStartedFrom): Promise<void> => {
+  #handleStartFocusSession = async (
+    startedBy: SessionStartedBy,
+    startedFrom: SessionStartedFrom,
+    sessionStartMetadata: {
+      appName: string;
+      durationOfCurrentApp: number;
+      appEventData: {
+        idleTimeNearHistoryAverage: number;
+        idleTimeImmediateHistoryAverage: number;
+      };
+    },
+  ): Promise<void> => {
     try {
-      const focusSession = await this.startFocusSession(startedBy, startedFrom);
+      const focusSession = await this.startFocusSession(startedBy, startedFrom, sessionStartMetadata);
       console.log('Focus session started: ', focusSession.toJS());
     } catch (error: any) {
       let response;
@@ -126,19 +167,27 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
     }
   };
 
-  public async startFocusSession(startedBy: SessionStartedBy, startedFrom: SessionStartedFrom): Promise<FocusSession> {
+  public async startFocusSession(
+    startedBy: SessionStartedBy,
+    startedFrom: SessionStartedFrom,
+    sessionStartMetadata: any = {},
+  ): Promise<FocusSession> {
     if (this.isFocusSessionInProgress()) {
       throw new Error('Focus session already in progress');
     }
-    // Add rules to check if a focus session can be started
-    // Removing the below business rule as the improved recorder can record the active screen amongst multiple screens.
-    // If there are multiple monitors, then the user should have preselcted the monitor on which the focus session should be recorded
+
     try {
-      this.#currentFocusSession = FocusSessionService.#createNewFocusSession(startedBy, startedFrom);
-      this.#repository.save(this.#currentFocusSession.toJS(), Constants.UNINITIALIZED_ID);
+      this.#currentFocusSession = FocusSessionService.#createNewFocusSession(
+        startedBy,
+        startedFrom,
+        sessionStartMetadata,
+      );
+      const saveResult = await this.#repository.save(this.#currentFocusSession);
+      const savedFocusSession = new FocusSession(saveResult);
+      this.#currentFocusSession = savedFocusSession;
       this.#focusSessionTimer = setInterval(() => {}, 1000);
-      this.appEventEmitter.emit(TriciAppEvent.FOCUS_SESSION_STARTED, this.#currentFocusSession);
-      return this.#currentFocusSession;
+      this.appEventEmitter.emit(TriciAppEvent.FOCUS_SESSION_STARTED, savedFocusSession);
+      return savedFocusSession;
     } catch (error: any) {
       throw new Error('Error starting focus session: ' + error.message);
     }
@@ -147,19 +196,14 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
   public async endFocusSession(): Promise<FocusSession> {
     if (this.#currentFocusSession !== null) {
       try {
-        const updatedId = generateUpdatedTriciId(this.#currentFocusSession.get('_id'));
         const endTime = Date.now();
-        const idOfDocToDelete = this.#currentFocusSession.get('_id');
-        const focusSessionToSave = this.#currentFocusSession.set('endTime', endTime).set('_id', updatedId);
-        console.log('Current focus session: ', this.#currentFocusSession.toJS());
-        console.log('Focus session to save: ', focusSessionToSave.toJS());
-        console.log('Id of doc to delete: ', idOfDocToDelete);
-        // Is it correct to expect the repository to return the saved document?
-        // Right now it is just returning the pouchDB response which contains the id and rev of the saved document
-        const response = await this.#repository.save(focusSessionToSave.toJS(), idOfDocToDelete);
+        const focusSessionToSave = this.#currentFocusSession.set('endTime', endTime);
+
+        const saveResult = await this.#repository.save(focusSessionToSave);
+        const savedFocusSession = new FocusSession(saveResult);
         this.#currentFocusSession = null;
-        this.appEventEmitter.emit(TriciAppEvent.FOCUS_SESSION_ENDED, focusSessionToSave);
-        return focusSessionToSave;
+        this.appEventEmitter.emit(TriciAppEvent.FOCUS_SESSION_ENDED, savedFocusSession);
+        return savedFocusSession;
       } catch (error: any) {
         throw new Error('Error ending focus session: ' + error.message);
       }

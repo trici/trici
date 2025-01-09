@@ -52,7 +52,11 @@ class TrayService implements ITriciDesktopService, ITrayService {
   receivedRegisteredShortcuts: shortcutRegisteredResult[] | undefined;
   userActivityStateMachine: UserActivityStateMachine;
 
-  constructor(actionDispatcher: IActionDispatcher<TriciAction>, eventBus: AppEventEmitter, userActivityStateMachine: UserActivityStateMachine) {
+  constructor(
+    actionDispatcher: IActionDispatcher<TriciAction>,
+    eventBus: AppEventEmitter,
+    userActivityStateMachine: UserActivityStateMachine,
+  ) {
     this.tray = undefined;
     this.trayState = TrayState.DEFAULT;
     this.actionDispatcher = actionDispatcher;
@@ -90,6 +94,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
               type: 'START_FOCUS_SESSION',
               startedBy: SessionStartedBy.USER,
               startedFrom: SessionStartedFrom.TRAY,
+              sessionStartMetadata: {},
             });
           },
         },
@@ -217,7 +222,10 @@ class TrayService implements ITriciDesktopService, ITrayService {
   private refreshTrayIcon(): void {
     const userActivityState = this.userActivityStateMachine.getCurrentState();
     if (this.trayState === TrayState.DEFAULT) {
-      if (userActivityState === UserActivityState.ACTIVE || userActivityState === UserActivityState.BECOMING_HYPER_ACTIVE) {
+      if (
+        userActivityState === UserActivityState.ACTIVE ||
+        userActivityState === UserActivityState.BECOMING_HYPER_ACTIVE
+      ) {
         this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_blue.png');
       } else {
         this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_iconTemplate.png');

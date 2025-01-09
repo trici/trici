@@ -11,6 +11,8 @@ import { WindowManager } from './WindowManager';
 import { CliMessageHandlerService } from './CliMessageHandlerService';
 import { FocusSessionService } from './FocusSessionService';
 import {
+  FocusSessionRepository,
+  IFocusSessionRepository,
   ITriciDocRepository,
   IUsedApplicationRepository,
   TriciDocRepository,
@@ -48,6 +50,7 @@ let dbManager: ISqliteDbManager;
 let sqliteDb: sqlite3.Database;
 let repo: ITriciDocRepository;
 let eventRepo: IAppEventRepository;
+let focusSessionRepository: IFocusSessionRepository;
 let usedApplicationRepository: IUsedApplicationRepository;
 let cliMessageHandlerService: CliMessageHandlerService;
 let focusSessionService: FocusSessionService;
@@ -144,6 +147,7 @@ export const InitializationService: IInitializationService = {
 
       eventRepo = new AppEventRepository(sqliteDb, logger);
       usedApplicationRepository = new UsedApplicationRepository(sqliteDb, logger);
+      focusSessionRepository = new FocusSessionRepository(sqliteDb, logger);
 
       // Initialize the AppEventEmitter
       appEventEmitter.initializeRepo(eventRepo);
@@ -205,7 +209,7 @@ export const InitializationService: IInitializationService = {
       const shortcutService = new GlobalShortcutService();
       shortcutService.initService();
 
-      focusSessionService = new FocusSessionService(repo, appEventEmitter, actionDispatcher);
+      focusSessionService = new FocusSessionService(focusSessionRepository, appEventEmitter, actionDispatcher);
       focusSessionService.initService();
       cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
       cliMessageHandlerService.registerCliMessageHandlers();

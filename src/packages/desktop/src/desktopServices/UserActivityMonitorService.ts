@@ -89,68 +89,205 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
   registerAppEventHandlers(): void {
     // TODO: Register any app event handlers that this service needs to handle
-    this.appEventEmitter.on(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE, async () => {
-      // If the user is using a browser when hyperactive, then we want to know the url that
-      // the user is browsing to figure out whether the user is working or leisure.
-      // Thus I was thinking that we should enquire what is the url only when the user is hyperactive.
-      // So we don't get to know the url when the user changes the tab in the browser. This is a problem.
-      // Upon further investigation, to know the url when the user changes the tab in the browser etc., we
-      // will need to build a browser extension.
 
-      const currentApplication = this.appObserverServiceInstance.getCurrentApp();
-      console.log('UserHyperActive.currentApplication:', currentApplication);
-      const currentApplicationIdentifier = currentApplication?.appIdentifier || 'unknown';
-      const currentAppCategory = this.usedApplicationsService.getAppCategory(currentApplicationIdentifier);
-      console.log('UserHyperActive.currentAppCategory:', currentAppCategory);
-      if (currentAppCategory === UsedAppCategory.DEFINITELY_WORK) {
-        console.log('User started working');
-        // this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, currentApplication);
-      } else if (currentAppCategory === UsedAppCategory.DEFINITELY_DISTRACT) {
-        console.log('User Fooling around');
-      } else if (currentAppCategory === UsedAppCategory.COULD_BE_ANYTHING) {
-        // Right now, only browsers are categorized as COULD_BE_ANYTHING. If/When we allow the user to categorize apps, then it could be other apps as well.
-        // This does beg the question that shoyuld I allow the user to categorize apps?
-        // check if the current app is a browser
-        if (isWebBrowser(currentApplication?.appName || 'unknown')) {
-          console.log('User is browsing');
-          const currentUrl = await this.appObserverServiceInstance.getActiveBrowserOpenedURL();
-          console.log('currentUrl:', currentUrl);
-          if (currentUrl) {
-            const userIsWorking = isUserWorking(currentUrl);
-            console.log('isUserWorking:', userIsWorking);
-          }
-        } else {
-          console.log('Not sure what to do');
-          console.log('currentAppCategory:', currentAppCategory);
-        }
-      } else if (currentAppCategory === UsedAppCategory.NOT_SET) {
-        console.log('Not sure what to do');
-      }
-    });
+    this.appEventEmitter.on(
+      TriciAppEvent.USER_HYPER_ACTIVE,
+      async (idleTimeNearHistoryAverage: number, idleTimeImmediateHistoryAverage: number) => {
+        console.log('UserHyperActive');
+        const currentAppDetails = await this.getCurrentAppDetails();
+        await this.handleTriciAppEvent(
+          currentAppDetails.currentApplication,
+          currentAppDetails.currentAppCategory,
+          TriciAppEvent.USER_HYPER_ACTIVE,
+          {
+            idleTimeNearHistoryAverage,
+            idleTimeImmediateHistoryAverage,
+          },
+        );
+      },
+    );
+
+    this.appEventEmitter.on(
+      TriciAppEvent.USER_BECOMING_HYPER_ACTIVE,
+      async (idleTimeNearHistoryAverage: number, idleTimeImmediateHistoryAverage: number) => {
+        // If the user is using a browser when hyperactive, then we want to know the url that
+        // the user is browsing to figure out whether the user is working or leisure.
+        // Thus I was thinking that we should enquire what is the url only when the user is hyperactive.
+        // So we don't get to know the url when the user changes the tab in the browser. This is a problem.
+        // Upon further investigation, to know the url when the user changes the tab in the browser etc., we
+        // will need to build a browser extension.
+
+        const appEventData = {
+          idleTimeNearHistoryAverage,
+          idleTimeImmediateHistoryAverage,
+        };
+        console.log('UserBecomingHyperActive');
+        const currentAppDetails = await this.getCurrentAppDetails();
+        await this.handleTriciAppEvent(
+          currentAppDetails.currentApplication,
+          currentAppDetails.currentAppCategory,
+          TriciAppEvent.USER_BECOMING_HYPER_ACTIVE,
+          appEventData,
+        );
+      },
+    );
   }
 
-  handleUserActivityStateChange = (state: UserActivityState) => {
+  getCurrentAppDetails = async () => {
+    const currentApplication = this.appObserverServiceInstance.getCurrentApp();
+    const currentApplicationIdentifier = currentApplication?.appIdentifier || 'unknown';
+    const currentAppCategory = this.usedApplicationsService.getAppCategory(currentApplicationIdentifier);
+    return { currentApplication, currentAppCategory };
+  };
+
+  handleTriciAppEvent = async (
+    currentApplication: { appName: string; appIdentifier: string; timestamp: number } | null,
+    currentAppCategory: UsedAppCategory,
+    appEvent: TriciAppEvent,
+    appEventData: {
+      idleTimeNearHistoryAverage: number;
+      idleTimeImmediateHistoryAverage: number;
+    },
+  ) => {
+    if (!currentApplication) {
+      console.log('No current application');
+      return;
+    }
+    const currentTimestamp = Date.now();
+    const durationOfCurrentApp = currentApplication?.timestamp
+      ? currentTimestamp - currentApplication.timestamp * 1000
+      : 0;
+    console.log('durationOfCurrentApp:', durationOfCurrentApp);
+
+    switch (currentAppCategory) {
+      case UsedAppCategory.DEFINITELY_WORK:
+        this.handleActivityWhenUsingWorkApp(currentApplication, durationOfCurrentApp, appEvent, appEventData);
+        break;
+      case UsedAppCategory.DEFINITELY_DISTRACT:
+        console.log('User fooling around');
+        break;
+      case UsedAppCategory.COULD_BE_ANYTHING:
+        // Right now, only browsers are categorized as COULD_BE_ANYTHING. If/When we allow the user to categorize apps, then it could be other apps as well.
+        // This does beg the question that shoyuld I allow the user to categorize apps?
+        if (isWebBrowser(currentApplication?.appName || 'unknown')) {
+          this.handleActivityWhenUsingBrowser(currentApplication, durationOfCurrentApp, appEvent, appEventData);
+        } else {
+          console.log('Not sure what to do');
+        }
+        break;
+      case UsedAppCategory.NOT_SET:
+        console.log('Not sure what to do');
+        break;
+      default:
+        console.log('Unknown app category');
+        break;
+    }
+  };
+
+  handleActivityWhenUsingWorkApp = (
+    currentApplication: { appName: string; appIdentifier: string; timestamp: number },
+    durationOfCurrentApp: number,
+    appEvent: TriciAppEvent,
+    appEventData: {
+      idleTimeNearHistoryAverage: number;
+      idleTimeImmediateHistoryAverage: number;
+    },
+  ) => {
+    if (appEvent === TriciAppEvent.USER_BECOMING_HYPER_ACTIVE) {
+      if (durationOfCurrentApp > 30 * 1000) {
+        console.log('User might have started working');
+        this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, {
+          appName: currentApplication.appName,
+          durationOfCurrentApp,
+          appEventData,
+        });
+      } else {
+        console.log('User might have started working but not for long');
+      }
+    } else if (appEvent === TriciAppEvent.USER_HYPER_ACTIVE) {
+      console.log('User is hyperactive and working');
+      if (durationOfCurrentApp > 10 * 1000) {
+        console.log('User is working');
+        this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, {
+          appName: currentApplication.appName,
+          durationOfCurrentApp,
+          appEventData,
+        });
+      } else {
+        console.log('User is working but not for long');
+      }
+    }
+  };
+
+  handleActivityWhenUsingBrowser = async (
+    currentApplication: { appName: string; appIdentifier: string; timestamp: number },
+    durationOfCurrentApp: number,
+    appEvent: TriciAppEvent,
+    appEventData: {
+      idleTimeNearHistoryAverage: number;
+      idleTimeImmediateHistoryAverage: number;
+    },
+  ) => {
+    try {
+      const urlBeingBrowsed = await this.appObserverServiceInstance.getActiveBrowserOpenedURL();
+      console.log('User is using a browser');
+      console.log('urlBeingBrowsed:', urlBeingBrowsed);
+      if (urlBeingBrowsed) {
+        const isWorking = isUserWorking(urlBeingBrowsed);
+        console.log('isWorking:', isWorking);
+      }
+    } catch (error) {
+      console.error('Error getting active browser opened URL:', error);
+    }
+  };
+
+  handleUserActivityStateChange = (
+    state: UserActivityState,
+    idleTimeNearHistoryAverage: number,
+    idleTimeImmediateHistoryAverage: number,
+  ) => {
     switch (state) {
       case UserActivityState.ACTIVE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_ACTIVE);
+        this.appEventEmitter.emit(TriciAppEvent.USER_ACTIVE, {
+          idleTimeNearHistoryAverage,
+          idleTimeImmediateHistoryAverage,
+        });
         break;
       case UserActivityState.GOING_INACTIVE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_GOING_INACTIVE);
+        this.appEventEmitter.emit(TriciAppEvent.USER_GOING_INACTIVE, {
+          idleTimeNearHistoryAverage,
+          idleTimeImmediateHistoryAverage,
+        });
         break;
       case UserActivityState.INACTIVE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_INACTIVE);
+        this.appEventEmitter.emit(TriciAppEvent.USER_INACTIVE, {
+          idleTimeNearHistoryAverage,
+          idleTimeImmediateHistoryAverage,
+        });
         break;
       case UserActivityState.AWAY:
-        this.appEventEmitter.emit(TriciAppEvent.USER_WENT_AWAY);
+        this.appEventEmitter.emit(TriciAppEvent.USER_WENT_AWAY, {
+          idleTimeNearHistoryAverage,
+          idleTimeImmediateHistoryAverage,
+        });
         break;
       case UserActivityState.BECOMING_HYPER_ACTIVE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE);
+        this.appEventEmitter.emit(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE, {
+          idleTimeNearHistoryAverage,
+          idleTimeImmediateHistoryAverage,
+        });
         break;
       case UserActivityState.HYPER_ACTIVE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_HYPER_ACTIVE);
+        this.appEventEmitter.emit(TriciAppEvent.USER_HYPER_ACTIVE, {
+          idleTimeNearHistoryAverage,
+          idleTimeImmediateHistoryAverage,
+        });
         break;
       case UserActivityState.IDLE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_IDLE);
+        this.appEventEmitter.emit(TriciAppEvent.USER_IDLE, {
+          idleTimeNearHistoryAverage,
+          idleTimeImmediateHistoryAverage,
+        });
         break;
       default:
         console.log('Unknown state');

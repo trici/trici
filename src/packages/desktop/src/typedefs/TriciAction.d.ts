@@ -10,6 +10,7 @@ export type TriciAction =
       type: 'START_FOCUS_SESSION';
       startedBy: SessionStartedBy;
       startedFrom: SESSION_STARTED_FROM;
+      sessionStartMetadata?: any;
     }
   | {
       type: 'END_FOCUS_SESSION';
