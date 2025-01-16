@@ -79,6 +79,26 @@ async function buildJs() {
 
   console.log(`Serving Onboarding bundle on http://${onboardingHost}:${onboardingPort}`);
 
+  let triciWindowContext = await esbuild.context({
+    entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'trici', 'triciBundleEntry.js')],
+    bundle: true,
+    outfile: path.join(ROOT_DIR, 'dist', 'live', 'trici.app.js'),
+    sourcemap: true,
+    target: ['chrome94'],
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+    plugins: [playSoundOnBuildErrorPlugin],
+  });
+
+  await triciWindowContext.watch();
+
+  let { host: triciHost, port: triciPort } = await triciWindowContext.serve({
+    servedir: path.join(ROOT_DIR, 'dist', 'live'),
+    port: 8084,
+    host: 'localhost',
+  });
+
+  console.log(`Serving Trici bundle on http://${triciHost}:${triciPort}`);
+
   let eventViewerWindowContext = await esbuild.context({
     entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'eventViewer', 'eventViewerBundleEntry.js')],
     bundle: true,

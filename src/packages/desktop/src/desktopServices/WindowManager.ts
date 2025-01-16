@@ -18,7 +18,7 @@ export class WindowManager implements IWindowManager {
   logger: Logger | IConsoleLogger;
   settingsWindow: BrowserWindow | null;
   alertWindow: BrowserWindow | null;
-  mainWindow: BrowserWindow | null;
+  triciWindow: BrowserWindow | null;
   onboardingWindow: BrowserWindow | null;
   eventViewerWindow: BrowserWindow | null;
   actionHandlersRegistered: boolean = false;
@@ -28,7 +28,7 @@ export class WindowManager implements IWindowManager {
   constructor(logger: Logger | IConsoleLogger, actionDispatcher: IActionDispatcher<TriciAction>) {
     this.logger = logger;
     this.settingsWindow = null;
-    this.mainWindow = null;
+    this.triciWindow = null;
     this.alertWindow = null;
     this.eventViewerWindow = null;
     this.onboardingWindow = null;
@@ -59,6 +59,7 @@ export class WindowManager implements IWindowManager {
             break;
           case 'SHOW_HIDE_TRICI':
             console.log('Show/Hide Trici');
+            this._showHideTriciWindow();
             break;
           case 'OPEN_ONBOARDING_WINDOW':
             console.log('Open Onboarding Window');
@@ -205,8 +206,8 @@ export class WindowManager implements IWindowManager {
     if (this.settingsWindow) {
       this.settingsWindow.reload();
     }
-    if (this.mainWindow) {
-      this.mainWindow.reload();
+    if (this.triciWindow) {
+      this.triciWindow.reload();
     }
     if (this.alertWindow) {
       this.alertWindow.reload();
@@ -219,12 +220,47 @@ export class WindowManager implements IWindowManager {
     }
   }
 
-  private _showMainWindow(): void {
-    throw new Error('Method not implemented.');
+  private _showHideTriciWindow(): void {
+    if (this.triciWindow) {
+      this.triciWindow.isVisible() ? this.triciWindow.hide() : this.triciWindow.show();
+    } else {
+      this._createAndShowTriciWindow();
+    }
   }
 
-  private _hideMainWindow(): void {
-    throw new Error('Method not implemented.');
+  private _createAndShowTriciWindow(): void {
+    if (this.triciWindow) {
+      this.triciWindow.show();
+    } else {
+      const preloadScriptPath = this.preloadScriptPath;
+      const { x, y } = this._getWindowCoordinates(1200, 900);
+      this.triciWindow = new BrowserWindow({
+        width: 1200,
+        height: 900,
+        x,
+        y,
+        webPreferences: {
+          nodeIntegration: false,
+          preload: preloadScriptPath,
+          contextIsolation: true,
+        },
+        frame: false,
+        transparent: true,
+        // titleBarStyle: 'hiddenInset',
+      });
+
+      this.triciWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), { query: { type: 'trici' } });
+      this.triciWindow.maximize();
+
+      contextMenu({
+        window: this.triciWindow,
+        showInspectElement: true,
+      });
+
+      this.triciWindow.on('close', () => {
+        this.triciWindow = null;
+      });
+    }
   }
 
   private _createAndShowAlertWindow(alertType: string, quitAppOnClose: boolean): void {
@@ -341,7 +377,7 @@ export class WindowManager implements IWindowManager {
       case 'settings':
         return this.settingsWindow;
       case 'main':
-        return this.mainWindow;
+        return this.triciWindow;
       case 'alert':
         return this.alertWindow;
       case 'onboarding':

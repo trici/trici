@@ -66,6 +66,20 @@ async function buildJs() {
   console.log('Onboarding Window build finished!!');
 
   await esbuild.build({
+    entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'trici', 'triciBundleEntry.js')],
+    bundle: true,
+    outfile: !isProdBuild
+      ? path.join(ROOT_DIR, 'dist', 'dev', 'trici.app.js')
+      : path.join(ROOT_DIR, 'dist', 'trici.app.js'),
+    sourcemap: !isProdBuild,
+    minify: isProdBuild,
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+    target: ['chrome94'],
+  });
+
+  console.log('Trici Window build finished!!');
+
+  await esbuild.build({
     entryPoints: [path.join(ROOT_DIR, 'src', 'app', 'windows', 'eventviewer', 'eventViewerBundleEntry.js')],
     bundle: true,
     outfile: !isProdBuild
