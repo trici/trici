@@ -49,6 +49,13 @@ describe('FocusSessionRepository', () => {
     });
   });
 
+  describe('getFocusSessions', () => {
+    it('should get focus sessions from the database', async () => {
+      const focusSessions = await repository.getFocusSessions(Date.now() - 1000, Date.now());
+      expect(focusSessions.length).toBeGreaterThan(0);
+    });
+  });
+
   afterAll(async () => {
     await afterAllInitCommon();
   });

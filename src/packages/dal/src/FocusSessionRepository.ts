@@ -5,6 +5,7 @@ import { Logger } from '@trici/logger';
 export interface IFocusSessionRepository {
   save(focusSession: IFocusSession): Promise<IFocusSession>;
   get(id: number): Promise<IFocusSession | null>;
+  getFocusSessions(from: number, to: number): Promise<Array<IFocusSession>>;
 }
 
 export class FocusSessionRepository implements IFocusSessionRepository {
@@ -109,6 +110,27 @@ export class FocusSessionRepository implements IFocusSessionRepository {
         } else {
           if (!row) resolve(null);
           else resolve(this.mapRowToFocusSession(row));
+        }
+      });
+    });
+  }
+
+  public async getFocusSessions(from: number, to: number): Promise<Array<IFocusSession>> {
+    if (!this.db) {
+      this.logger?.error('Database not initialized');
+      throw new Error('Database not initialized');
+    }
+
+    const selectQuery = `SELECT * FROM focus_session WHERE start_time BETWEEN ? AND ?`;
+    const params: any[] = [from, to];
+
+    return new Promise((resolve, reject) => {
+      this.db!.all(selectQuery, params, (err, rows) => {
+        if (err) {
+          this.logger?.error('Error getting focus sessions', err);
+          reject(err);
+        } else {
+          resolve(rows.map(this.mapRowToFocusSession));
         }
       });
     });
