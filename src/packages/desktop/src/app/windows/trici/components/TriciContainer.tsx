@@ -1,6 +1,6 @@
 import { Surface } from '@singhshashi/proactive';
 import { TriciTimeline } from './TriciTimeline';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const MAX_TIME = Date.now();
 const MIN_TIME = MAX_TIME - 24 * 60 * 60 * 1000; // 24 hours ago
@@ -14,6 +14,18 @@ export function TriciContainer() {
     return [sixtyMinutesAgo, now] as [number, number];
   });
   const [currentTime, setCurrentTime] = useState(Date.now() - 20 * 60 * 1000);
+
+  useEffect(() => {
+    console.log('Time Range:', {
+      start: new Date(timeRange[0]).toISOString(),
+      end: new Date(timeRange[1]).toISOString(),
+      duration: (timeRange[1] - timeRange[0]) / 1000 / 60, // duration in minutes
+    });
+  }, [timeRange]);
+
+  useEffect(() => {
+    console.log('Current Time:', new Date(currentTime).toISOString());
+  }, [currentTime]);
 
   return (
     <div className="flex h-full w-full flex-col bg-gray-800 bg-opacity-90 text-white">
@@ -29,6 +41,8 @@ export function TriciContainer() {
             onCurrentTimeChange={setCurrentTime}
             minTime={MIN_TIME}
             maxTime={MAX_TIME}
+            minZoomDuration={MIN_ZOOM_DURATION}
+            maxZoomDuration={MAX_ZOOM_DURATION}
           />
         </Surface>
       </div>
