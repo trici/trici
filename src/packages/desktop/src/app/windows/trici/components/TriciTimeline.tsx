@@ -13,6 +13,11 @@ interface TriciTimelineProps {
   maxZoomDuration: number;
 }
 
+function formatTime(timestamp: number): string {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
 export function TriciTimeline({
   timeRange,
   currentTime,
@@ -63,15 +68,21 @@ export function TriciTimeline({
   }, [handleWheel]);
 
   return (
-    <div ref={containerRef} id="timelinebar-container" className="flex h-full items-end pb-3 pr-1">
-      <TimelineBar
-        timeInterval={timeRange}
-        currentTime={currentTime}
-        onZoom={onTimeRangeChange}
-        onTimeChange={onCurrentTimeChange}
-        minTime={minTime}
-        maxTime={maxTime}
-      />
+    <div ref={containerRef} id="timelinebar-container" className="flex h-full flex-col">
+      <div className="flex-grow items-end pb-1 pr-1">
+        <TimelineBar
+          timeInterval={timeRange}
+          currentTime={currentTime}
+          onZoom={onTimeRangeChange}
+          onTimeChange={onCurrentTimeChange}
+          minTime={minTime}
+          maxTime={maxTime}
+        />
+      </div>
+      <div className="flex justify-between px-1 pb-2 text-xs">
+        <span>{formatTime(timeRange[0])}</span>
+        <span>{formatTime(timeRange[1])}</span>
+      </div>
     </div>
   );
 }

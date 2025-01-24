@@ -191,6 +191,7 @@ export const InitializationService: IInitializationService = {
         usedApplicationsService,
         eventRepo,
         appObserverService,
+        focusSessionRepository,
         logger,
       );
       const mainProcessIpcMessageHandlerService = new MainProcessIpcMessageHandlerService(

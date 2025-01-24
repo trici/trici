@@ -84,6 +84,25 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
             result = { success: false, handler: 'getEvents-Error', data: error };
           }
           break;
+        case 'getFocusSessionsForDuration':
+          try {
+            const { from, to } = params.args;
+            const focusSessions = await this.dataAccessService.getFocusSessionsForDuration(from, to);
+            result = { success: true, handler: 'getFocusSessionsForDuration-Success', data: focusSessions };
+          } catch (error) {
+            result = { success: false, handler: 'getFocusSessionsForDuration-Error', data: error };
+          }
+          break;
+        case 'getFocusSessionsPaginated':
+          try {
+            const { pageIndex, pageSize } = params.args;
+            const focusSessionsResult = await this.dataAccessService.getFocusSessionsPaginated(pageIndex, pageSize);
+            const focusSessions = focusSessionsResult.map(session => session.toJS());
+            result = { success: true, handler: 'getFocusSessionsPaginated-Success', data: focusSessions };
+          } catch (error) {
+            result = { success: false, handler: 'getFocusSessionsPaginated-Error', data: error };
+          }
+          break;
         default:
           break;
       }

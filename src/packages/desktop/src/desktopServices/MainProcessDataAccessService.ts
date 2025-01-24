@@ -5,9 +5,18 @@
  * This is done to reduce conversion between Record objects and plain objects since the communication between main and renderer process also happens with plain objects.
  */
 import { AppObserverService } from '@trici/app-observer';
-import { ITriciDocRepository, IAppEventRepository } from '@trici/dal';
+import { ITriciDocRepository, IAppEventRepository, IFocusSessionRepository } from '@trici/dal';
 import { Logger } from '@trici/logger';
-import { Constants, KeyParts, UserPreferences, IUserPreferences, UsedApplication, TriciAppEvent } from '@trici/models';
+import {
+  Constants,
+  KeyParts,
+  UserPreferences,
+  IUserPreferences,
+  UsedApplication,
+  TriciAppEvent,
+  IFocusSession,
+  FocusSession,
+} from '@trici/models';
 import { generateUninitializedTriciId, isWebBrowser } from '@trici/utils';
 import { app } from 'electron/main';
 import fs from 'fs/promises';
@@ -24,6 +33,8 @@ export interface IMainProcessDataAccessService {
   >;
   getUsedApplications(): Promise<UsedApplication[]>;
   getTriciAppEvents(fromTime: number, toTime: number, type: TriciAppEvent | null, count: number): Promise<any>;
+  getFocusSessionsForDuration(fromTime: number, toTime: number): Promise<Array<FocusSession>>;
+  getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<FocusSession>>;
 }
 
 export class MainProcessDataAccessService implements IMainProcessDataAccessService {
@@ -33,18 +44,20 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
   private _appObserver: AppObserverService;
   private _logger: Logger;
   private static _instance: MainProcessDataAccessService;
-
+  private _focusSessionRepository: IFocusSessionRepository;
   private constructor(
     repository: ITriciDocRepository,
     usedApplicationsService: IUsedApplicationsService,
     appEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
+    focusSessionRepository: IFocusSessionRepository,
     logger: Logger,
   ) {
     this._docRepository = repository;
     this._usedApplicationsService = usedApplicationsService;
     this._appEventRepository = appEventRepository;
     this._appObserver = appObserver;
+    this._focusSessionRepository = focusSessionRepository;
     this._logger = logger;
   }
 
@@ -53,6 +66,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     usedApplicationsService: IUsedApplicationsService,
     appEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
+    focusSessionRepository: IFocusSessionRepository,
     logger: Logger,
   ): MainProcessDataAccessService {
     if (!MainProcessDataAccessService._instance) {
@@ -61,6 +75,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
         usedApplicationsService,
         appEventRepository,
         appObserver,
+        focusSessionRepository,
         logger,
       );
     }
@@ -204,6 +219,26 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       return events;
     } catch (error) {
       logger.error('Error in getTriciAppEvents', error);
+      throw error;
+    }
+  }
+
+  public async getFocusSessionsForDuration(fromTime: number, toTime: number): Promise<Array<IFocusSession>> {
+    try {
+      const focusSessions = await this._focusSessionRepository.getFocusSessionsForDuration(fromTime, toTime);
+      return focusSessions;
+    } catch (error) {
+      logger.error('Error in getFocusSessions', error);
+      throw error;
+    }
+  }
+
+  public async getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<IFocusSession>> {
+    try {
+      const focusSessions = await this._focusSessionRepository.getFocusSessionsPaginated(pageIndex, pageSize);
+      return focusSessions;
+    } catch (error) {
+      logger.error('Error in getFocusSessionsPaginated', error);
       throw error;
     }
   }

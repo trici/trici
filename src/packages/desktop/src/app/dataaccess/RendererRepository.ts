@@ -5,6 +5,8 @@ import {
   TriciAppEvent,
   UsedApplication,
   UserPreferences,
+  IFocusSession,
+  FocusSession,
 } from '@trici/models';
 import { IBridgeAPIInterface } from '../../typedefs/preload';
 
@@ -14,6 +16,8 @@ export interface IRendererRepository {
   getCachedUserPreferences(): UserPreferences | null;
   getUsedApplications(): Promise<UsedApplication[]>;
   getEvents(from: number, to: number, type: TriciAppEvent): Promise<AppEvent[]>;
+  getFocusSessionsForDuration(from: number, to: number): Promise<Array<IFocusSession>>;
+  getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<IFocusSession>>;
 }
 
 /**
@@ -118,6 +122,36 @@ export class RendererRepository implements IRendererRepository {
       window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
         reject(result.data);
       }, 'getEvents-Error');
+    });
+  }
+
+  public getFocusSessionsForDuration(from: number, to: number): Promise<Array<IFocusSession>> {
+    return new Promise((fulfill, reject) => {
+      const args = { from: from, to: to };
+      window.bridgeApi.query({ handler: 'getFocusSessionsForDuration', args });
+      window.bridgeApi.registerQueryResultHandler((result: { data: any[] }) => {
+        console.log('getFocusSessionsForDuration-Success:%O', result.data);
+        const focusSessions = result.data.map((focusSession: any) => new FocusSession(focusSession));
+        fulfill(focusSessions);
+      }, 'getFocusSessionsForDuration-Success');
+      window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
+        reject(result.data);
+      }, 'getFocusSessionsForDuration-Error');
+    });
+  }
+
+  public getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<IFocusSession>> {
+    return new Promise((fulfill, reject) => {
+      const args = { pageIndex: pageIndex, pageSize: pageSize };
+      window.bridgeApi.query({ handler: 'getFocusSessionsPaginated', args });
+      window.bridgeApi.registerQueryResultHandler((result: { data: any[] }) => {
+        console.log('getFocusSessionsPaginated-Success:%O', result.data);
+        const focusSessions = result.data.map((focusSession: any) => new FocusSession(focusSession));
+        fulfill(focusSessions);
+      }, 'getFocusSessionsPaginated-Success');
+      window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
+        reject(result.data);
+      }, 'getFocusSessionsPaginated-Error');
     });
   }
 }

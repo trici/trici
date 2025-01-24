@@ -1,51 +1,38 @@
-import { Surface } from '@singhshashi/proactive';
-import { TriciTimeline } from './TriciTimeline';
-import { useState, useEffect } from 'react';
+import { TimelineView } from './TimelineView';
+import { FocusSessionsView } from './FocusSessionsView';
+import { useState } from 'react';
+import { cn } from '../../../common/Utils';
 
-const MAX_TIME = Date.now();
-const MIN_TIME = MAX_TIME - 24 * 60 * 60 * 1000; // 24 hours ago
-const MIN_ZOOM_DURATION = 5 * 60 * 1000; // 5 minutes
-const MAX_ZOOM_DURATION = MAX_TIME - MIN_TIME; // 24 hours
+type ViewType = 'timeline' | 'focus-sessions';
+
+const viewOptions: { id: ViewType; label: string }[] = [
+  { id: 'timeline', label: 'Timeline' },
+  { id: 'focus-sessions', label: 'Focus Sessions' },
+];
 
 export function TriciContainer() {
-  const [timeRange, setTimeRange] = useState(() => {
-    const now = Date.now();
-    const sixtyMinutesAgo = now - 60 * 60 * 1000; // 60 minutes in milliseconds
-    return [sixtyMinutesAgo, now] as [number, number];
-  });
-  const [currentTime, setCurrentTime] = useState(Date.now() - 20 * 60 * 1000);
-
-  useEffect(() => {
-    console.log('Time Range:', {
-      start: new Date(timeRange[0]).toISOString(),
-      end: new Date(timeRange[1]).toISOString(),
-      duration: (timeRange[1] - timeRange[0]) / 1000 / 60, // duration in minutes
-    });
-  }, [timeRange]);
-
-  useEffect(() => {
-    console.log('Current Time:', new Date(currentTime).toISOString());
-  }, [currentTime]);
+  const [currentView, setCurrentView] = useState<ViewType>('focus-sessions');
 
   return (
     <div className="flex h-full w-full flex-col bg-gray-800 bg-opacity-90 text-white">
-      <div className="flex flex-1 items-center justify-center">
-        <div className="bg-slate-700">{currentTime}</div>
+      <div className="flex border-b border-gray-700">
+        {viewOptions.map(option => (
+          <button
+            key={option.id}
+            onClick={() => setCurrentView(option.id)}
+            className={cn(
+              'px-4 py-2 text-sm font-medium transition-colors',
+              'hover:bg-gray-700/50',
+              'focus:outline-none',
+              currentView === option.id ? 'border-b-2 border-blue-500 text-blue-400' : 'text-gray-400',
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
-      <div className="h-[50px]">
-        <Surface shade="dark" width="100%" height="100%" type="glossy">
-          <TriciTimeline
-            timeRange={timeRange}
-            currentTime={currentTime}
-            onTimeRangeChange={setTimeRange}
-            onCurrentTimeChange={setCurrentTime}
-            minTime={MIN_TIME}
-            maxTime={MAX_TIME}
-            minZoomDuration={MIN_ZOOM_DURATION}
-            maxZoomDuration={MAX_ZOOM_DURATION}
-          />
-        </Surface>
-      </div>
+
+      <div className="flex-1">{currentView === 'timeline' ? <TimelineView /> : <FocusSessionsView />}</div>
     </div>
   );
 }
