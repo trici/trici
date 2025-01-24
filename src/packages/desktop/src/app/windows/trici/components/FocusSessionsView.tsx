@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { RendererRepository } from '../../../dataaccess/RendererRepository';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FocusSession, IFocusSession } from '@trici/models';
 
 const renderRepository = RendererRepository.getInstance();
@@ -14,6 +14,17 @@ export function FocusSessionsView() {
     queryKey: ['focusSessions', pageIndex, PAGE_SIZE],
     queryFn: () => renderRepository.getFocusSessionsPaginated(pageIndex, PAGE_SIZE),
   });
+
+  // Select the latest session when data is loaded
+  useEffect(() => {
+    if (focusSessionsQuery.data && focusSessionsQuery.data.length > 0 && !selectedSession) {
+      // Find the session with the latest startTime
+      const latestSession = focusSessionsQuery.data.reduce((latest, current) =>
+        current.startTime > latest.startTime ? current : latest,
+      );
+      setSelectedSession(latestSession);
+    }
+  }, [focusSessionsQuery.data]);
 
   if (focusSessionsQuery.isLoading) {
     return <div className="flex h-full w-full items-center justify-center">Loading...</div>;
