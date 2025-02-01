@@ -169,13 +169,13 @@ class LoggingService {
         if !fileManager.fileExists(atPath: logDirectoryPath) {
             do {
                 try fileManager.createDirectory(atPath: logDirectoryPath, withIntermediateDirectories: true, attributes: nil)
-                logToStandardOutput(message: ["msg": "Log directory created at path: \(logDirectoryPath)"])
+              logToStandardError(message: ["msg": "Log directory created at path: \(logDirectoryPath)"], isError: false)
             } catch {
                 logToStandardError(message: [
                     "errorMsg": "Failed to create log directory",
                     "path": logDirectoryPath,
                     "error": error.localizedDescription
-                ])
+                ], isError: true)
                 initialized = false
                 return
             }
@@ -186,12 +186,12 @@ class LoggingService {
             logToStandardError(message: [
                 "errorMsg": "Log directory is not writable",
                 "path": logDirectoryPath
-            ])
+            ], isError: true)
             initialized = false
             return
         }
 
-        logToStandardOutput(message: ["msg": "Setting up logging at \(logDirectoryPath)/\(logFilePrefix)"])
+      logToStandardError(message: ["msg": "Setting up logging at \(logDirectoryPath)/\(logFilePrefix)"], isError: false)
 
         // Set up logging
         do {
@@ -202,7 +202,7 @@ class LoggingService {
                 "errorMsg": "Failed to initialize logging",
                 "path": logDirectoryPath,
                 "error": error.localizedDescription
-            ])
+            ], isError: true)
             initialized = false
         }
     }
@@ -216,9 +216,9 @@ class LoggingService {
     }
 
 
-  static func logToStandardOutput(message: [String: Any]) {
+  static func writeToStandardOutput(message: [String: Any]) {
     let log: [String: Any] = [
-      "type": "stdLog",
+      "type": "stdOut",
       "response": message,
       "timestamp": Date().timeIntervalSince1970
     ]
@@ -229,18 +229,31 @@ class LoggingService {
     }
   }
 
-  static func logToStandardError(message: [String: Any]) {
-    let log: [String: Any] = [
-      "type": "stdError",
-      "response": message,
-      "timestamp": Date().timeIntervalSince1970
-    ]
-    if let data = try? JSONSerialization.data(withJSONObject: log),
-       let jsonString = String(data: data, encoding: .utf8)
-    {
-      FileHandle.standardError.write("\(jsonString)\n".data(using: .utf8)!)
-    }
+  static func logToStandardError(message: [String: Any], isError: Bool) {
+      let log: [String: Any] = [
+          "type": isError ? "stdError" : "stdLog",
+          "response": message,
+          "timestamp": Date().timeIntervalSince1970
+      ]
+      if let data = try? JSONSerialization.data(withJSONObject: log),
+         let jsonString = String(data: data, encoding: .utf8)
+      {
+          FileHandle.standardError.write("\(jsonString)\n".data(using: .utf8)!)
+      }
   }
+
+//  static func logToStandardError(message: [String: Any]) {
+//    let log: [String: Any] = [
+//      "type": "stdError",
+//      "response": message,
+//      "timestamp": Date().timeIntervalSince1970
+//    ]
+//    if let data = try? JSONSerialization.data(withJSONObject: log),
+//       let jsonString = String(data: data, encoding: .utf8)
+//    {
+//      FileHandle.standardError.write("\(jsonString)\n".data(using: .utf8)!)
+//    }
+//  }
 
     // Method to set up logging destinations
     func setupLogging(logDirectoryPath: String, logFileName: String) throws {

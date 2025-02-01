@@ -24,13 +24,13 @@ if let libraryDirectory = FileManager.default.urls(for: .libraryDirectory, in: .
       defaultLogsDirectoryPath = NSHomeDirectory() + (isProd ? "/Library/Logs/trici" : "/Library/Logs/TriciDev")
     }
 
-LoggingService.logToStandardOutput(message: ["defaultLogsDirectoryPath": defaultLogsDirectoryPath])
+LoggingService.logToStandardError(message: ["defaultLogsDirectoryPath": defaultLogsDirectoryPath], isError: false)
 
 
 var logsDirectoryPath: String
 
 if CommandLine.arguments.count > 1 {
-  LoggingService.logToStandardOutput(message: ["logsDirPathArg": "\(CommandLine.arguments[1])"])
+  LoggingService.logToStandardError(message: ["logsDirPathArg": "\(CommandLine.arguments[1])"], isError: false)
 //  print("logsDirPathArg:\(CommandLine.arguments[1])")
     logsDirectoryPath = CommandLine.arguments[1] // Use the first argument after the app name
 } else {
@@ -46,7 +46,7 @@ if (!LoggingService.isInitialized()) {
     LoggingService.logToStandardError(message: [
         "errorMsg": "Logger initialization failed",
         "path": logsDirectoryPath
-    ])
+    ], isError: true)
     exit(1)
 }
 logger = LoggingService.getLogger()
@@ -90,6 +90,8 @@ inputSource.setEventHandler {
         let commandLine = strData.trimmingCharacters(in: .whitespacesAndNewlines)
         let components = commandLine.split(separator: " ", maxSplits: 1)
         let command = String(components[0])
+      
+        logger.info("parsedCommand:\(command)")
 
         switch command {
         case "start":
@@ -112,18 +114,22 @@ inputSource.setEventHandler {
                   await screenRecorder.takeScreenshot(path: screenshotPath)
               }
           } else {
-            LoggingService.logToStandardError(message: ["error": "Screenshot command requires a path"])
+            LoggingService.logToStandardError(message: ["error": "Screenshot command requires a path"],isError: true)
           }
         case "getResolution":
           let resolution = screenRecorder.getHighestScreenResolution()
-          let logMessage = "{\"resolution\": \"\(resolution)\"}"
-          LoggingService.logToStandardOutput(message: ["resolution": "\(resolution)"])
+//          let logMessage = "{\"resolution\": \"\(resolution)\"}"
+          LoggingService.writeToStandardOutput(message: ["resolution": "\(resolution)"])
         case "getActiveScreen":
           let activeDisplay = screenRecorder.activeDisplay
+          if (activeDisplay != nil) {
+            let activeDisplayDescription =  "\(activeDisplay?.displayID) \(activeDisplay?.width)x\(activeDisplay?.height)"
+            LoggingService.writeToStandardOutput(message: ["activeDisplay": "\(activeDisplayDescription) " ])
+          }
         case "exit":
             exit(0)
         default:
-          LoggingService.logToStandardError(message: ["error": "Unknown command: \(command)"])
+          LoggingService.logToStandardError(message: ["error": "Unknown command: \(command)"], isError: true)
         }
     }
 }
