@@ -5,7 +5,8 @@ import { Logger } from '@trici/logger';
 export interface IFocusSessionRepository {
   save(focusSession: IFocusSession): Promise<IFocusSession>;
   get(id: number): Promise<IFocusSession | null>;
-  getFocusSessions(from: number, to: number): Promise<Array<IFocusSession>>;
+  getFocusSessionsForDuration(from: number, to: number): Promise<Array<FocusSession>>;
+  getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<FocusSession>>;
 }
 
 export class FocusSessionRepository implements IFocusSessionRepository {
@@ -17,7 +18,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
     this.logger = logger;
   }
 
-  private mapRowToFocusSession(row: any): IFocusSession {
+  private mapRowToFocusSession(row: any): FocusSession {
     return new FocusSession({
       id: row.id,
       startTime: row.start_time,
@@ -115,7 +116,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
     });
   }
 
-  public async getFocusSessions(from: number, to: number): Promise<Array<IFocusSession>> {
+  public async getFocusSessionsForDuration(from: number, to: number): Promise<Array<FocusSession>> {
     if (!this.db) {
       this.logger?.error('Database not initialized');
       throw new Error('Database not initialized');
@@ -131,6 +132,28 @@ export class FocusSessionRepository implements IFocusSessionRepository {
           reject(err);
         } else {
           resolve(rows.map(this.mapRowToFocusSession));
+        }
+      });
+    });
+  }
+
+  public async getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<FocusSession>> {
+    if (!this.db) {
+      this.logger?.error('Database not initialized');
+      throw new Error('Database not initialized');
+    }
+
+    const selectQuery = `SELECT * FROM focus_session where end_time > 0 ORDER BY start_time DESC LIMIT ? OFFSET ?`;
+    const params: any[] = [pageSize, pageIndex * pageSize];
+
+    return new Promise((resolve, reject) => {
+      this.db!.all(selectQuery, params, (err, rows) => {
+        if (err) {
+          this.logger?.error('Error getting focus sessions', err);
+          reject(err);
+        } else {
+          const focusSessions = rows.map(this.mapRowToFocusSession);
+          resolve(focusSessions);
         }
       });
     });
