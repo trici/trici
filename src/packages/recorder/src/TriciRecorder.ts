@@ -147,8 +147,10 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     const recordingCommandStdOutStdErrFileStream = fs.createWriteStream(recordingCommandStdOutStdErrFileNameWithPath, {
       flags: 'a',
     });
-    const sizeParam = `${screenResolution.width}x${screenResolution.height}`;
-    // const sizeParam = `1920x1080`;
+    // The below sizeParam is not being used and the value is hardcoded because of noise in the recording
+    // output issue. By having a standard resolution, the video comes clear.
+    // const sizeParam = `${screenResolution.width}x${screenResolution.height}`;
+    const sizeParam = `1920x1080`;
     console.log('this.#ffmpegBinPath:', this.#ffmpegBinPath);
     const waterMarkImagePathParam = `${waterMarkImagePath}`;
     const args = [
@@ -181,23 +183,17 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       'high',
       '-fps_mode',
       'vfr',
-      '-f',
-      'segment',
-      '-segment_time',
-      '7',
-      '-segment_list_flags',
-      'live',
-      '-segment_list_size',
-      '0',
-      '-max_muxing_queue_size',
-      '1024',
+      '-force_key_frames',
+      'expr:gte(t,n_forced*7)',
       '-reset_timestamps',
       '1',
-      '-force_key_frames',
-      'expr:gte(t,n_forced*5)',
-      `${recordingFileNameWithPath}-%04d.mp4`,
-
-      // `${recordingFileNameWithPath}.mp4`,
+      '-hls_time',
+      '7',
+      '-hls_list_size',
+      '0',
+      '-hls_flags',
+      'delete_segments',
+      `${recordingFileNameWithPath}.m3u8`,
     ];
 
     this.logger.info(`ffmpegProcess args: ${JSON.stringify(args)}`);
