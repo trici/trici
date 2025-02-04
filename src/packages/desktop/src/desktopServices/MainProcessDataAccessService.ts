@@ -68,7 +68,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     appObserver: AppObserverService,
     focusSessionRepository: IFocusSessionRepository,
     logger: Logger,
-  ): MainProcessDataAccessService {
+  ): IMainProcessDataAccessService {
     if (!MainProcessDataAccessService._instance) {
       MainProcessDataAccessService._instance = new MainProcessDataAccessService(
         repository,
@@ -223,7 +223,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     }
   }
 
-  public async getFocusSessionsForDuration(fromTime: number, toTime: number): Promise<Array<IFocusSession>> {
+  public async getFocusSessionsForDuration(fromTime: number, toTime: number): Promise<Array<FocusSession>> {
     try {
       const focusSessions = await this._focusSessionRepository.getFocusSessionsForDuration(fromTime, toTime);
       return focusSessions;
@@ -233,7 +233,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     }
   }
 
-  public async getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<IFocusSession>> {
+  public async getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<FocusSession>> {
     try {
       const focusSessions = await this._focusSessionRepository.getFocusSessionsPaginated(pageIndex, pageSize);
       return focusSessions;

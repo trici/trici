@@ -118,6 +118,9 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
       const displays = screen.getAllDisplays();
       event.returnValue = displays;
     });
+    ipcMain.on('getUserDataDirectoryCheckResult', async (event, params) => {
+      event.returnValue = global.userDataDirectoryCheckResult;
+    });
   }
 
   private async _handleMessage(msg: IMessageFromRenderer): Promise<IMessageFromMain> {

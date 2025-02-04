@@ -1,4 +1,5 @@
 import { NODE_ENV, PLATFORM } from '@trici/models';
+import { userDataDirectoryCheckResult } from '@trici/utils';
 
 export interface IHandlerObject {
   handler: Function;
@@ -39,4 +40,5 @@ export interface IBridgeAPIInterface {
   deregisterReceiveHandlers: (componentId: string) => void;
   getAllDisplays: () => Array<any>; // replace `any` with the actual type of `msg`, if known
   getInitValues: () => Array<IMessageFromMain>;
+  userDataDirectoryCheckResult: userDataDirectoryCheckResult;
 }
