@@ -10,6 +10,7 @@ const platform = process.platform as Platform | undefined;
 
 const appPath = ipcRenderer.sendSync('getAppPath', {});
 const triciConfig = ipcRenderer.sendSync('getConfig', {});
+const userDataDirectoryCheckResult = ipcRenderer.sendSync('getUserDataDirectoryCheckResult', {});
 
 console.log('config:', triciConfig);
 
@@ -125,6 +126,7 @@ const API: IBridgeAPIInterface = {
     return displays;
   },
   getInitValues: () => initValues,
+  userDataDirectoryCheckResult: userDataDirectoryCheckResult,
 };
 
 console.log('API:', API);

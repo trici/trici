@@ -72,7 +72,7 @@ class ScreenRecorder: NSObject {
         streamConfig.showsCursor = true
         streamConfig.pixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
 //        streamConfig.pixelFormat = kCVPixelFormatType_32BGRA
-        streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: 12)
+        streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: 7)
         streamConfig.scalesToFit = true
 
         streamConfig.queueDepth = 5
@@ -193,20 +193,46 @@ class ScreenRecorder: NSObject {
           logger.info("Opening named pipe")
 
           // Attempt to open the named pipe file handle
-          if namedPipeFileHandle == nil {
-              let path = "/tmp/tricistream"
-              if let handle = FileHandle(forWritingAtPath: path) {
-                  namedPipeFileHandle = handle
-              } else {
-                  logger.error("Failed to open named pipe: The pipe might not be ready for writing.")
-                  return
-              }
-          }
+//          if namedPipeFileHandle == nil {
+//              let path = "/tmp/tricistream"
+//              if let handle = FileHandle(forWritingAtPath: path) {
+//                  namedPipeFileHandle = handle
+//              } else {
+//                  logger.error("Failed to open named pipe: The pipe might not be ready for writing.")
+//                  return
+//              }
+//          }
+//
+//          // Create a serial dispatch queue for writing
+//          let writeQueue = DispatchQueue(label: "com.gettrici.Recorder.WriteQueue")
+//
+//          logger.info("Starting capture")
+        
+        logger.debug("Checking namedPipeFileHandle: \(namedPipeFileHandle == nil ? "nil" : "not nil")")
 
-          // Create a serial dispatch queue for writing
-          let writeQueue = DispatchQueue(label: "com.gettrici.Recorder.WriteQueue")
+        if namedPipeFileHandle == nil {
+            let path = "/tmp/tricistream"
+            
+            if !FileManager.default.fileExists(atPath: path) {
+                logger.error("Named pipe does not exist at \(path)")
+            } else {
+                logger.debug("Named pipe exists at \(path), but FileHandle initialization still failed.")
+            }
+            
+            if let handle = FileHandle(forWritingAtPath: path) {
+                namedPipeFileHandle = handle
+            } else {
+                logger.error("Failed to open named pipe: The pipe might not be ready for writing.")
+                logger.debug("Returning early due to failed named pipe opening.")
+                return
+            }
+        }
 
-          logger.info("Starting capture")
+        let writeQueue = DispatchQueue(label: "com.gettrici.Recorder.WriteQueue")
+
+        logger.info("Starting capture")
+
+        
           Task {
               var frameCounter = 0
               let startTime = Date()
@@ -332,6 +358,10 @@ class ScreenRecorder: NSObject {
 
           let rawFilePath = "/Users/shashi/projects/trici/src/packages/recorder/recordings/testRecording.raw"
           let rawFileURL = URL(fileURLWithPath: rawFilePath)
+        
+        if !FileManager.default.fileExists(atPath: rawFilePath) {
+          FileManager.default.createFile(atPath: rawFilePath, contents: nil, attributes: nil)
+        }
           guard let fileHandle = try? FileHandle(forWritingTo: rawFileURL) else {
               logger.error("Failed to open raw data file for writing.")
               return
@@ -380,7 +410,7 @@ class ScreenRecorder: NSObject {
               logger.info("Total duration: \(totalDuration) seconds")
 
               // Calculate expected frames
-              let frameRate: Double = 7.0  // Frame rate is 7 fps
+              let frameRate: Double = 7.0
               let expectedFrames = totalDuration * frameRate
               logger.info("Expected frames (Total Duration x Frame Rate): \(expectedFrames)")
 

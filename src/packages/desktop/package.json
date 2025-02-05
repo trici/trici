@@ -35,8 +35,8 @@
     "build-prod": "cross-env NODE_ENV=production pnpm run esbuild-main && cross-env NODE_ENV=production pnpm run esbuild-renderer && pnpm run build-config-prod && pnpm run build-css pnpm run build-copy-unbundled && pnpm run check-types",
     "build-config-dev": "cross-env NODE_ENV=development node buildConfig.js",
     "build-config-prod": "cross-env NODE_ENV=production node buildConfig.js",
-    "build-css": "pnpx tailwindcss -i src/tricitailwind.css -o dist/trici.output.css",
-    "build-css-live": "pnpx tailwindcss -i src/tricitailwind.css -o dist/trici.output.css --watch",
+    "build-css": "tailwindcss -i src/tricitailwind.css -o dist/trici.output.css",
+    "build-css-live": "tailwindcss -i src/tricitailwind.css -o dist/trici.output.css --watch",
     "create-version-file": "node createVersionFile.js",
     "test": "cross-env NODE_ENV=test npx playwright test",
     "updbin": "node updbin.js",
@@ -49,10 +49,12 @@
   "devDependencies": {
     "@playwright/test": "^1.31.2",
     "@tanstack/eslint-plugin-query": "^4.29.9",
+    "@types/d3": "^7.4.3",
     "@types/electron-json-storage": "^4.5.0",
     "@types/react": "^18.2.11",
     "@types/react-dom": "^18.2.4",
     "@types/uuid": "^9.0.1",
+    "@types/video.js": "^7.3.58",
     "concurrently": "^8.2.1",
     "cross-env": "^7.0.3",
     "electron": "^23.3.13",
@@ -75,6 +77,9 @@
     "@trici/pm": "workspace:^",
     "@trici/recorder": "workspace:^",
     "@trici/utils": "workspace:^",
+    "@videojs/http-streaming": "^3.15.0",
+    "clsx": "^2.1.1",
+    "d3": "^7.9.0",
     "electron-context-menu": "^3.6.1",
     "electron-is-accelerator": "^0.2.0",
     "electron-json-storage": "^4.6.0",
@@ -89,7 +94,9 @@
     "react-dom": "^18.2.0",
     "recharts": "^2.15.0",
     "sqlite3": "^5.1.6",
+    "tailwind-merge": "^2.6.0",
     "tailwind-scrollbar": "^3.1.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "video.js": "^8.21.0"
   }
 }

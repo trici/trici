@@ -73,24 +73,33 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     }
     return new Promise((resolve, reject) => {
       const responseHandler = (data: Buffer) => {
-        console.log('Inside responseHandler');
+        // console.log('Inside responseHandler');
         try {
-          const resolutionFromStdout = JSON.parse(data.toString('utf8'));
-          const resolutionString = resolutionFromStdout.resolution.replace(/[()]/g, ''); //1440.0, 900.0
-          const [width, height] = resolutionString.split(',').map(Number);
-          const resolution = {
-            width: Math.round(width),
-            height: Math.round(height),
-          };
-          console.log('resolutionFromStdout:', resolutionFromStdout);
-          console.log('resolution:', resolution);
-          resolve(resolution);
+          const resolutionResponse = JSON.parse(data.toString('utf8'));
+          this.logger.info('resolutionResponse:', resolutionResponse);
+          if (resolutionResponse.type === 'stdOut') {
+            const resolutionValue = resolutionResponse.response;
+            const resolutionString = resolutionValue.resolution.replace(/[()]/g, ''); //1440.0, 900.0
+            const [width, height] = resolutionString.split(',').map(Number);
+            const resolution = {
+              width: Math.round(width),
+              height: Math.round(height),
+            };
+            resolve(resolution);
+          } else {
+            this.logger.error(`Invalid response type in response: ${JSON.stringify(resolutionResponse)}`);
+            reject(new Error('Invalid response type'));
+          }
         } catch (error) {
+          this.logger.error(`Error parsing response: ${error}`);
           reject(error);
         }
       };
-      this.recordingProcess.stdout.on('data', responseHandler);
-      this.recordingProcess.stdin.write('getResolution\n');
+      this.recordingProcess.stdout.once('data', responseHandler);
+      this.recordingProcess.stdin.write('getResolution\n', (err: any) => {
+        if (err) this.logger.warn(`Error writing getResolution command: ${err}`);
+        this.logger.info('getResolution command written');
+      });
     });
   }
 
@@ -105,23 +114,32 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
 
     let screenResolution = null;
 
+    let recordingProcessStarted = false;
+
     try {
       if (!this.recordingProcess) {
         this.recordingProcess = spawn(this.#recorderBinPath);
         this.recordingProcess.on('error', (error: any) => {
           console.log('TriciRecorder process error:', error);
           this.logger.error(`TriciRecorder process error: ${error}`);
-          throw error;
         });
 
         this.recordingProcess.stderr.on('data', (data: any) => {
-          console.log('recordingProcess.on.data:', data);
+          const logData = JSON.parse(data.toString('utf8'));
+          if (logData.type === 'stdErr') {
+            this.logger.error(`TriciRecorder process stderr: ${JSON.stringify(logData.response)}`);
+          } else {
+            this.logger.info(`${logData.type}: ${JSON.stringify(logData.response)}`);
+          }
         });
+
         console.log('Recording process pid:', this.recordingProcess.pid);
         screenResolution = await this.getScreenResolution();
+        recordingProcessStarted = true;
       }
     } catch (error) {
       this.logger.error(`TriciRecorder failed to start:${error}`);
+      throw error;
     }
 
     const recordingFileNameWithPath = `${recordingStorageLocation}/${recordingFileName}`;
@@ -129,6 +147,8 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     const recordingCommandStdOutStdErrFileStream = fs.createWriteStream(recordingCommandStdOutStdErrFileNameWithPath, {
       flags: 'a',
     });
+    // The below sizeParam is not being used and the value is hardcoded because of noise in the recording
+    // output issue. By having a standard resolution, the video comes clear.
     // const sizeParam = `${screenResolution.width}x${screenResolution.height}`;
     const sizeParam = `1920x1080`;
     console.log('this.#ffmpegBinPath:', this.#ffmpegBinPath);
@@ -163,23 +183,17 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       'high',
       '-fps_mode',
       'vfr',
-      '-f',
-      'segment',
-      '-segment_time',
-      '5',
-      '-segment_list_flags',
-      'live',
-      '-segment_list_size',
-      '0',
-      '-max_muxing_queue_size',
-      '1024',
+      '-force_key_frames',
+      'expr:gte(t,n_forced*7)',
       '-reset_timestamps',
       '1',
-      '-force_key_frames',
-      'expr:gte(t,n_forced*5)',
-      `${recordingFileNameWithPath}-%04d.mp4`,
-
-      // `${recordingFileNameWithPath}.mp4`,
+      '-hls_time',
+      '7',
+      '-hls_list_size',
+      '0',
+      '-hls_flags',
+      'delete_segments',
+      `${recordingFileNameWithPath}.m3u8`,
     ];
 
     this.logger.info(`ffmpegProcess args: ${JSON.stringify(args)}`);
