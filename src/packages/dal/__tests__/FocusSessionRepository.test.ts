@@ -49,10 +49,43 @@ describe('FocusSessionRepository', () => {
     });
   });
 
-  describe('getFocusSessions', () => {
-    it('should get focus sessions from the database', async () => {
-      const focusSessions = await repository.getFocusSessions(Date.now() - 1000, Date.now());
-      expect(focusSessions.length).toBeGreaterThan(0);
+  describe('getFocusSessionsForDuration', () => {
+    it('should get focus sessions for a given time range', async () => {
+      const now = Date.now();
+      const from = now - 1000;
+      const to = now;
+
+      const focusSessions = await repository.getFocusSessionsForDuration(from, to);
+      expect(Array.isArray(focusSessions)).toBe(true);
+      focusSessions.forEach(session => {
+        expect(session.startTime).toBeGreaterThanOrEqual(from);
+        expect(session.startTime).toBeLessThanOrEqual(to);
+      });
+    });
+  });
+
+  describe('getFocusSessionsPaginated', () => {
+    it('should get paginated focus sessions', async () => {
+      const pageSize = 10;
+      const pageIndex = 0;
+
+      const focusSessions = await repository.getFocusSessionsPaginated(pageIndex, pageSize);
+      expect(Array.isArray(focusSessions)).toBe(true);
+      expect(focusSessions.length).toBeLessThanOrEqual(pageSize);
+
+      // Verify sessions are ordered by start_time DESC
+      for (let i = 1; i < focusSessions.length; i++) {
+        expect(focusSessions[i - 1].startTime).toBeGreaterThanOrEqual(focusSessions[i].startTime);
+      }
+    });
+
+    it('should return empty array for page beyond available data', async () => {
+      const pageSize = 10;
+      const pageIndex = 9999; // Very high page number
+
+      const focusSessions = await repository.getFocusSessionsPaginated(pageIndex, pageSize);
+      expect(Array.isArray(focusSessions)).toBe(true);
+      expect(focusSessions.length).toBe(0);
     });
   });
 
