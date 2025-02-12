@@ -36,15 +36,15 @@ export class DhappJobRepository implements IDhappJobRepository {
     const query = isInsert
       ? `
         INSERT INTO dhapp_job (
-          job_session_directory, 
-          status, 
-          steps_completed, 
-          error_message, 
+          job_session_directory,
+          status,
+          steps_completed,
+          error_message,
           attempt_count
         ) VALUES (?, ?, ?, ?, ?)
       `
       : `
-        UPDATE dhapp_job 
+        UPDATE dhapp_job
         SET job_session_directory = ?,
             status = ?,
             steps_completed = ?,
