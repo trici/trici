@@ -1,7 +1,7 @@
 import { Logger } from '@trici/logger';
 import sqlite3 from 'sqlite3';
 
-export interface DhappJob {
+export interface IDhappJob {
   id: number;
   job_session_directory: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
@@ -13,8 +13,8 @@ export interface DhappJob {
 }
 
 export interface IDhappJobRepository {
-  save(dhappJob: Omit<DhappJob, 'created_at' | 'updated_at'>): Promise<void>;
-  get(id: number): Promise<DhappJob | null>;
+  save(dhappJob: Omit<IDhappJob, 'created_at' | 'updated_at'>): Promise<void>;
+  get(id: number): Promise<IDhappJob | null>;
 }
 
 export class DhappJobRepository implements IDhappJobRepository {
@@ -26,7 +26,7 @@ export class DhappJobRepository implements IDhappJobRepository {
     this.logger = logger;
   }
 
-  public async save(dhappJob: Omit<DhappJob, 'created_at' | 'updated_at'>): Promise<void> {
+  public async save(dhappJob: Omit<IDhappJob, 'created_at' | 'updated_at'>): Promise<void> {
     if (!this.db) {
       this.logger?.error('Database not initialized');
       throw new Error('Database not initialized');
@@ -74,7 +74,7 @@ export class DhappJobRepository implements IDhappJobRepository {
     });
   }
 
-  public async get(id: number): Promise<DhappJob | null> {
+  public async get(id: number): Promise<IDhappJob | null> {
     if (!this.db) {
       this.logger?.error('Database not initialized');
       throw new Error('Database not initialized');
