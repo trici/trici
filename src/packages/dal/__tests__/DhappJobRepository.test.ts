@@ -1,14 +1,13 @@
 console.log('Executing file DhappJobRepository');
 import { Logger } from '@trici/logger';
 import { SqliteDbManager } from '../src/SqliteDbManager';
-import { DhappJobRepository } from '../src/DhappJobRepository';
+import { DhappJobRepository, IDhappJob } from '../src/DhappJobRepository';
 import sqlite3 from 'sqlite3';
 import { deleteDirectoryWithContents } from '@trici/utils';
-import path from 'path';
+import path, { resolve } from 'path';
 import fs from 'fs';
 import LoggingService from '@trici/logger';
 import knexfile from './knex/knexfile';
-import { DhappJob } from '../src/DhappJobRepository';
 
 describe('DhappJobRepository', () => {
   let repository: DhappJobRepository;
@@ -58,8 +57,9 @@ describe('DhappJobRepository', () => {
 
   describe('save and get', () => {
     it('should save a dhapp job to the database', async () => {
-      const dhappJobRecord: Omit<DhappJob, 'id' | 'created_at' | 'updated_at'> = {
-        job_session_directory: '/test/path',
+      const dhappJobRecord: Omit<IDhappJob, 'id' | 'created_at' | 'updated_at'> = {
+        job_session_directory: '/test/path/1739194174072',
+        job_name: '1739194174072',
         status: 'pending',
         steps_completed: { step1: true },
         error_message: null,
@@ -70,8 +70,9 @@ describe('DhappJobRepository', () => {
     });
 
     it('should retrieve a dhapp job from the database', async () => {
-      const dhappJobRecord: Omit<DhappJob, 'id' | 'created_at' | 'updated_at'> = {
-        job_session_directory: '/test/path/2',
+      const dhappJobRecord: Omit<IDhappJob, 'id' | 'created_at' | 'updated_at'> = {
+        job_session_directory: '/test/path/1739194174073',
+        job_name: '1739194174073',
         status: 'pending',
         steps_completed: { step1: true },
         error_message: null,
@@ -79,64 +80,50 @@ describe('DhappJobRepository', () => {
       };
 
       // Insert with id -1 for new record
-      await repository.save({ ...dhappJobRecord, id: -1 });
+      const savedJob = await repository.save({ ...dhappJobRecord, id: -1 });
 
-      // Get the inserted record's id
-      const result = await new Promise<any>((resolve, reject) => {
-        db.get(
-          'SELECT id FROM dhapp_job WHERE job_session_directory = ?',
-          [dhappJobRecord.job_session_directory],
-          (err, row) => {
-            if (err) reject(err);
-            else resolve(row);
-          },
-        );
-      });
-
-      const fetchedDhappJob = await repository.get(result.id);
+      const fetchedDhappJob = await repository.get(savedJob.id);
       expect(fetchedDhappJob).toMatchObject({
         ...dhappJobRecord,
-        id: result.id,
+        id: savedJob.id,
       });
     });
 
     it('should update an existing dhapp job in the database', async () => {
-      const initialDhappJob: Omit<DhappJob, 'id' | 'created_at' | 'updated_at'> = {
-        job_session_directory: '/test/path/3',
+      const initialDhappJob: Omit<IDhappJob, 'id' | 'created_at' | 'updated_at'> = {
+        job_session_directory: '/test/path/1739194174074',
         status: 'pending',
         steps_completed: { step1: false },
         error_message: null,
         attempt_count: 0,
+        job_name: '1739194174074',
       };
-
       // First insert
-      await repository.save({ ...initialDhappJob, id: -1 });
-
-      // Get the inserted record's id
-      const result = await new Promise<any>((resolve, reject) => {
-        db.get(
-          'SELECT id FROM dhapp_job WHERE job_session_directory = ?',
-          [initialDhappJob.job_session_directory],
-          (err, row) => {
-            if (err) reject(err);
-            else resolve(row);
-          },
-        );
+      const savedJob = await repository.save({
+        ...initialDhappJob,
+        id: -1,
+        job_session_directory: initialDhappJob.job_session_directory,
+        status: initialDhappJob.status,
+        steps_completed: initialDhappJob.steps_completed,
+        error_message: initialDhappJob.error_message,
+        attempt_count: initialDhappJob.attempt_count,
+        job_name: '1739194174074',
       });
 
       // Update the record
-      const updatedDhappJob: Omit<DhappJob, 'created_at' | 'updated_at'> = {
-        id: result.id,
-        job_session_directory: '/test/path/3',
+      const updatedDhappJob: Omit<IDhappJob, 'created_at' | 'updated_at'> = {
+        id: savedJob.id,
+        job_session_directory: savedJob.job_session_directory,
         status: 'completed',
         steps_completed: { step1: true },
         error_message: 'test error',
         attempt_count: 1,
+        job_name: savedJob.job_name,
       };
 
       await repository.save(updatedDhappJob);
 
-      const fetchedDhappJob = await repository.get(result.id);
+      const fetchedDhappJob = await repository.get(savedJob.id);
       expect(fetchedDhappJob).toMatchObject(updatedDhappJob);
     });
 
