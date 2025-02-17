@@ -17,6 +17,7 @@ export interface IFocusSession {
   startedBy: SessionStartedBy;
   startedFrom: SessionStartedFrom;
   sessionStartMetadata: any;
+  storageLocation: string;
 }
 
 const FocusSessionSchema: IFocusSession = {
@@ -31,6 +32,7 @@ const FocusSessionSchema: IFocusSession = {
   startedBy: SessionStartedBy.NOT_SET,
   startedFrom: SessionStartedFrom.NOT_SET,
   sessionStartMetadata: {},
+  storageLocation: Constants.EMPTY_STRING,
 };
 
 const FocusSessionRecord = Immutable.Record(FocusSessionSchema);
@@ -50,6 +52,7 @@ export class FocusSession extends FocusSessionRecord {
         startedBy: SessionStartedBy.NOT_SET,
         startedFrom: SessionStartedFrom.NOT_SET,
         sessionStartMetadata: {},
+        storageLocation: Constants.EMPTY_STRING,
       });
     } else {
       super({
@@ -64,6 +67,7 @@ export class FocusSession extends FocusSessionRecord {
         startedBy: focusSession.startedBy,
         startedFrom: focusSession.startedFrom,
         sessionStartMetadata: focusSession.sessionStartMetadata,
+        storageLocation: focusSession.storageLocation,
       });
     }
   }
