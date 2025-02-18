@@ -193,6 +193,8 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       '0',
       '-hls_flags',
       'delete_segments',
+      '-hls_segment_filename',
+      `${recordingFileNameWithPath}-%04d.ts`,
       `${recordingFileNameWithPath}.m3u8`,
     ];
 
