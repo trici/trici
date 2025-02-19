@@ -33,6 +33,7 @@ describe('FocusSessionRepository', () => {
           idleTimeNearHistoryAverage: 100,
           idleTimeImmediateHistoryAverage: 50,
         },
+        storageLocation: '',
       });
       const savedFocusSession = await repository.save(newFocusSession);
       expect(savedFocusSession.id).not.toBe(-1);

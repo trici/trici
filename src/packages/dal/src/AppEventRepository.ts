@@ -5,6 +5,7 @@ import { Logger } from '@trici/logger';
 export interface IAppEventRepository {
   save(tapEvent: IAppEvent): Promise<void>;
   getAppEvents(from: number, to: number, type: TriciAppEvent | null, count: number): Promise<Array<IAppEvent>>;
+  getAllAppEvents(from: number, to: number): Promise<Array<IAppEvent>>;
 }
 
 export class AppEventRepository implements IAppEventRepository {
@@ -14,6 +15,32 @@ export class AppEventRepository implements IAppEventRepository {
   constructor(db: sqlite3.Database, logger: Logger) {
     this.db = db;
     this.logger = logger;
+  }
+  getAllAppEvents(from: number, to: number): Promise<Array<IAppEvent>> {
+    if (!this.db) {
+      this.logger?.error('Database not initialized');
+      throw new Error('Database not initialized');
+    }
+
+    const selectQuery = `SELECT * FROM app_event WHERE timestamp BETWEEN ? AND ?`;
+    const params: any[] = [from, to];
+    return new Promise((resolve, reject) => {
+      this.db!.all(selectQuery, params, (err, rows: any[]) => {
+        if (err) {
+          this.logger?.error('Error retrieving app events from the database', err);
+          reject(err);
+        } else {
+          resolve(
+            rows.map(row => ({
+              id: row.id,
+              type: row.type,
+              timestamp: row.timestamp,
+              data: JSON.parse(row.data) as Array<any>,
+            })),
+          );
+        }
+      });
+    });
   }
 
   public async save(tapEvent: IAppEvent): Promise<void> {
