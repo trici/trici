@@ -1,6 +1,6 @@
 {
   "name": "@trici/pm",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Manages the communication between the primary and secondary main processes",
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",

@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.1](https://github.com/trici/trici/compare/@trici/activmon@1.1.0...@trici/activmon@1.1.1) (2025-02-19)
+
+### Bug Fixes
+
+- **@trici/activmon:** Improve the granularity by considering the immediate and near average values. Also added condition allowing state change from active to hyperactive ([c70dd9e](https://github.com/trici/trici/commit/c70dd9e1fee4af5813e99e9f7c75765556929aa2))
+- **@trici/activmon:** Pass parameters when the state changes ([29bd26b](https://github.com/trici/trici/commit/29bd26be2f32ae1de163139bc03f7a339a1b96dd))
+
 # [1.1.0](https://github.com/trici/trici/compare/@trici/activmon@1.0.1...@trici/activmon@1.1.0) (2024-12-14)
 
 ### Bug Fixes

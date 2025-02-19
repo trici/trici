@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.3.0](https://github.com/trici/trici/compare/@trici/recorder@1.2.4...@trici/recorder@1.3.0) (2025-02-19)
+
+### Bug Fixes
+
+- **@trici/recorder:** Fix the name of the segment files being generated. ([81c87da](https://github.com/trici/trici/commit/81c87da84e10bd674ae395e0f5f50d9b3613c10e))
+- **@trici/recorder:** Throw error on failure. getResolution and start command were not parsed as separate commands ([9423951](https://github.com/trici/trici/commit/9423951c2f390c12f2798d2134bf01a6bcb6e112))
+- **@trici/recorder:** Using constant value for output resolution. Also using HLS feature of ffmpeg which outputs ts files alongwith playlist. ([3abd8a9](https://github.com/trici/trici/commit/3abd8a922879da50a85ba9c15af1a081b14a7349))
+
+### Features
+
+- **@trici/recorder:** Added a method to take screenshot of the active screen ([a22bac6](https://github.com/trici/trici/commit/a22bac6a6f78e2605d2bf3fcf7bcdf6a313229a2))
+
 ## [1.2.4](https://github.com/trici/trici/compare/@trici/recorder@1.2.3...@trici/recorder@1.2.4) (2024-12-14)
 
 **Note:** Version bump only for package @trici/recorder

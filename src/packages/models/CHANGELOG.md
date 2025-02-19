@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.6.0](https://github.com/trici/trici/compare/@trici/models@1.5.0...@trici/models@1.6.0) (2025-02-19)
+
+### Features
+
+- **@trici/dal:** Added storageLocation field to focusSessions. storageLocation shall be configurable for premium users ([b76e433](https://github.com/trici/trici/commit/b76e433b67fb4f6c06cad9ba21a9669a34556771))
+- **@trici/models:** Changed the Focus Session object as it will now be saved in a table in Sqlite3. ([d0b9482](https://github.com/trici/trici/commit/d0b948247979417c050e3b24f0831851f271bbce))
+- **@trici/urlUtils:** Return an enum instead of boolean for the method isUserWorking ([698a9cd](https://github.com/trici/trici/commit/698a9cd069ba3d6ad5fed1584d95f0902fa29490))
+
 # [1.5.0](https://github.com/trici/trici/compare/@trici/models@1.4.0...@trici/models@1.5.0) (2024-12-14)
 
 ### Bug Fixes

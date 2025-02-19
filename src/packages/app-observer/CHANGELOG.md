@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.6.0](https://github.com/trici/trici/compare/@trici/app-observer@1.5.0...@trici/app-observer@1.6.0) (2025-02-19)
+
+### Bug Fixes
+
+- **@trici/app-observer:** Fix the test directory value being passed as param to mimic what will be actually passed ([7c96a49](https://github.com/trici/trici/commit/7c96a495d252000d04e4a5bf64a02e1bb61a8552))
+- **@trici/app-observer:** Handle the scenario where multiple lines are outputted at once. ([a185f45](https://github.com/trici/trici/commit/a185f4552f70cf7ddf15be1a6670f879a297dc94))
+- **@trici/app-observer:** If Accessibility API fails then use AppleScript correctly ([42e9e61](https://github.com/trici/trici/commit/42e9e6177124890a4c0c26aadec49bf5612a9650))
+- **@trici/app-observer:** Pass the logsDirectory path as a parameter. Handle initialization of Logging service correctly ([204a777](https://github.com/trici/trici/commit/204a7778ae12d00d44e578d88a6df709626be1bc))
+- **@trici/app-observer:** Return the reason the for failure to get the url than simply undefined ([bea947d](https://github.com/trici/trici/commit/bea947d885c3c3fca94c6c41f2cdf0a9c5dd20a9))
+
+### Features
+
+- **@trici/app-observer:** Added a method to get SystemIdleTime in milliseconds. Removed Old console app project ([2f0749b](https://github.com/trici/trici/commit/2f0749b4a249efe38745a05e6e3dfec51fc9ecdf))
+- **@trici/app-observer:** Save the AppChangeHistory and return more details when fetching the current app ([4565353](https://github.com/trici/trici/commit/4565353f2284773ea2df4c56a2afb50e90ddc700))
+- **@trici/app-observer:** Take the logs directory as a parameter passed to the console app ([b221608](https://github.com/trici/trici/commit/b2216085e4555a459cb25ee9bc5eaca722bdd85d))
+
 # [1.5.0](https://github.com/trici/trici/compare/@trici/app-observer@1.4.0...@trici/app-observer@1.5.0) (2024-12-14)
 
 ### Bug Fixes

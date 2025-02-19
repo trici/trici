@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.2.0](https://github.com/trici/trici/compare/@trici/dal@2.1.0...@trici/dal@2.2.0) (2025-02-19)
+
+### Bug Fixes
+
+- **@trici/dal:** Add missing export to index to export the DhappRepo ([0d744a5](https://github.com/trici/trici/commit/0d744a53a0f9b3ddddc5d1d69416563d6eeea063))
+- **@trici/dal:** Added column for job_name which is the name of the directory as well. Updated tests ([4f8a3c1](https://github.com/trici/trici/commit/4f8a3c1fb7bc8b53a98a2b2dede8d7a937b5c2d9))
+- **@trici/dal:** Duplicate entries were being created for the same focus session. Also fixed test for this scenario. Focus Session id was nullable and not auto increment ([d6d828b](https://github.com/trici/trici/commit/d6d828bee36540bb5215746274c33b252d073b7e))
+- **@trici/dal:** Fix tests for changes made in FocusSessionRepo, getFocusSessions changed to two methods, getFocusSessionsPaginated and getFocusSessionsForDuration ([13fb218](https://github.com/trici/trici/commit/13fb2183354471e3bd02b47ad45690cc4ee037f1))
+- **@trici/dal:** Use the convention followed for the name of the interface. Export type as well. ([8af4616](https://github.com/trici/trici/commit/8af461677ed678a2636ba8c36f6baf87ad3e095e))
+- **@trici/recorder:** Fix the name of the segment files being generated. ([81c87da](https://github.com/trici/trici/commit/81c87da84e10bd674ae395e0f5f50d9b3613c10e))
+
+### Features
+
+- **@trici/dal:** Added a method to return all AppEvents between a two timestamps ([4bce075](https://github.com/trici/trici/commit/4bce0758fe23c48982703f200a86fc5aa439626d))
+- **@trici/dal:** Added FocusSession Repository. Refactored tests. Changed UsedApplicationsRepo to return the saved object ([894827f](https://github.com/trici/trici/commit/894827f317dd0bb9b4112982d4b8273108b91f39))
+- **@trici/dal:** Added method to get focus sessions between two timestamps ([0706d84](https://github.com/trici/trici/commit/0706d8490d302227813078427f616f5cfb12a667))
+- **@trici/dal:** Added Repository to keep track of Dhapp Jobs ([1cb8e6e](https://github.com/trici/trici/commit/1cb8e6e8c2229d3ddcd390c17836a5037f75de64))
+
 # [2.1.0](https://github.com/trici/trici/compare/@trici/dal@2.0.0...@trici/dal@2.1.0) (2024-12-14)
 
 ### Features

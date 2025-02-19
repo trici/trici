@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.4](https://github.com/trici/trici/compare/@trici/postprocess@1.1.3...@trici/postprocess@1.1.4) (2025-02-19)
+
+**Note:** Version bump only for package @trici/postprocess
+
 ## [1.1.3](https://github.com/trici/trici/compare/@trici/postprocess@1.1.2...@trici/postprocess@1.1.3) (2024-12-14)
 
 **Note:** Version bump only for package @trici/postprocess

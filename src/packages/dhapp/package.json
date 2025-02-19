@@ -1,0 +1,36 @@
+{
+  "name": "@trici/dhapp",
+  "version": "0.0.2",
+  "description": "Data Handling and Processing Pipeline",
+  "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
+  "homepage": "https://github.com/trici/trici#readme",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "src": "src",
+    "test": "__tests__"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trici/trici.git"
+  },
+  "scripts": {
+    "build-esbuild-dev": "cross-env NODE_ENV=development node esbuild.js",
+    "build-esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
+    "build-dev": "pnpm run build-types && npm run build-esbuild-dev",
+    "build-prod": "pnpm run build-esbuild-prod",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles"
+  },
+  "bugs": {
+    "url": "https://github.com/trici/trici/issues"
+  },
+  "dependencies": {
+    "@trici/dal": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.3",
+    "@types/node": "^20.4.9",
+    "cross-env": "^7.0.3"
+  }
+}

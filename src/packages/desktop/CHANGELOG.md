@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.9.0](https://github.com/trici/trici/compare/@trici/desktop@0.8.0...@trici/desktop@0.9.0) (2025-02-19)
+
+### Bug Fixes
+
+- **@trici/desktop:** By default, the latest Focus Session should be the one that is selected ([bc18417](https://github.com/trici/trici/commit/bc18417d19cacf9e0c0bdf71490032a52b3a6135))
+- **@trici/desktop:** Different dimensions for root element depending on type of window. Prevents scroll in triciMainWindow ([93410df](https://github.com/trici/trici/commit/93410dfbffc51fb9081238bda8e2d7b4d7246e17))
+- **@trici/desktop:** Fix the time filter dropdown to show the selected value ([ddb6e59](https://github.com/trici/trici/commit/ddb6e592d70d8131c00e5d0f94945f05263c1dc3))
+- **@trici/desktop:** Pass the logging directory to triciAppObserver ([c62548c](https://github.com/trici/trici/commit/c62548ce59e2b39653e9b40640bbce4bd97373b0))
+
+### Features
+
+- **@trici/desktop:** Added migration for Focus Session table. Renamed older migration files to follow same naming convention. ([af8474e](https://github.com/trici/trici/commit/af8474ee91271bda28ed49ea60cc5343d1e2e529))
+- **@trici/desktop:** Added the column storageLocation for FocusSession object. Also added a new plugin to write event data for the session to the directory where recordings are stored when Focus Session ends. Also added a priority when registering plugins which determines the order in which the plugins are fired for the same event. ([5a91264](https://github.com/trici/trici/commit/5a912642492078374ac8f432c9e8d4ed4c045b66))
+- **@trici/desktop:** Fetch and show Focus Session data in the Trici Window. There are two views: Timeline and FocusSession wise ([b6c7ff7](https://github.com/trici/trici/commit/b6c7ff752b674475c2773539dcfdf17d945894e5))
+- **@trici/desktop:** Interface to show the Focus Sessions as a grid of data. First check in/ ([bb22c08](https://github.com/trici/trici/commit/bb22c08fd86f2a80976b8d400f5c4d8dc64e7609))
+- **@trici/desktop:** Pass sessionStartMetaData when starting the Focus Session ([dc0543a](https://github.com/trici/trici/commit/dc0543aee4cae940cf5a5fec192b62a316a4c93b))
+
 # [0.8.0](https://github.com/trici/trici/compare/@trici/desktop@0.7.0...@trici/desktop@0.8.0) (2024-12-14)
 
 ### Bug Fixes

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.2.0](https://github.com/trici/trici/compare/@trici/utils@2.1.0...@trici/utils@2.2.0) (2025-02-19)
+
+### Features
+
+- **@trici/urlUtils:** Return an enum instead of boolean for the method isUserWorking ([698a9cd](https://github.com/trici/trici/commit/698a9cd069ba3d6ad5fed1584d95f0902fa29490))
+
 # [2.1.0](https://github.com/trici/trici/compare/@trici/utils@2.0.0...@trici/utils@2.1.0) (2024-12-14)
 
 ### Bug Fixes
