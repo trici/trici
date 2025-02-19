@@ -1,6 +1,9 @@
 This project is a monorepo managed by pnpm and nx/lerna.
 
 The root of the monorepo is src folder (which is not the git root). The builds folder contains the builds for the different platforms.
+Currently, only the darwin build is supported, but in future Windows will be supported as well.
+The code in the @trici/desktop package is built for prod (js bundle and swift console apps) and then copied to the builds/darwin folder.
+
 
 The docs folder contains the documentation for the project.
 .
@@ -33,3 +36,13 @@ Each package has its own tests which is located in the __tests__ folder. For exa
 │   │   ├── logs
 │   │   └── src
 │   │       └── swift
+
+
+The @trici/dal package is the data access layer and provides a the interface to conduct database operations. To independently
+test the data access layer,the migrations are located in the __tests__/knex/migrations folder. This is a mirror of the actual migrations
+folder which is location in the @trici/desktop package in the knex/migrations folder.
+
+All the repository save methods should return the object that was saved, rather than just the id or void.
+
+The migration files are named in the format of YYYYMMDD_001_migration_name.js. The YYYYMMDD is the timestamp(year, month, day) of the migration and the 001 is the migration number.
+
