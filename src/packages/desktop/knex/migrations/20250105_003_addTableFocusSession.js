@@ -20,6 +20,7 @@ exports.up = function (knex) {
     table.string('started_by').notNullable();
     table.string('started_from').notNullable();
     table.json('session_start_metadata').notNullable();
+    table.string('storage_location').defaultTo('');
     table.timestamps(true, true);
   });
 };

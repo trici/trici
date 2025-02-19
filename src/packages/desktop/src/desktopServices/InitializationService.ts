@@ -26,6 +26,7 @@ import { TriciRecorder } from '@trici/recorder';
 import { PluginManager } from './PluginManager';
 import { AppEventEmitter } from './AppEventEmitter';
 import { ScreenRecordingPlugin } from '../plugins/ScreenRecordingPlugin';
+import { SessionEndDataProcessingPlugin } from '../plugins/SessionEndDataProcessingPlugin';
 import actionDispatcher, { dispatch } from './ActionDispatcher';
 import { IUsedApplication, UserPreferences } from '@trici/models';
 import { IWindowManager } from './WindowManager';
@@ -76,9 +77,17 @@ function initializeLogger() {
 /**
  * Load Core Plugins
  */
-function regiserCorePlugins(pluginManager: PluginManager, recorder: TriciRecorder, windowManager: IWindowManager) {
+function regiserCorePlugins(
+  pluginManager: PluginManager,
+  recorder: TriciRecorder,
+  appEventRepository: IAppEventRepository,
+  logger: Logger,
+) {
   const screenRecordingPlugin = new ScreenRecordingPlugin(recorder);
-  pluginManager.register(screenRecordingPlugin);
+  pluginManager.register(screenRecordingPlugin, 10);
+
+  const sessionEndDataProcessingPlugin = new SessionEndDataProcessingPlugin(appEventRepository, logger);
+  pluginManager.register(sessionEndDataProcessingPlugin, 100);
 }
 
 export interface IInitializationService {
@@ -217,7 +226,7 @@ export const InitializationService: IInitializationService = {
 
       const pluginManager = PluginManager.getInstance(logger, appEventEmitter);
       pluginManager.initialize();
-      regiserCorePlugins(pluginManager, triciRecorder, windowManager);
+      regiserCorePlugins(pluginManager, triciRecorder, eventRepo, logger);
 
       // Start the UserActivityMonitor service
       const userActivityMonitorService = new UserActivityMonitorService(

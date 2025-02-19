@@ -5,8 +5,13 @@ import { IPluginManager } from '../typedefs/IPluginManager';
 import type { Logger } from '@trici/logger';
 import { IConsoleLogger } from '@trici/logger';
 
+interface PluginWithPriority {
+  plugin: ITriciPlugin;
+  priority: number;
+}
+
 export class PluginManager implements IPluginManager {
-  private plugins: ITriciPlugin[];
+  private plugins: PluginWithPriority[];
   private eventBus: AppEventEmitter;
   private logger: Logger | IConsoleLogger;
   private static instance: PluginManager;
@@ -37,17 +42,22 @@ export class PluginManager implements IPluginManager {
     this.initialized = true;
   }
 
-  public register(plugin: ITriciPlugin): void {
+  public register(plugin: ITriciPlugin, priority: number = 5000): void {
     if (!this.initialized) {
       throw new Error('PluginManager not initialized');
     }
-    this.plugins.push(plugin);
-    // plugin.initialize(this);
+
+    if (priority < 1 || priority > 10000) {
+      throw new Error('Priority must be between 1 and 10000');
+    }
+
+    this.plugins.push({ plugin, priority });
+    this.plugins.sort((a, b) => a.priority - b.priority);
   }
 
   public emit<E extends TriciAppEvent>(event: E, ...args: any[]): void {
     console.log('PluginManager.emit', event, args);
-    this.plugins.forEach(plugin => {
+    this.plugins.forEach(({ plugin }) => {
       plugin.handleEvent(event, ...args);
     });
   }

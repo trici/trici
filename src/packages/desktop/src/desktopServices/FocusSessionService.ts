@@ -72,6 +72,7 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
       startedBy: startedBy,
       startedFrom: startedFrom,
       sessionStartMetadata: sessionStartMetadata,
+      storageLocation: Constants.EMPTY_STRING,
     });
   };
 
