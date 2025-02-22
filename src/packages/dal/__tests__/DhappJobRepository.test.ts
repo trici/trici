@@ -69,6 +69,14 @@ describe('DhappJobRepository', () => {
       expect(async () => await repository.save({ ...dhappJobRecord, id: -1 })).not.toThrow();
     });
 
+    it('should return the job to handle when there is a pending job', async () => {
+      const jobToHandle = await repository.getJobToHandle();
+      expect(jobToHandle).not.toBeNull();
+      expect(jobToHandle?.status).toBe('pending');
+      expect(jobToHandle?.job_session_directory).toBe('/test/path/1739194174072');
+      expect(jobToHandle?.job_name).toBe('1739194174072');
+    });
+
     it('should retrieve a dhapp job from the database', async () => {
       const dhappJobRecord: Omit<IDhappJob, 'id' | 'created_at' | 'updated_at'> = {
         job_session_directory: '/test/path/1739194174073',

@@ -16,6 +16,7 @@ export interface IDhappJob {
 export interface IDhappJobRepository {
   save(dhappJob: Omit<IDhappJob, 'created_at' | 'updated_at'>): Promise<IDhappJob>;
   get(id: number): Promise<IDhappJob | null>;
+  getJobToHandle(): Promise<IDhappJob | null>;
 }
 
 export class DhappJobRepository implements IDhappJobRepository {
@@ -25,6 +26,20 @@ export class DhappJobRepository implements IDhappJobRepository {
   constructor(db: sqlite3.Database, logger: Logger) {
     this.db = db;
     this.logger = logger;
+  }
+
+  public async getJobToHandle(): Promise<IDhappJob | null> {
+    const query = `SELECT * FROM dhapp_job WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1`;
+    const params: any[] = [];
+    return new Promise((resolve, reject) => {
+      this.db!.get(query, params, (err, row: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row);
+        }
+      });
+    });
   }
 
   public async save(dhappJob: Omit<IDhappJob, 'created_at' | 'updated_at'>): Promise<IDhappJob> {
