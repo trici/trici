@@ -20,6 +20,12 @@ export function TriciPlayer({ selectedSession }: TriciPlayerProps) {
         fluid: true,
         preload: 'auto',
         aspectRatio: '16:9',
+        playbackRates: [1, 2, 4, 6, 8], // Available playback speeds
+        controlBar: { volumePanel: false, pictureInPictureToggle: false },
+      });
+
+      player.on('loadedmetadata', () => {
+        player.playbackRate(4);
       });
 
       playerRef.current = player;
@@ -46,9 +52,8 @@ export function TriciPlayer({ selectedSession }: TriciPlayerProps) {
     // Update video source with the playlist
     playerRef.current.src({
       src: playlistUrl,
-      type: 'application/x-mpegURL' // This is the MIME type for HLS playlists
+      type: 'application/x-mpegURL', // This is the MIME type for HLS playlists
     });
-
   }, [selectedSession]);
 
   return (
