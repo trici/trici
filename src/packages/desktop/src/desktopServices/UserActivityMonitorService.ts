@@ -1,6 +1,7 @@
+import * as fs from 'fs';
 import { AppObserverService } from '@trici/app-observer';
 import type { Logger } from '@trici/logger';
-import { Constants, DailyUserActivity, TriciAppEvent, UsedAppCategory } from '@trici/models';
+import { Constants, DailyUserActivity, FocusSession, TriciAppEvent, UsedAppCategory } from '@trici/models';
 import { generateNewTriciId, generateUpdatedTriciId, isTriciIdValidForToday, isWebBrowser } from '@trici/utils';
 import { IAppJsonStorageService } from './AppJsonStorageService';
 import { AppEventEmitter } from './AppEventEmitter';
@@ -11,6 +12,8 @@ import UsedApplicationsService from './UsedApplicationsService';
 import { UserActivityStateMachine } from '@trici/activmon';
 import { UserActivityState } from '@trici/models';
 import { isUserWorking } from '@trici/utils';
+import { DataWriter } from '@trici/datawriter';
+
 export interface IUserActivityMonitorService {
   start(): Promise<void>;
   stop(): Promise<void>;
@@ -28,6 +31,8 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   isServiceInitialized: boolean = false;
   actionDispatcher: IActionDispatcher<TriciAction>;
   usedApplicationsService: UsedApplicationsService;
+  captureIdleTimeProfile: boolean = false;
+  idleTimeProfile: { idleTime: number; timestamp: number }[] = [];
 
   constructor(
     logger: Logger,
@@ -48,6 +53,8 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.isServiceInitialized = false;
     this.actionDispatcher = actionDispatcher;
     this.usedApplicationsService = usedApplicationsService;
+    this.captureIdleTimeProfile = false;
+    this.idleTimeProfile = [];
   }
 
   updateLastSavedTodayUserActivityId = async (udpatedId: string) => {
@@ -60,6 +67,10 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       idleTime,
       idleTimeDiff,
     });
+
+    if (this.captureIdleTimeProfile) {
+      this.idleTimeProfile.push({ idleTime, timestamp: Date.now() });
+    }
 
     this.lastIdleTime = idleTime;
   };
@@ -87,8 +98,32 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     });
   }
 
+  // question: should
   registerAppEventHandlers(): void {
     // TODO: Register any app event handlers that this service needs to handle
+
+    this.appEventEmitter.on(TriciAppEvent.FOCUS_SESSION_STARTED, () => {
+      this.captureIdleTimeProfile = true;
+    });
+
+    this.appEventEmitter.on(TriciAppEvent.FOCUS_SESSION_ENDED, async (focusSession: FocusSession) => {
+      this.captureIdleTimeProfile = false;
+      const prefix = focusSession.get('startTime');
+      const fileName = `${prefix}-itp.dat`;
+
+      if (this.idleTimeProfile.length === 0) {
+        return;
+      }
+
+      try {
+        const protoBuffer = DataWriter.convertIdleTimeProfile(this.idleTimeProfile);
+        const filePath = global.userDataDirectoryCheckResult.recordingsDir.path + '/' + prefix + '/' + fileName;
+        await fs.promises.writeFile(filePath, protoBuffer);
+        this.idleTimeProfile = [];
+      } catch (error) {
+        this.logger.error(`UserActivityMonitorService: Error while writing idle time profile to file: ${error}`);
+      }
+    });
 
     this.appEventEmitter.on(
       TriciAppEvent.USER_HYPER_ACTIVE,

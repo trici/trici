@@ -1,0 +1,8 @@
+__tests__/logs
+.DS_STORE
+*.log
+*.map
+out
+sampledata
+dist
+logs

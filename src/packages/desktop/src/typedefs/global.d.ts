@@ -1,4 +1,5 @@
 import { OnboardingState, TriciApp } from '@trici/models';
+import { userDataDirectoryCheckResult } from '@trici/utils';
 
 declare global {
   var appDetails: string;
