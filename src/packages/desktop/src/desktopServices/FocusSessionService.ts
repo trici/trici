@@ -186,7 +186,7 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
       const saveResult = await this.#repository.save(this.#currentFocusSession);
       const savedFocusSession = new FocusSession(saveResult);
       this.#currentFocusSession = savedFocusSession;
-      this.#focusSessionTimer = setInterval(() => {}, 1000);
+      // this.#focusSessionTimer = setInterval(() => {}, 1000);
       this.appEventEmitter.emit(TriciAppEvent.FOCUS_SESSION_STARTED, savedFocusSession);
       return savedFocusSession;
     } catch (error: any) {
