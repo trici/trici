@@ -2,7 +2,7 @@
  * CliMessageHandlerService.ts
  *
  */
-import { CLIMessageType, DisplayNotSelectedError, SessionStartedBy, SessionStartedFrom } from '@trici/models';
+import { CLIMessageType, DisplayNotSelectedError, SessionTrigger } from '@trici/models';
 import { IProcessManager } from '@trici/pm';
 import { IFocusSessionService } from './FocusSessionService';
 
@@ -32,10 +32,7 @@ export class CliMessageHandlerService implements ICliMessageHandlerService {
      * handling AppEvents is not followed.
      */
     try {
-      const focusSession = await this.focusSessionService.startFocusSession(
-        SessionStartedBy.USER,
-        SessionStartedFrom.CLI,
-      );
+      const focusSession = await this.focusSessionService.startFocusSession(SessionTrigger.CLI, {});
       console.log('Focus session started: ', focusSession.toJS());
       const data = { success: true, message: 'Focus session started' };
       this.processManager.sendCliMessageResponse(data, socket);
@@ -56,7 +53,7 @@ export class CliMessageHandlerService implements ICliMessageHandlerService {
 
   async handleEndFocusSession(data: any, socket: any): Promise<void> {
     try {
-      const focusSession = await this.focusSessionService.endFocusSession();
+      const focusSession = await this.focusSessionService.endFocusSession(SessionTrigger.CLI);
       console.log('Focus session ended: ', focusSession.toJS());
       const data = { success: true, message: 'Focus session ended' };
       this.processManager.sendCliMessageResponse(data, socket);

@@ -28,8 +28,8 @@ export class FocusSessionRepository implements IFocusSessionRepository {
       recordingProcessCrashedOnStart: row.recording_process_crashed_on_start,
       displayUnits: JSON.parse(row.display_units),
       shouldHaveRecording: row.should_have_recording,
-      startedBy: row.started_by,
-      startedFrom: row.started_from,
+      startTrigger: row.start_trigger,
+      endTrigger: row.end_trigger,
       sessionStartMetadata: JSON.parse(row.session_start_metadata),
       storageLocation: row.storage_location,
     });
@@ -46,7 +46,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
     if (focusSession.id && focusSession.id > 0) {
       // Update
       const updateQuery = `UPDATE focus_session SET start_time = ?, end_time = ?, name = ?, session_did_start = ?, recording_process_crashed_on_start = ?,
-       display_units = ?, should_have_recording = ?, started_by = ?, started_from = ?, session_start_metadata = ?, storage_location = ? WHERE id = ? RETURNING *`;
+       display_units = ?, should_have_recording = ?, start_trigger = ?, end_trigger = ?, session_start_metadata = ?, storage_location = ? WHERE id = ? RETURNING *`;
       const params = [
         focusSession.startTime,
         focusSession.endTime,
@@ -55,8 +55,8 @@ export class FocusSessionRepository implements IFocusSessionRepository {
         focusSession.recordingProcessCrashedOnStart,
         JSON.stringify(focusSession.displayUnits),
         focusSession.shouldHaveRecording,
-        focusSession.startedBy,
-        focusSession.startedFrom,
+        focusSession.startTrigger,
+        focusSession.endTrigger,
         JSON.stringify(focusSession.sessionStartMetadata),
         focusSession.storageLocation,
         focusSession.id,
@@ -73,7 +73,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
       });
     } else {
       // Insert
-      const insertQuery = `INSERT INTO focus_session (start_time, end_time, name, session_did_start, recording_process_crashed_on_start, display_units, should_have_recording, started_by, started_from, session_start_metadata, storage_location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`;
+      const insertQuery = `INSERT INTO focus_session (start_time, end_time, name, session_did_start, recording_process_crashed_on_start, display_units, should_have_recording, start_trigger, end_trigger, session_start_metadata, storage_location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`;
       const params = [
         focusSession.startTime,
         focusSession.endTime,
@@ -82,8 +82,8 @@ export class FocusSessionRepository implements IFocusSessionRepository {
         focusSession.recordingProcessCrashedOnStart,
         JSON.stringify(focusSession.displayUnits),
         focusSession.shouldHaveRecording,
-        focusSession.startedBy,
-        focusSession.startedFrom,
+        focusSession.startTrigger,
+        focusSession.endTrigger,
         JSON.stringify(focusSession.sessionStartMetadata),
         focusSession.storageLocation,
       ];

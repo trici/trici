@@ -3,7 +3,7 @@
  */
 import * as Immutable from 'immutable';
 import { Constants } from './Constants';
-import { SessionStartedBy, SessionStartedFrom } from './enums';
+import { SessionTrigger } from './enums';
 
 export interface IFocusSession {
   id: number;
@@ -14,8 +14,8 @@ export interface IFocusSession {
   recordingProcessCrashedOnStart: boolean;
   displayUnits: any[];
   shouldHaveRecording: boolean;
-  startedBy: SessionStartedBy;
-  startedFrom: SessionStartedFrom;
+  startTrigger: SessionTrigger;
+  endTrigger: SessionTrigger;
   sessionStartMetadata: any;
   storageLocation: string;
 }
@@ -29,8 +29,8 @@ const FocusSessionSchema: IFocusSession = {
   recordingProcessCrashedOnStart: false,
   displayUnits: [],
   shouldHaveRecording: true,
-  startedBy: SessionStartedBy.NOT_SET,
-  startedFrom: SessionStartedFrom.NOT_SET,
+  startTrigger: SessionTrigger.NOT_SET,
+  endTrigger: SessionTrigger.NOT_SET,
   sessionStartMetadata: {},
   storageLocation: Constants.EMPTY_STRING,
 };
@@ -49,8 +49,8 @@ export class FocusSession extends FocusSessionRecord {
         recordingProcessCrashedOnStart: false,
         displayUnits: [],
         shouldHaveRecording: false,
-        startedBy: SessionStartedBy.NOT_SET,
-        startedFrom: SessionStartedFrom.NOT_SET,
+        startTrigger: SessionTrigger.NOT_SET,
+        endTrigger: SessionTrigger.NOT_SET,
         sessionStartMetadata: {},
         storageLocation: Constants.EMPTY_STRING,
       });
@@ -64,8 +64,8 @@ export class FocusSession extends FocusSessionRecord {
         recordingProcessCrashedOnStart: focusSession.recordingProcessCrashedOnStart,
         displayUnits: focusSession.displayUnits,
         shouldHaveRecording: focusSession.shouldHaveRecording,
-        startedBy: focusSession.startedBy,
-        startedFrom: focusSession.startedFrom,
+        startTrigger: focusSession.startTrigger,
+        endTrigger: focusSession.endTrigger,
         sessionStartMetadata: focusSession.sessionStartMetadata,
         storageLocation: focusSession.storageLocation,
       });

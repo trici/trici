@@ -7,7 +7,7 @@
  */
 
 import { App, app, Menu, Tray } from 'electron';
-import { SessionStartedBy, SessionStartedFrom, TrayState, TriciAppEvent, UserActivityState } from '@trici/models';
+import { SessionTrigger, TrayState, TriciAppEvent, UserActivityState } from '@trici/models';
 import type { Logger } from '@trici/logger';
 import { dispatch, IActionDispatcher } from './ActionDispatcher';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
@@ -92,8 +92,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
           click: () => {
             dispatch({
               type: 'START_FOCUS_SESSION',
-              startedBy: SessionStartedBy.USER,
-              startedFrom: SessionStartedFrom.TRAY,
+              startTrigger: SessionTrigger.TRAY,
               sessionStartMetadata: {},
             });
           },
@@ -138,7 +137,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
               )?.shortcut
             : undefined,
           click: () => {
-            dispatch({ type: 'END_FOCUS_SESSION' });
+            dispatch({ type: 'END_FOCUS_SESSION', endTrigger: SessionTrigger.TRAY });
           },
         },
       ];
