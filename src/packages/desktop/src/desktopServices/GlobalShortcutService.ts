@@ -2,7 +2,7 @@ import { globalShortcut } from 'electron';
 import config from '@trici/config';
 import { dispatch } from './ActionDispatcher';
 import isAccelerator from 'electron-is-accelerator';
-import { Constants, SessionStartedBy, SessionStartedFrom } from '@trici/models';
+import { Constants, SessionTrigger } from '@trici/models';
 
 export interface IGlobalShortcutService {
   initService(): void;
@@ -108,8 +108,7 @@ export class GlobalShortcutService implements IGlobalShortcutService {
         () => {
           dispatch({
             type: 'START_FOCUS_SESSION',
-            startedBy: SessionStartedBy.USER,
-            startedFrom: SessionStartedFrom.SHORTCUT,
+            startTrigger: SessionTrigger.SHORTCUT,
           });
         },
       );
@@ -121,7 +120,7 @@ export class GlobalShortcutService implements IGlobalShortcutService {
         Constants.DEFAULT_GLOBAL_STOP_FOCUS_SESSION_SHORTCUT_PROD,
         this.globalStopFocusSessionShortcutRegistered,
         () => {
-          dispatch({ type: 'END_FOCUS_SESSION' });
+          dispatch({ type: 'END_FOCUS_SESSION', endTrigger: SessionTrigger.SHORTCUT });
         },
       );
 

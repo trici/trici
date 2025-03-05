@@ -3,13 +3,7 @@ export enum TrayState {
   SESSION_IN_PROGRESS = 'SESSION_IN_PROGRESS',
 }
 
-export enum SessionStartedBy {
-  NOT_SET = 'NOT_SET',
-  USER = 'USER',
-  TRICI_ACTIVITY = 'TRICI_ACTIVITY',
-}
-
-export enum SessionStartedFrom {
+export enum SessionTrigger {
   NOT_SET = 'NOT_SET',
   TRAY = 'TRAY',
   CLI = 'CLI',

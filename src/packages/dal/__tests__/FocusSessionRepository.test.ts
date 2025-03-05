@@ -2,7 +2,7 @@ import { Logger } from '@trici/logger';
 import { beforeAllInitCommon, afterAllInitCommon } from './TestHelpers';
 import { FocusSessionRepository } from '../src/FocusSessionRepository';
 import sqlite3 from 'sqlite3';
-import { FocusSession, SessionStartedBy, SessionStartedFrom } from '@trici/models';
+import { FocusSession, SessionTrigger } from '@trici/models';
 
 describe('FocusSessionRepository', () => {
   let repository: FocusSessionRepository;
@@ -25,8 +25,8 @@ describe('FocusSessionRepository', () => {
         recordingProcessCrashedOnStart: false,
         displayUnits: [],
         shouldHaveRecording: true,
-        startedBy: SessionStartedBy.TRICI_ACTIVITY,
-        startedFrom: SessionStartedFrom.APP_EVENT,
+        startTrigger: SessionTrigger.APP_EVENT,
+        endTrigger: SessionTrigger.NOT_SET,
         sessionStartMetadata: {
           appName: 'Code',
           durationOfCurrentApp: 210,

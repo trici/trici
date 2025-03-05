@@ -17,8 +17,8 @@ exports.up = function (knex) {
     table.boolean('recording_process_crashed_on_start').defaultTo(false);
     table.json('display_units').notNullable();
     table.boolean('should_have_recording').defaultTo(true);
-    table.string('started_by').notNullable();
-    table.string('started_from').notNullable();
+    table.string('start_trigger').notNullable();
+    table.string('end_trigger').notNullable();
     table.json('session_start_metadata').notNullable();
     table.string('storage_location').defaultTo('');
     table.timestamps(true, true);

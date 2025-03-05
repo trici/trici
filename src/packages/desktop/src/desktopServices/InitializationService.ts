@@ -219,7 +219,7 @@ export const InitializationService: IInitializationService = {
       const shortcutService = new GlobalShortcutService();
       shortcutService.initService();
 
-      focusSessionService = new FocusSessionService(focusSessionRepository, appEventEmitter, actionDispatcher);
+      focusSessionService = new FocusSessionService(focusSessionRepository, appEventEmitter, actionDispatcher, logger);
       focusSessionService.initService();
       cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
       cliMessageHandlerService.registerCliMessageHandlers();
