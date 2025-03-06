@@ -36,6 +36,7 @@ import { MainProcessIpcMessageHandlerService } from './MainProcessIpcMessageHand
 import { PermissionsService } from './PermissionsService';
 import UsedApplicationsService from './UsedApplicationsService';
 import { MainProcessIpcMessageSender } from './MainProcessIpcMessageSender';
+import { UpdateService } from './UpdateService';
 import path from 'path';
 import sqlite3 from 'sqlite3';
 import knexfile from '../../knexfile';
@@ -240,6 +241,20 @@ export const InitializationService: IInitializationService = {
       );
       userActivityMonitorService.initService();
       userActivityMonitorService.start();
+
+      // Initialize the UpdateService
+      try {
+        const updateService = UpdateService.getInstance(logger);
+        await updateService.initialize();
+        await updateService.checkForUpdates();
+
+        if (!updateService.isServerReachable()) {
+          logger.warn('Update server is not reachable. App will continue without auto-updates.');
+        }
+      } catch (error) {
+        logger.error('Failed to initialize update service:', error);
+        // Continue app execution even if update service fails
+      }
 
       // console.log('global.userDataDirectoryCheckResult: ', global.userDataDirectoryCheckResult);
       // console.log(global.userDataDirectoryCheckResult.dataDir.path);
