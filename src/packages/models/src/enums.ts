@@ -90,6 +90,7 @@ export enum Platform {
 export enum AlertWindowMessageType {
   NONE = 'NONE',
   SCREEN_RECORDING_PERMISSION_REVOKED = 'SCREEN_RECORDING_PERMISSION_REVOKED',
+  UPDATE_AVAILABLE = 'UPDATE_AVAILABLE',
 }
 
 // It is not clear what will be the category for the browser. Will it be 'PROBABLY_WORK' or 'PROBABLY_DISTRACT'?

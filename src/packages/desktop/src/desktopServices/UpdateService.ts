@@ -1,5 +1,6 @@
 import { autoUpdater } from 'electron';
 import { Logger } from '@trici/logger';
+import { dispatch } from './ActionDispatcher';
 
 interface UpdateInfo {
   version: string;
@@ -76,6 +77,14 @@ export class UpdateService {
       autoUpdater.on('update-available', (event: Electron.Event) => {
         this.logger.info('Update available');
         this.isUpdateServerReachable = true;
+        // Show the update available alert
+        dispatch({
+          type: 'SHOW_ALERT_WINDOW',
+          args: {
+            alertType: 'UPDATE_AVAILABLE',
+            quitAppOnClose: false,
+          },
+        });
       });
 
       autoUpdater.on('update-not-available', (event: Electron.Event) => {
@@ -90,8 +99,7 @@ export class UpdateService {
 
       autoUpdater.on('update-downloaded', (event: Electron.Event) => {
         this.logger.info('Update downloaded. Notifying the app to install the update');
-        // Restart the app to install the update
-        // autoUpdater.quitAndInstall();
+        // The update will be installed when the user clicks the install button
       });
 
       this.isInitialized = true;
