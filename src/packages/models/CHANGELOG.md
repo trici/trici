@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.7.0](https://github.com/trici/trici/compare/@trici/models@1.6.0...@trici/models@1.7.0) (2025-03-06)
+
+### Bug Fixes
+
+- Don't start a FocusSession within a cooldown period when the user has manually ended the session. Also, this led to rectifying how we store how the FocusSession start/end was triggered. ([8ed651e](https://github.com/trici/trici/commit/8ed651eb0d7052351ccd7678f47b80cc04bd87dc))
+
+### Features
+
+- Added Interface to Alert User that Update is available to install ([2ddb986](https://github.com/trici/trici/commit/2ddb986c2f3bac0dd1abce7ec8693810f6c3368b))
+
 # [1.6.0](https://github.com/trici/trici/compare/@trici/models@1.5.0...@trici/models@1.6.0) (2025-02-19)
 
 ### Features

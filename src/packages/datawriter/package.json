@@ -1,6 +1,6 @@
 {
   "name": "@trici/datawriter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "JSON to Protocol Buffer converter for data writing",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,9 +19,9 @@
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",
+    "cross-env": "^7.0.3",
     "jest": "^29.5.0",
     "ts-jest": "^29.1.0",
-    "typescript": "^5.0.0",
-    "cross-env": "^7.0.3"
+    "typescript": "^5.0.0"
   }
 }

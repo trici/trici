@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.10.0](https://github.com/trici/trici/compare/@trici/desktop@0.9.0...@trici/desktop@0.10.0) (2025-03-06)
+
+### Bug Fixes
+
+- Don't start a FocusSession within a cooldown period when the user has manually ended the session. Also, this led to rectifying how we store how the FocusSession start/end was triggered. ([8ed651e](https://github.com/trici/trici/commit/8ed651eb0d7052351ccd7678f47b80cc04bd87dc))
+
+### Features
+
+- Added higher playback speeds and set the default to 4 ([bb1a44b](https://github.com/trici/trici/commit/bb1a44b32204cf768c964d893ee310d577c58a7a))
+- Added Interface to Alert User that Update is available to install ([2ddb986](https://github.com/trici/trici/commit/2ddb986c2f3bac0dd1abce7ec8693810f6c3368b))
+- Capture the IdleTimeProfile and save it to a file in the focus session directory ([e3e46b1](https://github.com/trici/trici/commit/e3e46b12b7e1c7e7453d94b3afaf9b8ecefef87d))
+- Implement autoUpdates. Right now it only downloads the updates. Have to think of a how to Notify the User of Update available ([83eb65c](https://github.com/trici/trici/commit/83eb65cb253fe571dbef3985c0127d8a3db2e241))
+
 # [0.9.0](https://github.com/trici/trici/compare/@trici/desktop@0.8.0...@trici/desktop@0.9.0) (2025-02-19)
 
 ### Bug Fixes

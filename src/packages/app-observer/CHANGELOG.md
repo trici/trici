@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.6.1](https://github.com/trici/trici/compare/@trici/app-observer@1.6.0...@trici/app-observer@1.6.1) (2025-03-06)
+
+**Note:** Version bump only for package @trici/app-observer
+
 # [1.6.0](https://github.com/trici/trici/compare/@trici/app-observer@1.5.0...@trici/app-observer@1.6.0) (2025-02-19)
 
 ### Bug Fixes

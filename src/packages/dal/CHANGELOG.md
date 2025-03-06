@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.3.0](https://github.com/trici/trici/compare/@trici/dal@2.2.0...@trici/dal@2.3.0) (2025-03-06)
+
+### Bug Fixes
+
+- Don't start a FocusSession within a cooldown period when the user has manually ended the session. Also, this led to rectifying how we store how the FocusSession start/end was triggered. ([8ed651e](https://github.com/trici/trici/commit/8ed651eb0d7052351ccd7678f47b80cc04bd87dc))
+
+### Features
+
+- **@trici/dal:** Added a method to get the job to be handled ([ffe802a](https://github.com/trici/trici/commit/ffe802ae5b9cd0a1f87734255dea0a4426c31437))
+
 # [2.2.0](https://github.com/trici/trici/compare/@trici/dal@2.1.0...@trici/dal@2.2.0) (2025-02-19)
 
 ### Bug Fixes
