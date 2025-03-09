@@ -1,0 +1,79 @@
+---
+description: When creating new files, packages, tests etc. These rules describe the structure that needs to be followed, how the package is built. 
+globs: 
+alwaysApply: false
+---
+
+# Monorepo Structure
+
+This project is a monorepo managed by pnpm and nx/lerna.
+
+The root of the monorepo is src folder (which is not the git root). The builds folder contains the builds for the different platforms.
+Currently, only the darwin build is supported, but in future Windows will be supported as well.
+The code in the @trici/desktop package is built for prod (js bundle and swift console apps) and then copied to the builds/darwin folder.
+
+
+The docs folder contains the documentation for the project.
+.
+├── builds
+│   └── darwin
+├── docs
+├── src
+│   ├── node_modules
+│   ├── packages
+│   └── scripts
+└── venv
+    ├── bin
+    ├── include
+    └── lib
+
+
+
+Each package has its own tests which is located in the __tests__ folder. For example:
+
+├── packages
+│   ├── activmon
+│   │   ├── __tests__
+│   │   ├── dist
+│   │   └── src
+│   ├── app-observer
+│   │   ├── __tests__
+│   │   ├── bin
+│   │   │   └── dev
+│   │   ├── dist
+│   │   ├── logs
+│   │   └── src
+│   │       └── swift
+
+
+There are basically two types of packages: oine which contain native code and ones which just have js code. The ones with the native code will have a native folder like src/swift for swift code. 
+
+## Building of packages
+The package.json of each package has a "build-dev" and "build-prod" command which is used to build the package. There is no "build" command. The "build-dev" and "build-prod" commands typically use esbuild to build the typescript code and if there is native code then there is a separate added step for that. E.g. 
+
+ "scripts": {
+    "esbuild-dev": "cross-env NODE_ENV=development node esbuild.js ",
+    "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js ",
+    "build-types": "tsc && node ../../scripts/flatten-types.js .",
+    "build-dev": "run-script-os",
+    "build-dev:darwin": "pnpm run buildBinary-dev:darwin && pnpm run esbuild-dev && pnpm run build-types",
+    "build-dev:win32": "pnpm run buildBinary-dev:win32 && pnpm run esbuild-dev && pnpm run build-types",
+    "buildBinary-dev:darwin": "if [ -f 'bin/dev/Recorder' ]; then rm -rf bin/dev/Recorder; fi && xcodebuild -project src/swift/Recorder/Recorder.xcodeproj -scheme Recorder -configuration Debug -derivedDataPath src/swift/Recorder/build && cp src/swift/Recorder/build/Build/Products/Debug/Recorder bin/dev/Recorder && shasum -a 256 bin/dev/Recorder > dist/Recorder.sha256",
+    "buildBinary-prod:darwin": "if [ -f 'bin/Recorder' ]; then rm -rf bin/Recorder; fi && xcodebuild -project src/swift/Recorder/Recorder.xcodeproj -scheme Recorder -configuration Release -derivedDataPath src/swift/Recorder/build && cp src/swift/Recorder/build/Build/Products/Release/Recorder bin/Recorder && shasum -a 256 bin/Recorder > dist/Recorder.sha256",
+    "build-prod": "run-script-os",
+    "build-prod:darwin": "pnpm run buildBinary-prod:darwin && pnpm run esbuild-prod && pnpm run build-types",
+    "build-prod:win32": "pnpm run buildBinary-prod:win32 && pnpm run esbuild-prod && pnpm run build-types",
+    "test": "node ./__tests__/recorder.test.js"
+  },
+
+  In the above example, you can see that the build-dev is calling build-Binary-dev:darwin to build the native swift code and the esbuild-dev to build the typescript code and the build-types to run typescript to just output the types. 
+
+  Each package thus will also necessarily have an esbuild.js file and a tsconfig.json for esbuild and typescript respectively. The tsconfig.json file inherits from the tsconfig.json at the root of the monorepo. 
+
+  In packages where the tests are generated using jest, a jest.config.js file is also present at the root of the package. 
+
+ ## Models/Entitites
+
+ The data structures/models/entitites/types that are used across the application are typically defined in the @trici/models package. If any new models are to be added or modified it should be done in that package. The @trici/models package is referenced by other packages. 
+
+
