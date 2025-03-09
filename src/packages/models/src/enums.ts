@@ -1,6 +1,7 @@
 export enum TrayState {
   DEFAULT = 'DEFAULT',
   SESSION_IN_PROGRESS = 'SESSION_IN_PROGRESS',
+  SLEEPING = 'SLEEPING',
 }
 
 export enum SessionTrigger {
@@ -67,6 +68,8 @@ export enum TriciAppEvent {
   USER_STARTED_WORKING = 'user-started-working',
   USER_STOPPED_WORKING = 'user-stopped-working',
   USER_MAY_BE_WORKING = 'user-may-be-working',
+  APP_SLEEP_STARTED = 'app-sleep-started',
+  APP_SLEEP_ENDED = 'app-sleep-ended',
 }
 
 export enum IsUserWorking {

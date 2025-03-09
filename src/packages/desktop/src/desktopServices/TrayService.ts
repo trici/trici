@@ -69,7 +69,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
   private _getMenuTemplate(trayState: TrayState): any[] {
     let template: any[] = [];
     const shouldHaveAccelerator = this.receivedRegisteredShortcuts && this.receivedRegisteredShortcuts.length > 0;
-    if (trayState === TrayState.DEFAULT) {
+    if (trayState === TrayState.DEFAULT || trayState === TrayState.SLEEPING) {
       template = [
         {
           label: 'Show/Hide Trici',
@@ -96,6 +96,38 @@ class TrayService implements ITriciDesktopService, ITrayService {
               sessionStartMetadata: {},
             });
           },
+        },
+        {
+          label: 'Sleep Mode',
+          submenu: [
+            {
+              label: '5 minutes',
+              click: () => {
+                dispatch({
+                  type: 'APP_SLEEP_REQUESTED',
+                  payload: { durationMinutes: 5 },
+                });
+              },
+            },
+            {
+              label: '15 minutes',
+              click: () => {
+                dispatch({
+                  type: 'APP_SLEEP_REQUESTED',
+                  payload: { durationMinutes: 15 },
+                });
+              },
+            },
+            {
+              label: '30 minutes',
+              click: () => {
+                dispatch({
+                  type: 'APP_SLEEP_REQUESTED',
+                  payload: { durationMinutes: 30 },
+                });
+              },
+            },
+          ],
         },
         {
           label: 'Settings',
@@ -171,6 +203,14 @@ class TrayService implements ITriciDesktopService, ITrayService {
       console.log("TrayService: Received event 'FOCUS_SESSION_ENDED'");
       this.changeTrayState(TrayState.DEFAULT);
     });
+    this.eventBus.on(TriciAppEvent.APP_SLEEP_STARTED, () => {
+      console.log("TrayService: Received event 'APP_SLEEP_STARTED'");
+      this.changeTrayState(TrayState.SLEEPING);
+    });
+    this.eventBus.on(TriciAppEvent.APP_SLEEP_ENDED, () => {
+      console.log("TrayService: Received event 'APP_SLEEP_ENDED'");
+      this.changeTrayState(TrayState.DEFAULT);
+    });
   }
 
   private _refreshTrayContextMenu(): void {
@@ -220,6 +260,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
 
   private refreshTrayIcon(): void {
     const userActivityState = this.userActivityStateMachine.getCurrentState();
+
     if (this.trayState === TrayState.DEFAULT) {
       if (
         userActivityState === UserActivityState.ACTIVE ||
@@ -231,6 +272,8 @@ class TrayService implements ITriciDesktopService, ITrayService {
       }
     } else if (this.trayState === TrayState.SESSION_IN_PROGRESS) {
       this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_red.png');
+    } else if (this.trayState === TrayState.SLEEPING) {
+      this.tray?.setImage(app.getAppPath() + '/resources/images/trici_tray_icon_gray.png');
     }
   }
 

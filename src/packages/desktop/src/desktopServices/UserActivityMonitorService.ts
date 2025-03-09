@@ -18,6 +18,7 @@ export interface IUserActivityMonitorService {
   start(): Promise<void>;
   stop(): Promise<void>;
   getUserActivityState(): UserActivityState;
+  isAppSleeping(): boolean;
 }
 
 export class UserActivityMonitorService implements ITriciDesktopService, IUserActivityMonitorService {
@@ -33,6 +34,8 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   usedApplicationsService: UsedApplicationsService;
   captureIdleTimeProfile: boolean = false;
   idleTimeProfile: { idleTime: number; timestamp: number }[] = [];
+  private _isAppSleeping: boolean = false;
+  private _sleepTimer: NodeJS.Timeout | null = null;
 
   constructor(
     logger: Logger,
@@ -76,7 +79,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   };
 
   registerActionHandlers(): void {
-    // TODO: Register any action handlers that this service needs to handle
     this.actionDispatcher.register((action: TriciAction) => {
       switch (action.type) {
         case 'CLEANUP_BEFORE_SHUTDOWN':
@@ -92,18 +94,24 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
             }
           });
           break;
+        case 'APP_SLEEP_REQUESTED':
+          this.startSleep(action.payload.durationMinutes);
+          break;
+        case 'APP_WAKE_UP_REQUESTED':
+          this.wakeUp();
+          break;
         default:
           break;
       }
     });
   }
 
-  // question: should
   registerAppEventHandlers(): void {
-    // TODO: Register any app event handlers that this service needs to handle
-
     this.appEventEmitter.on(TriciAppEvent.FOCUS_SESSION_STARTED, () => {
       this.captureIdleTimeProfile = true;
+      if (this._isAppSleeping) {
+        this.wakeUp();
+      }
     });
 
     this.appEventEmitter.on(TriciAppEvent.FOCUS_SESSION_ENDED, async (focusSession: FocusSession) => {
@@ -137,6 +145,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
           {
             idleTimeNearHistoryAverage,
             idleTimeImmediateHistoryAverage,
+            isAppSleeping: this._isAppSleeping,
           },
         );
       },
@@ -155,6 +164,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
         const appEventData = {
           idleTimeNearHistoryAverage,
           idleTimeImmediateHistoryAverage,
+          isAppSleeping: this._isAppSleeping,
         };
         console.log('UserBecomingHyperActive');
         const currentAppDetails = await this.getCurrentAppDetails();
@@ -182,8 +192,14 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     appEventData: {
       idleTimeNearHistoryAverage: number;
       idleTimeImmediateHistoryAverage: number;
+      isAppSleeping: boolean;
     },
   ) => {
+    if (appEventData.isAppSleeping) {
+      this.logger.info('UserActivityMonitorService: App is sleeping, skipping user started working event');
+      return;
+    }
+
     if (!currentApplication) {
       console.log('No current application');
       return;
@@ -226,6 +242,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     appEventData: {
       idleTimeNearHistoryAverage: number;
       idleTimeImmediateHistoryAverage: number;
+      isAppSleeping: boolean;
     },
   ) => {
     if (appEvent === TriciAppEvent.USER_BECOMING_HYPER_ACTIVE) {
@@ -281,48 +298,33 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     idleTimeNearHistoryAverage: number,
     idleTimeImmediateHistoryAverage: number,
   ) => {
+    const eventData = {
+      idleTimeNearHistoryAverage,
+      idleTimeImmediateHistoryAverage,
+      isAppSleeping: this._isAppSleeping,
+    };
+
     switch (state) {
       case UserActivityState.ACTIVE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_ACTIVE, {
-          idleTimeNearHistoryAverage,
-          idleTimeImmediateHistoryAverage,
-        });
+        this.appEventEmitter.emit(TriciAppEvent.USER_ACTIVE, eventData);
         break;
       case UserActivityState.GOING_INACTIVE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_GOING_INACTIVE, {
-          idleTimeNearHistoryAverage,
-          idleTimeImmediateHistoryAverage,
-        });
+        this.appEventEmitter.emit(TriciAppEvent.USER_GOING_INACTIVE, eventData);
         break;
       case UserActivityState.INACTIVE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_INACTIVE, {
-          idleTimeNearHistoryAverage,
-          idleTimeImmediateHistoryAverage,
-        });
+        this.appEventEmitter.emit(TriciAppEvent.USER_INACTIVE, eventData);
         break;
       case UserActivityState.AWAY:
-        this.appEventEmitter.emit(TriciAppEvent.USER_WENT_AWAY, {
-          idleTimeNearHistoryAverage,
-          idleTimeImmediateHistoryAverage,
-        });
+        this.appEventEmitter.emit(TriciAppEvent.USER_WENT_AWAY, eventData);
         break;
       case UserActivityState.BECOMING_HYPER_ACTIVE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE, {
-          idleTimeNearHistoryAverage,
-          idleTimeImmediateHistoryAverage,
-        });
+        this.appEventEmitter.emit(TriciAppEvent.USER_BECOMING_HYPER_ACTIVE, eventData);
         break;
       case UserActivityState.HYPER_ACTIVE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_HYPER_ACTIVE, {
-          idleTimeNearHistoryAverage,
-          idleTimeImmediateHistoryAverage,
-        });
+        this.appEventEmitter.emit(TriciAppEvent.USER_HYPER_ACTIVE, eventData);
         break;
       case UserActivityState.IDLE:
-        this.appEventEmitter.emit(TriciAppEvent.USER_IDLE, {
-          idleTimeNearHistoryAverage,
-          idleTimeImmediateHistoryAverage,
-        });
+        this.appEventEmitter.emit(TriciAppEvent.USER_IDLE, eventData);
         break;
       default:
         console.log('Unknown state');
@@ -332,7 +334,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
   public initService(): void {
     if (!this.isServiceInitialized) {
-      // Subsribe to state change events from the UserActivityStateMachine
       this.userActivityStateMachine.on('stateChanged', this.handleUserActivityStateChange);
       this.registerActionHandlers();
       this.registerAppEventHandlers();
@@ -341,7 +342,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   }
 
   async start(): Promise<void> {
-    //Register event handlers to handle events from the services.
     this.appObserverServiceInstance.on('idleTime', idleTime => this.handleTriciPing(idleTime));
 
     this.appObserverServiceInstance.on('frontmostAppChanged', (frontmostAppChangeData: any) => {
@@ -379,11 +379,49 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   }
 
   async stop(): Promise<void> {
+    if (this._sleepTimer) {
+      clearTimeout(this._sleepTimer);
+      this._sleepTimer = null;
+    }
+    this._isAppSleeping = false;
     this.appObserverServiceInstance.stop();
     this.appObserverServiceInstance.removeAllListeners();
   }
 
   getUserActivityState(): UserActivityState {
     return this.userActivityStateMachine.getCurrentState();
+  }
+
+  public isAppSleeping(): boolean {
+    return this._isAppSleeping;
+  }
+
+  private startSleep(durationMinutes: number) {
+    this._isAppSleeping = true;
+
+    if (this._sleepTimer) {
+      clearTimeout(this._sleepTimer);
+    }
+
+    this._sleepTimer = setTimeout(() => this.wakeUp(), durationMinutes * 60 * 1000);
+
+    this.appEventEmitter.emit(TriciAppEvent.APP_SLEEP_STARTED, {
+      durationMinutes,
+      wakeUpTime: new Date(Date.now() + durationMinutes * 60 * 1000),
+      isAppSleeping: true,
+    });
+  }
+
+  private wakeUp() {
+    this._isAppSleeping = false;
+
+    if (this._sleepTimer) {
+      clearTimeout(this._sleepTimer);
+      this._sleepTimer = null;
+    }
+
+    this.appEventEmitter.emit(TriciAppEvent.APP_SLEEP_ENDED, {
+      isAppSleeping: false,
+    });
   }
 }

@@ -105,8 +105,13 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
         appEventData: {
           idleTimeNearHistoryAverage: number;
           idleTimeImmediateHistoryAverage: number;
+          isAppSleeping: boolean;
         },
       ) => {
+        if (appEventData.isAppSleeping) {
+          this.logger.info('FocusSessionService: App is sleeping, skipping auto-start of Focus Session');
+          return;
+        }
         // Check if we're within the 3-minute cooldown period
         const now = Date.now();
         const cooldownPeriod = 3 * 60 * 1000; // 3 minutes in milliseconds
