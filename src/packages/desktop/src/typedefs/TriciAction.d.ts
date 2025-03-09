@@ -61,4 +61,13 @@ export type TriciAction =
     }
   | {
       type: 'PING_FUNCTION';
+    }
+  | {
+      type: 'APP_SLEEP_REQUESTED';
+      payload: {
+        durationMinutes: number;
+      };
+    }
+  | {
+      type: 'APP_WAKE_UP_REQUESTED';
     };
