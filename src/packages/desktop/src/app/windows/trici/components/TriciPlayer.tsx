@@ -1,64 +1,168 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import videojs from 'video.js';
 import Player from 'video.js/dist/types/player';
 import { IFocusSession } from '@trici/models';
 
 interface TriciPlayerProps {
   selectedSession: IFocusSession | null;
+  onTimeUpdate?: (currentTime: number) => void;
 }
 
-export function TriciPlayer({ selectedSession }: TriciPlayerProps) {
+// Define the handle type
+export interface TriciPlayerHandle {
+  seekToTimestamp: (timestamp: number) => void;
+}
+
+export const TriciPlayer = forwardRef<TriciPlayerHandle, TriciPlayerProps>(({ selectedSession, onTimeUpdate }, ref) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playerRef = useRef<Player | null>(null);
+  const [currentSessionStartTime, setCurrentSessionStartTime] = useState<number>(0);
+  const [playerInitialized, setPlayerInitialized] = useState(false);
 
+  // Method to seek to a specific timestamp
+  const seekToTimestamp = (timestamp: number) => {
+    if (!playerRef.current || !selectedSession || !timestamp) return;
+
+    // Calculate seconds from the start of the video
+    const sessionStartTime = selectedSession.startTime;
+    const seekTimeSeconds = (timestamp - sessionStartTime) / 1000;
+
+    // Seek to the calculated time
+    if (seekTimeSeconds >= 0) {
+      playerRef.current.currentTime(seekTimeSeconds);
+    }
+  };
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    seekToTimestamp,
+  }));
+
+  // Initialize video.js - only once
   useEffect(() => {
-    if (!videoRef.current) return;
+    // Cleanup function to dispose player
+    const disposePlayer = () => {
+      if (playerRef.current) {
+        playerRef.current.dispose();
+        playerRef.current = null;
+        setPlayerInitialized(false);
+      }
+    };
 
-    if (!playerRef.current) {
-      const player = videojs(videoRef.current, {
+    // Only initialize once the DOM is ready and the element exists
+    if (!videoRef.current) return disposePlayer;
+
+    // Create player instance
+    const player = videojs(
+      videoRef.current,
+      {
         controls: true,
         fluid: true,
         preload: 'auto',
         aspectRatio: '16:9',
-        playbackRates: [1, 2, 4, 6, 8], // Available playback speeds
-        controlBar: { volumePanel: false, pictureInPictureToggle: false },
-      });
+        playbackRates: [1, 2, 4, 6, 8],
+        controlBar: {
+          volumePanel: false,
+          pictureInPictureToggle: false,
+        },
+      },
+      () => {
+        // Player is ready
+        console.log('Player is ready');
 
-      player.on('loadedmetadata', () => {
+        // Set initial playback rate
         player.playbackRate(4);
-      });
+        setPlayerInitialized(true);
+      },
+    );
 
-      playerRef.current = player;
-    }
+    playerRef.current = player;
 
-    return () => {
-      if (playerRef.current) {
-        playerRef.current.dispose();
-        playerRef.current = null;
-      }
-    };
+    // Clean up on unmount
+    return disposePlayer;
   }, []);
 
+  // Set up time update listener whenever currentSessionStartTime changes
+  useEffect(() => {
+    if (!playerRef.current || !playerInitialized) return;
+
+    // Remove any existing timeupdate listeners to prevent duplicates
+    playerRef.current.off('timeupdate');
+
+    // Add time update event listener
+    playerRef.current.on('timeupdate', () => {
+      if (onTimeUpdate && currentSessionStartTime > 0 && selectedSession) {
+        // Convert video time (in seconds) to timestamp
+        const currentTime = playerRef.current?.currentTime();
+        if (typeof currentTime === 'number') {
+          const videoTimeMs = currentTime * 1000;
+          const actualTimestamp = currentSessionStartTime + videoTimeMs;
+
+          // Calculate video progress percentage
+          const sessionDuration = selectedSession.endTime - selectedSession.startTime;
+          let videoDuration = sessionDuration; // Default to session duration
+
+          // Safely get video duration
+          try {
+            if (playerRef.current && typeof playerRef.current.duration === 'function') {
+              const duration = playerRef.current.duration();
+              if (typeof duration === 'number' && !isNaN(duration) && duration > 0) {
+                videoDuration = duration * 1000; // Convert to ms
+              }
+            }
+          } catch (e) {
+            console.warn('Error getting video duration:', e);
+          }
+
+          // Adjust the timestamp based on the ratio of session duration to video duration
+          // This helps synchronize the timeline with the video progress
+          const adjustedTimestamp = currentSessionStartTime + videoTimeMs * (sessionDuration / videoDuration);
+
+          const videoProgress = videoTimeMs / sessionDuration;
+          const videoProgressPercent = videoProgress * 100;
+
+          // Only send updates if the timestamp is valid
+          if (actualTimestamp >= currentSessionStartTime) {
+            // Use the adjusted timestamp for better synchronization
+            onTimeUpdate(adjustedTimestamp);
+          } else {
+            console.warn('Invalid timestamp calculated:', actualTimestamp, 'vs start time:', currentSessionStartTime);
+          }
+        }
+      }
+    });
+  }, [currentSessionStartTime, onTimeUpdate, playerInitialized]);
+
+  // Update video source when session changes
   useEffect(() => {
     if (!playerRef.current || !selectedSession) return;
 
     const timestamp = new Date(selectedSession.startTime).getTime();
+    setCurrentSessionStartTime(timestamp);
+
     const recordingStorageLocation = window.bridgeApi.userDataDirectoryCheckResult.recordingsDir.path;
     const focusSessionRecordingsDir = `${recordingStorageLocation}/${timestamp}`;
 
     // Use the playlist file instead of individual segments
     const playlistUrl = `${focusSessionRecordingsDir}/${timestamp}.m3u8`;
 
+    console.log('Loading video source:', playlistUrl);
+
     // Update video source with the playlist
     playerRef.current.src({
       src: playlistUrl,
       type: 'application/x-mpegURL', // This is the MIME type for HLS playlists
     });
+
+    // Ensure player is ready
+    playerRef.current.ready(() => {
+      console.log('Player ready with new source');
+    });
   }, [selectedSession]);
 
   return (
-    <div className="relative w-full">
-      <div data-vjs-player>
+    <div className="relative flex h-full w-full items-center justify-center">
+      <div data-vjs-player className="h-full max-h-full w-full">
         <video ref={videoRef} className="video-js vjs-big-play-centered">
           <p className="vjs-no-js">
             To view this video please enable JavaScript, and consider upgrading to a web browser that supports HTML5
@@ -68,4 +172,4 @@ export function TriciPlayer({ selectedSession }: TriciPlayerProps) {
       </div>
     </div>
   );
-}
+});
