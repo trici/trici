@@ -232,14 +232,10 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
         {/* Current time indicator */}
         {currentTime ? (
           <div
-            className="absolute top-0 z-30 h-full w-2 cursor-move bg-red-600"
+            className="absolute top-0 z-30 h-full w-1 cursor-move bg-gray-400"
             style={{ left: `${getPositionFromTimestamp(currentTime)}%` }}
             title={`Current position: ${formatTime(currentTime)} (${(((currentTime - selectedSession.startTime) / (selectedSession.endTime - selectedSession.startTime)) * 100).toFixed(1)}%)`}
-          >
-            {/* Indicator handle for better visibility */}
-            <div className="absolute -left-1.5 top-0 h-4 w-4 rounded-full bg-red-600 shadow-md"></div>
-            <div className="absolute -left-1.5 bottom-0 h-4 w-4 rounded-full bg-red-600 shadow-md"></div>
-          </div>
+          ></div>
         ) : (
           <div className="absolute left-0 top-0 text-xs text-gray-500">Waiting for playback...</div>
         )}
