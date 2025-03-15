@@ -135,16 +135,16 @@ export function FocusSessionsView() {
               {/* Container for video and timeline with consistent width */}
               <div className="flex h-full w-full flex-col items-center">
                 <div className="flex w-full max-w-[85%] flex-col">
-                  {/* Video player - 80% of the main content */}
-                  <div className="h-[80%] w-full">
+                  {/* Video player - reduced from 80% to 65% of the main content */}
+                  <div className="h-[75%] w-full">
                     <TriciPlayer ref={playerRef} selectedSession={selectedSession} onTimeUpdate={handleTimeUpdate} />
                   </div>
 
-                  {/* Spacer between video and timeline */}
-                  <div className="h-6"></div>
+                  {/* Spacer between video and timeline - increased from 6 to 12 */}
+                  <div className="h-12"></div>
 
-                  {/* Timeline - 20% of the main content */}
-                  <div className="h-[20%] w-full">
+                  {/* Timeline - increased from 20% to 35% of the main content */}
+                  <div className="h-[25%] w-full">
                     <SessionTimeline
                       selectedSession={selectedSession}
                       currentTime={currentPlaybackTime}

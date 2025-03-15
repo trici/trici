@@ -9,6 +9,11 @@ interface SessionTimelineProps {
   onTimelineClick?: (time: number) => void; // Callback when timeline is clicked
 }
 
+interface IdleTimePoint {
+  idleTime: number;
+  timestamp: number;
+}
+
 export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineClick }: SessionTimelineProps) {
   const timelineRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -25,6 +30,14 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
       selectedSession
         ? renderRepository.getEvents(selectedSession.startTime, selectedSession.endTime, null)
         : Promise.resolve([]),
+    enabled: !!selectedSession,
+  });
+
+  // Fetch idle time profile for the selected session
+  const idleTimeProfileQuery = useQuery({
+    queryKey: ['idleTimeProfile', selectedSession?.startTime],
+    queryFn: () =>
+      selectedSession ? renderRepository.getIdleTimeProfile(selectedSession.startTime) : Promise.resolve([]),
     enabled: !!selectedSession,
   });
 
@@ -183,6 +196,38 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
     }
   };
 
+  // Normalize idle time values for visualization
+  const normalizeIdleTime = (idleTime: number) => {
+    // Assuming idle time is in milliseconds
+    // Higher values mean less activity, so we invert the scale
+    // 0 = completely idle, 1 = very active
+
+    // Max idle time threshold (e.g., 5 seconds = 5000ms)
+    const maxIdleTime = 5000;
+
+    // Normalize and invert
+    const normalizedValue = 1 - Math.min(idleTime / maxIdleTime, 1);
+
+    return normalizedValue;
+  };
+
+  // Get color for idle time heatmap
+  const getIdleTimeColor = (idleTime: number) => {
+    // Use a single color for all activity levels
+    return 'bg-blue-500';
+  };
+
+  // Get height for idle time visualization
+  const getIdleTimeHeight = (idleTime: number) => {
+    const activity = normalizeIdleTime(idleTime);
+
+    // Height as percentage of container height
+    // More active = taller bar, less active = shorter bar
+    const heightPercent = 5 + activity * 95; // Min 5%, max 100%
+
+    return `${heightPercent}%`;
+  };
+
   // Estimate data size to adjust tooltip height
   const getDataSize = (event: AppEvent): 'small' | 'medium' | 'large' => {
     if (!event.data) return 'small';
@@ -208,12 +253,27 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
     }
   };
 
-  if (sessionEventsQuery.isLoading) {
-    return <div className="flex h-full w-full items-center justify-center">Loading events...</div>;
+  // Activity legend
+  const activityLegend = (
+    <div className="flex items-center gap-2">
+      <span className="text-xs font-medium">Activity:</span>
+      <div className="flex items-center">
+        <div className="mr-1 h-4 w-1 bg-blue-500" />
+        <span className="text-xs">Height shows activity level</span>
+      </div>
+    </div>
+  );
+
+  if (sessionEventsQuery.isLoading || idleTimeProfileQuery.isLoading) {
+    return <div className="flex h-full w-full items-center justify-center">Loading...</div>;
   }
 
   if (sessionEventsQuery.error) {
     return <div className="text-red-500">Error loading events: {sessionEventsQuery.error.toString()}</div>;
+  }
+
+  if (idleTimeProfileQuery.error) {
+    return <div className="text-red-500">Error loading idle time profile: {idleTimeProfileQuery.error.toString()}</div>;
   }
 
   // Determine which event to show in tooltip
@@ -226,15 +286,45 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
       {/* Timeline */}
       <div
         ref={timelineRef}
-        className="relative h-10 cursor-pointer rounded-lg bg-gray-200 shadow-inner"
+        className="relative h-10 cursor-pointer overflow-hidden rounded-lg bg-gray-200 shadow-inner"
         onClick={handleTimelineClick}
       >
+        {/* Idle time profile visualization */}
+        <div className="absolute bottom-0 left-0 h-5 w-full">
+          {idleTimeProfileQuery.data && idleTimeProfileQuery.data.length > 0 && (
+            <div className="relative h-full w-full">
+              {idleTimeProfileQuery.data.map((point, index) => {
+                const position = getPositionFromTimestamp(point.timestamp);
+                const width =
+                  index < idleTimeProfileQuery.data.length - 1
+                    ? getPositionFromTimestamp(idleTimeProfileQuery.data[index + 1].timestamp) - position
+                    : 100 - position;
+
+                return (
+                  <div
+                    key={index}
+                    className={`absolute bottom-0 ${getIdleTimeColor(point.idleTime)} opacity-70`}
+                    style={{
+                      left: `${position}%`,
+                      width: `${Math.max(0.1, width)}%`,
+                      height: getIdleTimeHeight(point.idleTime),
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Current time indicator */}
         {currentTime ? (
           <div
             className="absolute top-0 z-30 h-full w-1 cursor-move bg-gray-400"
             style={{ left: `${getPositionFromTimestamp(currentTime)}%` }}
-            title={`Current position: ${formatTime(currentTime)} (${(((currentTime - selectedSession.startTime) / (selectedSession.endTime - selectedSession.startTime)) * 100).toFixed(1)}%)`}
+            title={`Current position: ${formatTime(currentTime)} (${(
+              ((currentTime - selectedSession.startTime) / (selectedSession.endTime - selectedSession.startTime)) *
+              100
+            ).toFixed(1)}%)`}
           ></div>
         ) : (
           <div className="absolute left-0 top-0 text-xs text-gray-500">Waiting for playback...</div>
@@ -310,14 +400,20 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
         </div>
       )}
 
-      {/* Event legend */}
-      <div className="mt-2 flex flex-wrap gap-2">
-        {Array.from(new Set(sessionEventsQuery.data?.map(event => event.type) || [])).map(eventType => (
-          <div key={eventType} className="flex items-center">
-            <div className={`h-3 w-3 rounded-full ${getEventColor(eventType)} mr-1`} />
-            <span className="text-xs">{formatEventType(eventType)}</span>
-          </div>
-        ))}
+      {/* Legend */}
+      <div className="mt-2 flex flex-wrap gap-4">
+        {/* Event legend */}
+        <div className="flex flex-wrap gap-2">
+          {Array.from(new Set(sessionEventsQuery.data?.map(event => event.type) || [])).map(eventType => (
+            <div key={eventType} className="flex items-center">
+              <div className={`h-3 w-3 rounded-full ${getEventColor(eventType)} mr-1`} />
+              <span className="text-xs">{formatEventType(eventType)}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Activity legend */}
+        {activityLegend}
       </div>
     </div>
   );

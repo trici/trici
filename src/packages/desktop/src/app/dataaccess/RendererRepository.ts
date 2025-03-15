@@ -9,6 +9,7 @@ import {
   FocusSession,
 } from '@trici/models';
 import { IBridgeAPIInterface } from '../../typedefs/preload';
+import { DataWriter } from '@trici/datawriter';
 
 export interface IRendererRepository {
   getUserPreferences(): Promise<UserPreferences>;
@@ -18,6 +19,7 @@ export interface IRendererRepository {
   getEvents(from: number, to: number, type: TriciAppEvent): Promise<AppEvent[]>;
   getFocusSessionsForDuration(from: number, to: number): Promise<Array<IFocusSession>>;
   getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<IFocusSession>>;
+  getIdleTimeProfile(sessionStartTime: number): Promise<Array<{ idleTime: number; timestamp: number }>>;
 }
 
 /**
@@ -152,6 +154,21 @@ export class RendererRepository implements IRendererRepository {
       window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
         reject(result.data);
       }, 'getFocusSessionsPaginated-Error');
+    });
+  }
+
+  public getIdleTimeProfile(sessionStartTime: number): Promise<{ idleTime: number; timestamp: number }[]> {
+    return new Promise((fulfill, reject) => {
+      const args = { sessionStartTime };
+      window.bridgeApi.query({ handler: 'getIdleTimeProfile', args });
+      window.bridgeApi.registerQueryResultHandler((result: { data: Buffer }) => {
+        console.log('getIdleTimeProfile-Success:%O', result.data);
+        const idleTimeProfile = DataWriter.readIdleTimeProfileFromBuffer(result.data);
+        fulfill(idleTimeProfile);
+      }, 'getIdleTimeProfile-Success');
+      window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
+        reject(result.data);
+      }, 'getIdleTimeProfile-Error');
     });
   }
 }

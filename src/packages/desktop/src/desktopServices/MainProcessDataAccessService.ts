@@ -21,6 +21,7 @@ import { generateUninitializedTriciId, isWebBrowser } from '@trici/utils';
 import { app } from 'electron/main';
 import fs from 'fs/promises';
 import { IUsedApplicationsService } from './UsedApplicationsService';
+import { DataWriter } from '@trici/datawriter';
 /**
  * IMainProcessDataAccessService
  * @description Interface for MainProcessDataAccessService
@@ -35,6 +36,7 @@ export interface IMainProcessDataAccessService {
   getTriciAppEvents(fromTime: number, toTime: number, type: TriciAppEvent | null, count: number): Promise<any>;
   getFocusSessionsForDuration(fromTime: number, toTime: number): Promise<Array<FocusSession>>;
   getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<FocusSession>>;
+  getIdleTimeProfile(sessionStartTime: number): Promise<Buffer>;
 }
 
 export class MainProcessDataAccessService implements IMainProcessDataAccessService {
@@ -239,6 +241,23 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       return focusSessions;
     } catch (error) {
       logger.error('Error in getFocusSessionsPaginated', error);
+      throw error;
+    }
+  }
+
+  public async getIdleTimeProfile(sessionStartTime: number): Promise<Buffer> {
+    try {
+      // Read the dat file:
+      const filePath =
+        global.userDataDirectoryCheckResult.recordingsDir.path +
+        '/' +
+        sessionStartTime +
+        '/' +
+        `${sessionStartTime}-itp.dat`;
+      const idleTimeProfileBuffer = await fs.readFile(filePath);
+      return idleTimeProfileBuffer;
+    } catch (error) {
+      logger.error('Error in getIdleTimeProfile', error);
       throw error;
     }
   }

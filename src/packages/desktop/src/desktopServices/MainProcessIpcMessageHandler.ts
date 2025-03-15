@@ -103,6 +103,20 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
             result = { success: false, handler: 'getFocusSessionsPaginated-Error', data: error };
           }
           break;
+        case 'getIdleTimeProfile':
+          try {
+            const { sessionStartTime } = params.args;
+            console.log(
+              'MainProcessIpcMessageHandlerService._registerQueryHandlers: getIdleTimeProfile',
+              sessionStartTime,
+            );
+            const idleTimeProfileBuffer = await this.dataAccessService.getIdleTimeProfile(sessionStartTime);
+            result = { success: true, handler: 'getIdleTimeProfile-Success', data: idleTimeProfileBuffer };
+          } catch (error) {
+            console.log('MainProcessIpcMessageHandlerService._registerQueryHandlers: getIdleTimeProfile error', error);
+            result = { success: false, handler: 'getIdleTimeProfile-Error', data: error };
+          }
+          break;
         default:
           break;
       }
