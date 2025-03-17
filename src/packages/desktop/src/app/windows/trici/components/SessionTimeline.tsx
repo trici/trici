@@ -21,6 +21,7 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
   const [hoveredEvent, setHoveredEvent] = useState<AppEvent | null>(null);
   const [pinnedEvent, setPinnedEvent] = useState<AppEvent | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [showEventMarkers, setShowEventMarkers] = useState(false);
   const renderRepository = RendererRepository.getInstance();
 
   // Fetch events for the selected session
@@ -253,17 +254,6 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
     }
   };
 
-  // Activity legend
-  const activityLegend = (
-    <div className="flex items-center gap-2">
-      <span className="text-xs font-medium">Activity:</span>
-      <div className="flex items-center">
-        <div className="mr-1 h-4 w-1 bg-blue-500" />
-        <span className="text-xs">Height shows activity level</span>
-      </div>
-    </div>
-  );
-
   if (sessionEventsQuery.isLoading || idleTimeProfileQuery.isLoading) {
     return <div className="flex h-full w-full items-center justify-center">Loading...</div>;
   }
@@ -281,7 +271,17 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
 
   return (
     <div className="flex h-full w-full flex-col">
-      <h3 className="mb-3 text-sm font-medium">Session Timeline</h3>
+      <div className="mb-2 flex items-center justify-between rounded-md bg-gray-100 p-2 shadow-sm">
+        <h3 className="text-sm font-medium text-gray-700">Session Timeline</h3>
+        <button
+          onClick={() => setShowEventMarkers(!showEventMarkers)}
+          className="ml-2 flex items-center rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+          title={showEventMarkers ? 'Hide event markers' : 'Show event markers'}
+        >
+          <span className="mr-1">{showEventMarkers ? 'Hide' : 'Show'} events</span>
+          <div className={`h-2 w-2 rounded-full ${showEventMarkers ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+        </button>
+      </div>
 
       {/* Timeline */}
       <div
@@ -342,26 +342,31 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
         )}
 
         {/* Event markers */}
-        {sessionEventsQuery.data?.map((event, index) => (
-          <div
-            key={`${event.id || index}`}
-            className={`absolute top-0 h-full w-1 ${getEventColor(event.type)} z-10 opacity-70 transition-all hover:w-1.5 hover:opacity-100 ${
-              pinnedEvent && pinnedEvent.id === event.id ? 'w-2 opacity-100 ring-2 ring-white' : ''
-            }`}
-            style={{ left: `${getPositionFromTimestamp(event.timestamp)}%` }}
-            onMouseEnter={e => handleEventMouseEnter(event, e)}
-            onMouseLeave={handleEventMouseLeave}
-            onClick={e => handleEventClick(event, e)}
-          />
-        ))}
+        {showEventMarkers &&
+          sessionEventsQuery.data?.map((event, index) => (
+            <div
+              key={`${event.id || index}`}
+              className={`absolute top-0 h-full w-1 ${getEventColor(event.type)} z-10 opacity-70 transition-all hover:w-1.5 hover:opacity-100 ${
+                pinnedEvent && pinnedEvent.id === event.id ? 'w-2 opacity-100 ring-2 ring-white' : ''
+              }`}
+              style={{ left: `${getPositionFromTimestamp(event.timestamp)}%` }}
+              onMouseEnter={e => handleEventMouseEnter(event, e)}
+              onMouseLeave={handleEventMouseLeave}
+              onClick={e => handleEventClick(event, e)}
+            />
+          ))}
 
         {/* Time labels */}
-        <div className="absolute bottom-0 left-0 text-xs text-gray-600">{formatTime(selectedSession.startTime)}</div>
-        <div className="absolute bottom-0 right-0 text-xs text-gray-600">{formatTime(selectedSession.endTime)}</div>
+        <div className="absolute bottom-1 left-1 rounded bg-gray-100 px-1 text-xs font-medium text-gray-700">
+          {formatTime(selectedSession.startTime)}
+        </div>
+        <div className="absolute bottom-1 right-1 rounded bg-gray-100 px-1 text-xs font-medium text-gray-700">
+          {formatTime(selectedSession.endTime)}
+        </div>
       </div>
 
       {/* Event tooltip */}
-      {displayEvent && (
+      {showEventMarkers && displayEvent && (
         <div
           ref={tooltipRef}
           className={`fixed z-50 rounded bg-gray-800 p-3 text-white shadow-lg ${
@@ -400,20 +405,28 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
         </div>
       )}
 
-      {/* Legend */}
-      <div className="mt-2 flex flex-wrap gap-4">
-        {/* Event legend */}
-        <div className="flex flex-wrap gap-2">
-          {Array.from(new Set(sessionEventsQuery.data?.map(event => event.type) || [])).map(eventType => (
-            <div key={eventType} className="flex items-center">
-              <div className={`h-3 w-3 rounded-full ${getEventColor(eventType)} mr-1`} />
-              <span className="text-xs">{formatEventType(eventType)}</span>
-            </div>
-          ))}
-        </div>
+      {/* Activity legend with event legend if events are shown */}
+      <div className="mt-2 flex flex-wrap gap-3">
+        {/* Event legend - only show if event markers are visible */}
+        {showEventMarkers && sessionEventsQuery.data && sessionEventsQuery.data.length > 0 && (
+          <div className="flex flex-wrap gap-2 rounded-md border border-gray-200 bg-white px-3 py-1 shadow-sm">
+            {Array.from(new Set(sessionEventsQuery.data?.map(event => event.type) || [])).map(eventType => (
+              <div key={eventType} className="flex items-center">
+                <div className={`h-3 w-3 rounded-full ${getEventColor(eventType)} mr-1`} />
+                <span className="text-xs">{formatEventType(eventType)}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Activity legend */}
-        {activityLegend}
+        <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1 shadow-sm">
+          <span className="text-xs font-medium text-gray-700">Activity:</span>
+          <div className="flex items-center">
+            <div className="mr-1 h-5 w-2 bg-blue-500" />
+            <span className="text-xs">Height shows activity level</span>
+          </div>
+        </div>
       </div>
     </div>
   );

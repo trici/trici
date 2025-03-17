@@ -18,6 +18,7 @@ export const TriciPlayer = forwardRef<TriciPlayerHandle, TriciPlayerProps>(({ se
   const playerRef = useRef<Player | null>(null);
   const [currentSessionStartTime, setCurrentSessionStartTime] = useState<number>(0);
   const [playerInitialized, setPlayerInitialized] = useState(false);
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
 
   // Method to seek to a specific timestamp
   const seekToTimestamp = (timestamp: number) => {
@@ -57,7 +58,7 @@ export const TriciPlayer = forwardRef<TriciPlayerHandle, TriciPlayerProps>(({ se
       videoRef.current,
       {
         controls: true,
-        fluid: true,
+        fluid: false,
         preload: 'auto',
         aspectRatio: '16:9',
         playbackRates: [1, 2, 4, 6, 8],
@@ -82,63 +83,73 @@ export const TriciPlayer = forwardRef<TriciPlayerHandle, TriciPlayerProps>(({ se
     return disposePlayer;
   }, []);
 
-  // Set up time update listener whenever currentSessionStartTime changes
+  // Update video duration when it becomes available
   useEffect(() => {
     if (!playerRef.current || !playerInitialized) return;
+
+    const handleDurationChange = () => {
+      try {
+        if (playerRef.current && typeof playerRef.current.duration === 'function') {
+          const duration = playerRef.current.duration();
+          if (typeof duration === 'number' && !isNaN(duration) && duration > 0) {
+            setVideoDuration(duration * 1000); // Convert to ms
+            console.log('Video duration set:', duration * 1000, 'ms');
+          }
+        }
+      } catch (e) {
+        console.warn('Error getting video duration:', e);
+      }
+    };
+
+    playerRef.current.on('durationchange', handleDurationChange);
+    playerRef.current.on('loadedmetadata', handleDurationChange);
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.off('durationchange', handleDurationChange);
+        playerRef.current.off('loadedmetadata', handleDurationChange);
+      }
+    };
+  }, [playerInitialized]);
+
+  // Set up time update listener whenever currentSessionStartTime changes
+  useEffect(() => {
+    if (!playerRef.current || !playerInitialized || !selectedSession) return;
 
     // Remove any existing timeupdate listeners to prevent duplicates
     playerRef.current.off('timeupdate');
 
     // Add time update event listener
     playerRef.current.on('timeupdate', () => {
-      if (onTimeUpdate && currentSessionStartTime > 0 && selectedSession) {
+      if (onTimeUpdate && currentSessionStartTime > 0) {
         // Convert video time (in seconds) to timestamp
         const currentTime = playerRef.current?.currentTime();
         if (typeof currentTime === 'number') {
           const videoTimeMs = currentTime * 1000;
-          const actualTimestamp = currentSessionStartTime + videoTimeMs;
-
-          // Calculate video progress percentage
           const sessionDuration = selectedSession.endTime - selectedSession.startTime;
-          let videoDuration = sessionDuration; // Default to session duration
 
-          // Safely get video duration
-          try {
-            if (playerRef.current && typeof playerRef.current.duration === 'function') {
-              const duration = playerRef.current.duration();
-              if (typeof duration === 'number' && !isNaN(duration) && duration > 0) {
-                videoDuration = duration * 1000; // Convert to ms
-              }
-            }
-          } catch (e) {
-            console.warn('Error getting video duration:', e);
-          }
+          // Use the actual video duration if available, otherwise fall back to session duration
+          const actualVideoDuration = videoDuration || sessionDuration;
 
-          // Adjust the timestamp based on the ratio of session duration to video duration
-          // This helps synchronize the timeline with the video progress
-          const adjustedTimestamp = currentSessionStartTime + videoTimeMs * (sessionDuration / videoDuration);
-
-          const videoProgress = videoTimeMs / sessionDuration;
-          const videoProgressPercent = videoProgress * 100;
+          // Calculate the timestamp based on the ratio of session duration to video duration
+          const adjustedTimestamp = currentSessionStartTime + videoTimeMs * (sessionDuration / actualVideoDuration);
 
           // Only send updates if the timestamp is valid
-          if (actualTimestamp >= currentSessionStartTime) {
-            // Use the adjusted timestamp for better synchronization
+          if (adjustedTimestamp >= currentSessionStartTime) {
             onTimeUpdate(adjustedTimestamp);
-          } else {
-            console.warn('Invalid timestamp calculated:', actualTimestamp, 'vs start time:', currentSessionStartTime);
           }
         }
       }
     });
-  }, [currentSessionStartTime, onTimeUpdate, playerInitialized]);
+  }, [currentSessionStartTime, onTimeUpdate, playerInitialized, selectedSession, videoDuration]);
 
   // Update video source when session changes
   useEffect(() => {
     if (!playerRef.current || !selectedSession) return;
 
-    const timestamp = new Date(selectedSession.startTime).getTime();
+    const timestamp = selectedSession.startTime;
     setCurrentSessionStartTime(timestamp);
+    setVideoDuration(null); // Reset video duration when changing sessions
 
     const recordingStorageLocation = window.bridgeApi.userDataDirectoryCheckResult.recordingsDir.path;
     const focusSessionRecordingsDir = `${recordingStorageLocation}/${timestamp}`;
@@ -161,7 +172,7 @@ export const TriciPlayer = forwardRef<TriciPlayerHandle, TriciPlayerProps>(({ se
   }, [selectedSession]);
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center">
+    <div className="relative aspect-video w-full">
       <div data-vjs-player className="h-full max-h-full w-full">
         <video ref={videoRef} className="video-js vjs-big-play-centered">
           <p className="vjs-no-js">
