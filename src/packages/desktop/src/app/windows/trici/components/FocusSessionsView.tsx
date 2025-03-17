@@ -83,6 +83,23 @@ export function FocusSessionsView() {
     return `${date.toLocaleDateString(undefined, { weekday: 'short' })} - ${date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
   };
 
+  // Format session duration in minutes or hours and minutes
+  const formatSessionDuration = (session: IFocusSession) => {
+    // Calculate duration in milliseconds
+    const durationMs = session.endTime ? session.endTime - session.startTime : Date.now() - session.startTime; // Use current time for ongoing sessions
+
+    // Convert to minutes
+    const durationMinutes = Math.max(1, Math.round(durationMs / (1000 * 60))); // Ensure at least 1 minute
+
+    if (durationMinutes < 60) {
+      return `${durationMinutes} m`;
+    } else {
+      const hours = Math.floor(durationMinutes / 60);
+      const minutes = durationMinutes % 60;
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+  };
+
   // Handle timeline click to seek video
   const handleTimelineClick = (timestamp: number) => {
     if (playerRef.current) {
@@ -124,11 +141,11 @@ export function FocusSessionsView() {
               >
                 <div className="p-1">
                   <div
-                    className={`mx-auto h-12 w-12 rounded-lg border-2 ${
+                    className={`mx-auto flex h-12 w-12 items-center justify-center rounded-lg border-2 ${
                       selectedSession?.id === session.id ? 'border-blue-500' : 'border-gray-300'
-                    } bg-gray-200`}
+                    } bg-gray-200 text-xs font-medium`}
                   >
-                    {/* Placeholder for future preview image */}
+                    {formatSessionDuration(session)}
                   </div>
                 </div>
                 <div className="mt-1 text-center text-xs">{formatSessionTime(session.startTime)}</div>
