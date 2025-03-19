@@ -31,12 +31,12 @@ export class LoggingService extends EventEmitter implements ILoggingService {
     this.logFileNameFormat = '';
 
     this.defaultMeta = {};
-    this.logFileFormat = printf(({ level, message, label, timestamp, installationId, appDetails }) => {
-      return `${timestamp} [${label}] [${installationId}] [${appDetails}] ${level}: ${message} `;
+    this.logFileFormat = printf(({ level, message, label, timestamp, installationId, appDetails, category }) => {
+      return `${timestamp} [${label}] [${installationId}] [${appDetails}] ${level}: ${category ? `[${category}] ` : ''}${message} `;
     });
     this.httpLogFormat = printf(
-      ({ level, message, appDetails, timestamp, installationId }) =>
-        `${timestamp} [${appDetails}] ${installationId} ${level}: ${message}`,
+      ({ level, message, appDetails, timestamp, installationId, category }) =>
+        `${timestamp} [${appDetails}] ${installationId} ${level}: ${category ? `[${category}] ` : ''}${message}`,
     );
     this.remoteApiEndPoint = 'api.gettrici.com';
     this.loggerDefaultMetaUsesInstallationId = false;
