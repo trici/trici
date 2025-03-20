@@ -19,17 +19,17 @@ export interface IMainProcessIpcMessageHandlerService {
 
 const successResponseForVoidFunctions: IMessageFromMain = { success: true, handler: '', data: {}, initValue: false };
 export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessageHandlerService {
-  private logger: Logger | IConsoleLogger;
+  private getLogger: () => Logger | IConsoleLogger;
   private dataAccessService: IMainProcessDataAccessService;
   private appJsonStorageService: IAppJsonStorageService;
   private initialized: boolean = false;
 
   constructor(
-    logger: Logger | IConsoleLogger,
+    getLogger: () => Logger | IConsoleLogger,
     dataAccessService: IMainProcessDataAccessService,
     appJsonStorageService: IAppJsonStorageService,
   ) {
-    this.logger = logger;
+    this.getLogger = getLogger;
     this.dataAccessService = dataAccessService;
     this.appJsonStorageService = appJsonStorageService;
   }
@@ -228,13 +228,13 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
         if (response.success && response.handler !== '') {
           event.sender.send('messageFromMain', response);
         } else if (!response.success) {
-          logger.error('response.success is false:', response);
+          this.getLogger().error('response.success is false:', response);
         }
       } catch (err: any) {
         const errorString = `errorMessage: ${err.toString()},
           params: ${JSON.stringify(msg)}
           StackTrace: ${err.stack}`;
-        logger.error(errorString);
+        this.getLogger().error(errorString);
       }
     });
   }

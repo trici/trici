@@ -2,40 +2,21 @@ import { TriciDocRepository } from '../src/TriciDocRepository';
 import { Constants } from '@trici/models';
 import { v4 as uuidv4 } from 'uuid';
 import type { Logger } from '@trici/logger';
-import LoggingService from '@trici/logger';
+import LoggingService, { getConsoleLogger } from '@trici/logger';
 import { deleteDirectoryWithContents } from '@trici/utils';
 import path from 'path';
 
 // Mock the logger to silence the output during tests
 
 describe('TriciDocRepository', () => {
-  let logger: Logger;
   let repository: TriciDocRepository;
 
   const appDataDirectory = path.join(__dirname, 'testAppData');
   const workspaceName = 'default';
 
   beforeAll(() => {
-    const dirPath = path.join(__dirname, 'logs');
-
     return new Promise(async (resolve, reject) => {
-      try {
-        console.log('Cleaning test logs directory');
-        await deleteDirectoryWithContents(dirPath);
-        console.log('Cleaned test logs directory');
-      } catch (err) {
-        console.log('Error initializing logger: ', err);
-        reject(err);
-      }
-
-      // Initialize the logger with the logs directory path to be the current directory
-      console.log('dirPath: ', dirPath);
-      logger = LoggingService.init(dirPath, 'test-%DATE%.log', {
-        installationId: 'test-installation-id',
-        appDetails: 'darwin-dev-2.1.1',
-      });
-      console.log('Initialized logger');
-      repository = new TriciDocRepository(logger);
+      repository = new TriciDocRepository(getConsoleLogger);
       console.log('Initializing repository with appDataDirectory: ', appDataDirectory);
       repository.init(appDataDirectory);
       resolve(true);

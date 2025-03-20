@@ -1,6 +1,6 @@
 import ipc from 'node-ipc';
 import config from '@trici/config';
-import type { Logger } from '@trici/logger';
+import type { IConsoleLogger, Logger } from '@trici/logger';
 import EventEmitter from 'events';
 import { CLIMessageType, IPCServerEvents } from '@trici/models';
 import { clearNodeIpcServerSocket } from '@trici/utils';
@@ -9,7 +9,6 @@ export interface IProcessManager {
   registerPrimaryProcess(processID: number): void;
   isPrimaryProcessRegistered(): boolean;
   killPrimaryProcess(): void;
-  updateLogger(logger: Logger): void;
   sendCliMessageResponse(data: any, socket: any): void;
   on(event: CLIMessageType, listener: (data: any, socket: any) => void): void;
 }
@@ -23,13 +22,13 @@ export interface IProcessManager {
  */
 export class ProcessManager implements IProcessManager {
   private _registeredPrimaryProcessId: number;
-  private _logger: any;
+  private _getLogger: () => Logger | IConsoleLogger;
   private _eventEmitter: EventEmitter;
 
-  constructor(logger: Logger) {
+  constructor(getLogger: () => Logger | IConsoleLogger) {
     // ...
     this._registeredPrimaryProcessId = 0;
-    this._logger = logger;
+    this._getLogger = getLogger;
     this._eventEmitter = new EventEmitter();
   }
 
@@ -41,7 +40,7 @@ export class ProcessManager implements IProcessManager {
       maxRetries: 10,
       appspace: config.ipcConfigAppSpace,
       socketRoot: config.ipcConfigSocketRoot,
-      logger: this._logger.info.bind(this._logger),
+      logger: this._getLogger().info.bind(this._getLogger()),
       delimiter: config.ipcConfigDelimiter,
     };
   }
@@ -62,15 +61,6 @@ export class ProcessManager implements IProcessManager {
     }
     return result;
   };
-
-  /**
-   * Updates the logger with the passed value.
-   * @description - This is used to update the logger when the logger is updated in the LoggingService.
-   * @param logger - The updated logger after changing the defaultMeta
-   */
-  updateLogger(logger: Logger): void {
-    this._logger = logger;
-  }
 
   /**
    * Register the primary process

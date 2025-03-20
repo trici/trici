@@ -6,6 +6,8 @@ describe('UserActivityStateMachine', () => {
   let logger: jest.Mocked<IConsoleLogger>;
   let stateMachine: UserActivityStateMachine;
 
+  const getLogger = () => logger;
+
   beforeAll(() => {
     logger = {
       info: jest.fn(),
@@ -15,8 +17,9 @@ describe('UserActivityStateMachine', () => {
       verbose: jest.fn(),
       debug: jest.fn(),
     };
+
     jest.useFakeTimers();
-    stateMachine = new UserActivityStateMachine(logger);
+    stateMachine = new UserActivityStateMachine(getLogger);
   });
 
   afterAll(() => {

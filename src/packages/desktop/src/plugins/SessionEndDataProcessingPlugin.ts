@@ -2,18 +2,18 @@ import { ITriciPlugin } from 'src/typedefs/ITriciPlugin';
 import { Constants, FocusSession, TriciAppEvent } from '@trici/models';
 import { IAppEventRepository } from '@trici/dal';
 import * as fs from 'fs';
-import { Logger } from '@trici/logger';
+import { Logger, IConsoleLogger } from '@trici/logger';
 
 export class SessionEndDataProcessingPlugin implements ITriciPlugin {
   public name: string = 'SessionEndDataProcessingPlugin';
   public version: string = '1.0.0';
   public description: string = 'Session end data processing plugin for Trici';
   appEventRepository: IAppEventRepository;
-  logger: Logger;
+  getLogger: () => Logger | IConsoleLogger;
 
-  constructor(appEventRepository: IAppEventRepository, logger: Logger) {
+  constructor(appEventRepository: IAppEventRepository, getLogger: () => Logger | IConsoleLogger) {
     this.appEventRepository = appEventRepository;
-    this.logger = logger;
+    this.getLogger = getLogger;
   }
 
   public handleEvent(event: TriciAppEvent, ...data: any[]): void {
@@ -29,7 +29,7 @@ export class SessionEndDataProcessingPlugin implements ITriciPlugin {
       const startTime = focusSession.get('startTime');
       const endTime = focusSession.get('endTime');
       const appEvents = await this.appEventRepository.getAllAppEvents(startTime, endTime);
-      this.logger.info('App events: ', appEvents);
+      this.getLogger().info('App events: ', appEvents);
 
       // write the app events to a file in the same directory as the focus session
       let filePath;
@@ -45,7 +45,7 @@ export class SessionEndDataProcessingPlugin implements ITriciPlugin {
         .join('\n');
       fs.writeFileSync(filePath, fileContent);
     } catch (error) {
-      this.logger.error('Error writing app events to file: ', error);
+      this.getLogger().error('Error writing app events to file: ', error);
     }
   }
 }

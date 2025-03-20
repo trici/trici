@@ -183,6 +183,7 @@ export class LoggingService extends EventEmitter implements ILoggingService {
     }
 
     this.logger.level = logLevel;
+    this.emit('logLevelChanged', logLevel);
   }
 
   public changeLoggerDefaultMeta(defaultMeta: any): void {
@@ -192,13 +193,14 @@ export class LoggingService extends EventEmitter implements ILoggingService {
     if (!this.loggerDefaultMetaUsesInstallationId) {
       // update logger config based on installationId
       this.logger.info(`Changing logger default meta to: ${JSON.stringify(defaultMeta)}`);
-      this.logger = winston.createLogger({
+      const updatedLogger = winston.createLogger({
         level: 'info',
         transports: this._getTransportsConfig(),
         exceptionHandlers: this._getExceptionHandlersTransportsConfig(),
         exitOnError: false,
         defaultMeta: defaultMeta,
       });
+      this.logger = updatedLogger;
       this.loggerDefaultMetaUsesInstallationId = true;
       this.emit('defaultMetaChanged', this.loggerDefaultMetaUsesInstallationId);
     }

@@ -35,7 +35,7 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
   private currentState: UserActivityState;
   private stateHistory: UserActivityStateHistory;
   private idleTimeHistory: IdleTimeHistory;
-  private logger: Logger | IConsoleLogger;
+  private getLogger: () => Logger | IConsoleLogger;
   private transitions: StateTransition[];
   // private startedBecomingHyperActiveAt: number;
 
@@ -183,12 +183,12 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
     ];
   }
 
-  constructor(logger: Logger | IConsoleLogger) {
+  constructor(getLogger: () => Logger | IConsoleLogger) {
     super();
     this.currentState = UserActivityState.IDLE;
     this.stateHistory = [{ state: this.currentState, timestamp: Date.now() }];
     this.idleTimeHistory = new IdleTimeHistory();
-    this.logger = logger;
+    this.getLogger = getLogger;
     this.transitions = this.defineTransitions();
     // this.startedBecomingHyperActiveAt = 0;
   }
@@ -205,7 +205,7 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
     if (this.currentState !== newState) {
       // If required, can add stateExitActions
       // this.handleStateExitActions(prevState)
-      this.logger.info(`UserActivityStateMachine transitioning from ${this.currentState} to ${newState}`);
+      this.getLogger().info(`UserActivityStateMachine transitioning from ${this.currentState} to ${newState}`);
       this.currentState = newState;
       this.stateHistory.push({ state: this.currentState, timestamp: Date.now() });
 

@@ -13,20 +13,20 @@ interface PluginWithPriority {
 export class PluginManager implements IPluginManager {
   private plugins: PluginWithPriority[];
   private eventBus: AppEventEmitter;
-  private logger: Logger | IConsoleLogger;
+  private getLogger: () => Logger | IConsoleLogger;
   private static instance: PluginManager;
   private initialized: boolean = false;
 
-  private constructor(logger: Logger | IConsoleLogger, appEventEmitter: AppEventEmitter) {
+  private constructor(getLogger: () => Logger | IConsoleLogger, appEventEmitter: AppEventEmitter) {
     this.plugins = [];
     this.eventBus = appEventEmitter;
-    this.logger = logger;
+    this.getLogger = getLogger;
     this.initialized = false;
   }
 
-  public static getInstance(logger: Logger | IConsoleLogger, appEventEmitter: AppEventEmitter): PluginManager {
+  public static getInstance(getLogger: () => Logger | IConsoleLogger, appEventEmitter: AppEventEmitter): PluginManager {
     if (!PluginManager.instance) {
-      PluginManager.instance = new PluginManager(logger, appEventEmitter);
+      PluginManager.instance = new PluginManager(getLogger, appEventEmitter);
     }
     return PluginManager.instance;
   }

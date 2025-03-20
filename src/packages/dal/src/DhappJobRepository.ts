@@ -1,4 +1,4 @@
-import { Logger } from '@trici/logger';
+import { IConsoleLogger, Logger } from '@trici/logger';
 import sqlite3 from 'sqlite3';
 
 export interface IDhappJob {
@@ -21,11 +21,11 @@ export interface IDhappJobRepository {
 
 export class DhappJobRepository implements IDhappJobRepository {
   db: sqlite3.Database | null = null;
-  logger: Logger | null = null;
+  getLogger: () => Logger | IConsoleLogger;
 
-  constructor(db: sqlite3.Database, logger: Logger) {
+  constructor(db: sqlite3.Database, getLogger: () => Logger | IConsoleLogger) {
     this.db = db;
-    this.logger = logger;
+    this.getLogger = getLogger;
   }
 
   public async getJobToHandle(): Promise<IDhappJob | null> {
@@ -44,7 +44,7 @@ export class DhappJobRepository implements IDhappJobRepository {
 
   public async save(dhappJob: Omit<IDhappJob, 'created_at' | 'updated_at'>): Promise<IDhappJob> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
@@ -86,7 +86,7 @@ export class DhappJobRepository implements IDhappJobRepository {
     return new Promise((resolve, reject) => {
       this.db!.get(query, params, (err, row: any) => {
         if (err) {
-          this.logger?.error('Error saving dhapp job to the database', err);
+          this.getLogger().error('Error saving dhapp job to the database', err);
           reject(err);
         } else {
           resolve({
@@ -107,7 +107,7 @@ export class DhappJobRepository implements IDhappJobRepository {
 
   public async get(id: number): Promise<IDhappJob | null> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
@@ -117,7 +117,7 @@ export class DhappJobRepository implements IDhappJobRepository {
     return new Promise((resolve, reject) => {
       this.db!.get(selectQuery, params, (err, row: any) => {
         if (err) {
-          this.logger?.error('Error retrieving dhapp job from the database', err);
+          this.getLogger().error('Error retrieving dhapp job from the database', err);
           reject(err);
         } else {
           resolve(

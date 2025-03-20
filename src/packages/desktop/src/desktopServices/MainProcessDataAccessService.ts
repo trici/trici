@@ -6,7 +6,7 @@
  */
 import { AppObserverService } from '@trici/app-observer';
 import { ITriciDocRepository, IAppEventRepository, IFocusSessionRepository } from '@trici/dal';
-import { Logger } from '@trici/logger';
+import { IConsoleLogger, Logger } from '@trici/logger';
 import {
   Constants,
   KeyParts,
@@ -44,7 +44,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
   private _usedApplicationsService: IUsedApplicationsService;
   private _appEventRepository: IAppEventRepository;
   private _appObserver: AppObserverService;
-  private _logger: Logger;
+  private _getLogger: () => Logger | IConsoleLogger;
   private static _instance: MainProcessDataAccessService;
   private _focusSessionRepository: IFocusSessionRepository;
   private constructor(
@@ -53,14 +53,14 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     appEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
     focusSessionRepository: IFocusSessionRepository,
-    logger: Logger,
+    getLogger: () => Logger | IConsoleLogger,
   ) {
     this._docRepository = repository;
     this._usedApplicationsService = usedApplicationsService;
     this._appEventRepository = appEventRepository;
     this._appObserver = appObserver;
     this._focusSessionRepository = focusSessionRepository;
-    this._logger = logger;
+    this._getLogger = getLogger;
   }
 
   public static getInstance(
@@ -69,7 +69,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     appEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
     focusSessionRepository: IFocusSessionRepository,
-    logger: Logger,
+    getLogger: () => Logger | IConsoleLogger,
   ): IMainProcessDataAccessService {
     if (!MainProcessDataAccessService._instance) {
       MainProcessDataAccessService._instance = new MainProcessDataAccessService(
@@ -78,7 +78,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
         appEventRepository,
         appObserver,
         focusSessionRepository,
-        logger,
+        getLogger,
       );
     }
     return MainProcessDataAccessService._instance;
@@ -101,7 +101,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       }
       return userPreferences;
     } catch (error) {
-      logger.error('Error in getUserPreferences', error);
+      this._getLogger().error('Error in getUserPreferences', error);
       throw error;
     }
   }
@@ -122,7 +122,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       global.userPreferences = savedUserPreferences;
       return savedUserPreferences;
     } catch (error) {
-      logger.error('Error in saveUserPreferences', error);
+      this._getLogger().error('Error in saveUserPreferences', error);
       throw error;
     }
   }
@@ -179,7 +179,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
         installedApplications = JSON.parse(fileContents.toString());
       }
     } catch (error) {
-      logger.error('Error in getInstalledApplications', error);
+      this._getLogger().error('Error in getInstalledApplications', error);
       throw error;
     }
     return installedApplications;
@@ -199,7 +199,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       });
       return usedApplications;
     } catch (error) {
-      logger.error('Error in getUsedApplications', error);
+      this._getLogger().error('Error in getUsedApplications', error);
       throw error;
     }
   }
@@ -220,7 +220,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       const events = await this._appEventRepository.getAppEvents(fromTime, toTime, type, count);
       return events;
     } catch (error) {
-      logger.error('Error in getTriciAppEvents', error);
+      this._getLogger().error('Error in getTriciAppEvents', error);
       throw error;
     }
   }
@@ -230,7 +230,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       const focusSessions = await this._focusSessionRepository.getFocusSessionsForDuration(fromTime, toTime);
       return focusSessions;
     } catch (error) {
-      logger.error('Error in getFocusSessions', error);
+      this._getLogger().error('Error in getFocusSessions', error);
       throw error;
     }
   }
@@ -240,7 +240,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       const focusSessions = await this._focusSessionRepository.getFocusSessionsPaginated(pageIndex, pageSize);
       return focusSessions;
     } catch (error) {
-      logger.error('Error in getFocusSessionsPaginated', error);
+      this._getLogger().error('Error in getFocusSessionsPaginated', error);
       throw error;
     }
   }
@@ -257,7 +257,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       const idleTimeProfileBuffer = await fs.readFile(filePath);
       return idleTimeProfileBuffer;
     } catch (error) {
-      logger.error('Error in getIdleTimeProfile', error);
+      this._getLogger().error('Error in getIdleTimeProfile', error);
       throw error;
     }
   }

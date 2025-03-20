@@ -1,28 +1,22 @@
 console.log('Executing file DhappJobRepository');
-import { Logger } from '@trici/logger';
+import { getConsoleLogger } from '@trici/logger';
 import { SqliteDbManager } from '../src/SqliteDbManager';
 import { DhappJobRepository, IDhappJob } from '../src/DhappJobRepository';
 import sqlite3 from 'sqlite3';
 import { deleteDirectoryWithContents } from '@trici/utils';
 import path, { resolve } from 'path';
 import fs from 'fs';
-import LoggingService from '@trici/logger';
 import knexfile from './knex/knexfile';
 
 describe('DhappJobRepository', () => {
   let repository: DhappJobRepository;
   let db: sqlite3.Database;
-  let logger: Logger;
   let dbManager: SqliteDbManager;
 
   beforeAll(async () => {
-    const logsDirPath = path.join(__dirname, 'logs');
     const testDbDirPath = path.join(__dirname, 'testAppData');
 
     try {
-      console.log('Cleaning test logs directory');
-      await deleteDirectoryWithContents(logsDirPath);
-      console.log('Cleaned test logs directory');
       console.log('Cleaning test db directory');
       await deleteDirectoryWithContents(testDbDirPath);
 
@@ -34,18 +28,12 @@ describe('DhappJobRepository', () => {
       console.log('Error initializing logger: ', err);
     }
 
-    logger = LoggingService.init(logsDirPath, 'testsql-%DATE%.log', {
-      installationId: 'test-installation-id',
-      appDetails: 'darwin-dev-2.2.2',
-    });
-    console.log('Initialized logger');
-
     try {
-      dbManager = new SqliteDbManager(logger);
+      dbManager = new SqliteDbManager(getConsoleLogger);
       await dbManager.init(testDbDirPath, knexfile);
       db = dbManager.getDb();
 
-      repository = new DhappJobRepository(db, logger);
+      repository = new DhappJobRepository(db, getConsoleLogger);
     } catch (err) {
       console.log('Error initializing repository: ', err);
     }

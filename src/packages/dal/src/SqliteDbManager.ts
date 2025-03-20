@@ -1,4 +1,4 @@
-import { Logger } from '@trici/logger';
+import { IConsoleLogger, Logger } from '@trici/logger';
 import knex from 'knex';
 //@ts-ignore
 import sqlite3 from 'sqlite3';
@@ -14,14 +14,14 @@ export interface ISqliteDbManager {
 export class SqliteDbManager implements ISqliteDbManager {
   #dbInitialized: boolean;
   db: sqlite3.Database | null;
-  #logger: Logger;
+  getLogger: () => Logger | IConsoleLogger;
   knexInstance: any;
 
-  constructor(logger: Logger) {
+  constructor(getLogger: () => Logger | IConsoleLogger) {
     this.#dbInitialized = false;
     this.db = null;
     this.knexInstance = null;
-    this.#logger = logger;
+    this.getLogger = getLogger;
   }
 
   /**
@@ -44,12 +44,12 @@ export class SqliteDbManager implements ISqliteDbManager {
         console.log('batchno:', batchno);
         console.log('migrations:', migrations);
         if (migrations.length === 0) {
-          this.#logger.info('No migrations ran');
+          this.getLogger().info('No migrations ran');
         } else {
-          this.#logger.info(`Migrations ran successfully: ${batchno}, ${migrations}`);
+          this.getLogger().info(`Migrations ran successfully: ${batchno}, ${migrations}`);
         }
       } catch (err) {
-        this.#logger.error(`Error initializing Sqlite3 database: `, err);
+        this.getLogger().error(`Error initializing Sqlite3 database: `, err);
         console.error(err);
         throw err;
       }
@@ -73,14 +73,14 @@ export class SqliteDbManager implements ISqliteDbManager {
         await this.db.close();
         this.knexInstance.destroy();
         this.#dbInitialized = false;
-        this.#logger.info('Database connection closed successfully.');
+        this.getLogger().info('Database connection closed successfully.');
       } catch (err) {
-        this.#logger.error('Error closing the database connection: ', err);
+        this.getLogger().error('Error closing the database connection: ', err);
         console.error(err);
         throw err;
       }
     } else {
-      this.#logger.warn('Attempted to close a database connection that was not initialized.');
+      this.getLogger().warn('Attempted to close a database connection that was not initialized.');
     }
   }
 }

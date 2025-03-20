@@ -1,6 +1,6 @@
 import { FocusSession, IFocusSession } from '@trici/models';
 import sqlite3 from 'sqlite3';
-import { Logger } from '@trici/logger';
+import { IConsoleLogger, Logger } from '@trici/logger';
 
 export interface IFocusSessionRepository {
   save(focusSession: IFocusSession): Promise<IFocusSession>;
@@ -11,11 +11,11 @@ export interface IFocusSessionRepository {
 
 export class FocusSessionRepository implements IFocusSessionRepository {
   db: sqlite3.Database | null = null;
-  logger: Logger | null = null;
+  getLogger: () => Logger | IConsoleLogger;
 
-  constructor(db: sqlite3.Database, logger: Logger) {
+  constructor(db: sqlite3.Database, getLogger: () => Logger | IConsoleLogger) {
     this.db = db;
-    this.logger = logger;
+    this.getLogger = getLogger;
   }
 
   private mapRowToFocusSession(row: any): FocusSession {
@@ -39,7 +39,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
     // If focus session is new, insert it
     // If focus session is existing, update it
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
@@ -64,7 +64,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
       return new Promise((resolve, reject) => {
         this.db!.get(updateQuery, params, (err, row: any) => {
           if (err) {
-            this.logger?.error('Error updating focus session', err);
+            this.getLogger().error('Error updating focus session', err);
             reject(err);
           } else {
             resolve(this.mapRowToFocusSession(row));
@@ -90,7 +90,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
       return new Promise((resolve, reject) => {
         this.db!.get(insertQuery, params, (err, row: any) => {
           if (err) {
-            this.logger?.error('Error inserting focus session', err);
+            this.getLogger().error('Error inserting focus session', err);
             reject(err);
           } else {
             resolve(this.mapRowToFocusSession(row));
@@ -102,14 +102,14 @@ export class FocusSessionRepository implements IFocusSessionRepository {
 
   async get(id: number): Promise<IFocusSession | null> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
     return new Promise((resolve, reject) => {
       this.db!.get(`SELECT * FROM focus_session WHERE _id = ? `, [id], (err, row) => {
         if (err) {
-          this.logger?.error('Error getting focus session', err);
+          this.getLogger().error('Error getting focus session', err);
           reject(err);
         } else {
           if (!row) resolve(null);
@@ -121,7 +121,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
 
   public async getFocusSessionsForDuration(from: number, to: number): Promise<Array<FocusSession>> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
@@ -131,7 +131,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
     return new Promise((resolve, reject) => {
       this.db!.all(selectQuery, params, (err, rows) => {
         if (err) {
-          this.logger?.error('Error getting focus sessions', err);
+          this.getLogger().error('Error getting focus sessions', err);
           reject(err);
         } else {
           resolve(rows.map(this.mapRowToFocusSession));
@@ -142,7 +142,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
 
   public async getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<FocusSession>> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
@@ -152,7 +152,7 @@ export class FocusSessionRepository implements IFocusSessionRepository {
     return new Promise((resolve, reject) => {
       this.db!.all(selectQuery, params, (err, rows) => {
         if (err) {
-          this.logger?.error('Error getting focus sessions', err);
+          this.getLogger().error('Error getting focus sessions', err);
           reject(err);
         } else {
           const focusSessions = rows.map(this.mapRowToFocusSession);

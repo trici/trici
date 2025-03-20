@@ -1,6 +1,6 @@
 import { UsedApplication, IUsedApplication } from '@trici/models';
 import sqlite3 from 'sqlite3';
-import { Logger } from '@trici/logger';
+import { IConsoleLogger, Logger } from '@trici/logger';
 import { error } from 'console';
 
 export interface IUsedApplicationRepository {
@@ -12,17 +12,17 @@ export interface IUsedApplicationRepository {
 
 export class UsedApplicationRepository implements IUsedApplicationRepository {
   private db: sqlite3.Database | null = null;
-  private logger: Logger | null = null;
+  private getLogger: () => Logger | IConsoleLogger;
 
-  constructor(db: sqlite3.Database, logger: Logger) {
+  constructor(db: sqlite3.Database, getLogger: () => Logger | IConsoleLogger) {
     this.db = db;
-    this.logger = logger;
+    this.getLogger = getLogger;
   }
 
   // Insert or update the used application
   public async save(usedApplication: IUsedApplication): Promise<IUsedApplication> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
     const insertQuery = `
@@ -40,7 +40,7 @@ export class UsedApplicationRepository implements IUsedApplicationRepository {
     return new Promise((resolve, reject) => {
       this.db!.get(insertQuery, params, (err, row: any) => {
         if (err) {
-          this.logger?.error('Error saving used application to the database', err);
+          this.getLogger().error('Error saving used application to the database', err);
           reject(err);
         } else {
           resolve({
@@ -58,7 +58,7 @@ export class UsedApplicationRepository implements IUsedApplicationRepository {
   // Given that I have now added the appIdentifier to the IUsedApplication interface, I am not sure if this method is needed.
   public async get(applicationName: string): Promise<IUsedApplication | null> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
     const selectQuery = `SELECT * FROM used_application WHERE application_name = ?`;
@@ -67,14 +67,14 @@ export class UsedApplicationRepository implements IUsedApplicationRepository {
     return new Promise((resolve, reject) => {
       this.db!.all(selectQuery, params, (err, rows: any[]) => {
         if (err) {
-          this.logger?.error('Error retrieving used application from the database', err);
+          this.getLogger().error('Error retrieving used application from the database', err);
           reject(err);
         } else {
           if (rows.length === 0) {
             return null;
           }
           if (rows.length > 1) {
-            this.logger?.error('Error retrieving used application from the database. More than one record found');
+            this.getLogger().error('Error retrieving used application from the database. More than one record found');
             throw new Error('Error retrieving used application from the database. More than one record found');
           }
           const usedApplicationsResult = rows[0];
@@ -93,7 +93,7 @@ export class UsedApplicationRepository implements IUsedApplicationRepository {
   // Insert multiple records at once.
   public async insertMany(usedApplications: IUsedApplication[]): Promise<void> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
     return new Promise((resolve, reject) => {
@@ -113,7 +113,7 @@ export class UsedApplicationRepository implements IUsedApplicationRepository {
       statement.finalize();
       this.db!.run('COMMIT;', error => {
         if (error) {
-          this.logger?.error('Error inserting used application into the database', error);
+          this.getLogger().error('Error inserting used application into the database', error);
           reject(error);
         } else {
           resolve();
@@ -124,14 +124,14 @@ export class UsedApplicationRepository implements IUsedApplicationRepository {
 
   public async getUsedApplications(): Promise<IUsedApplication[]> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
     return new Promise((resolve, reject) => {
       const query = `SELECT * FROM used_application`;
       this.db!.all(query, (error, rows: any[]) => {
         if (error) {
-          this.logger?.error('Error retrieving used applications from the database', error);
+          this.getLogger().error('Error retrieving used applications from the database', error);
           reject(error);
         } else {
           //transform rows into fields of IUsedApplication

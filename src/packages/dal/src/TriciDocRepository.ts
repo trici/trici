@@ -1,5 +1,5 @@
 import jsonpatch from 'fast-json-patch';
-import type { Logger } from '@trici/logger';
+import type { IConsoleLogger, Logger } from '@trici/logger';
 import PouchDB from 'pouchdb';
 
 declare function emit(key: any, value?: any): void;
@@ -21,12 +21,12 @@ const appEventsIndexViewName = `appEventsIndex_1`;
 export class TriciDocRepository implements ITriciDocRepository {
   #repoInitialized: boolean;
   #db: any;
-  #logger: Logger;
+  getLogger: () => Logger | IConsoleLogger;
 
-  constructor(logger: Logger) {
+  constructor(getLogger: () => Logger | IConsoleLogger) {
     this.#repoInitialized = false;
     this.#db = null;
-    this.#logger = logger;
+    this.getLogger = getLogger;
   }
 
   /**
@@ -38,14 +38,14 @@ export class TriciDocRepository implements ITriciDocRepository {
   public init(dataDirectoryPath: string): void {
     if (!this.#repoInitialized) {
       try {
-        this.#logger.info(`Initializing repository with dataDirectoryPath: ${dataDirectoryPath}`);
+        this.getLogger().info(`Initializing repository with dataDirectoryPath: ${dataDirectoryPath}`);
         this.#db = new PouchDB(dataDirectoryPath);
         this.#db.info().then((info: PouchDB.Core.DatabaseInfo) => {
-          this.#logger.info(JSON.stringify(info));
+          this.getLogger().info(JSON.stringify(info));
         });
         this.#repoInitialized = true;
       } catch (error) {
-        this.#logger.error('Error initializing repository. Error: ', error);
+        this.getLogger().error('Error initializing repository. Error: ', error);
       }
     }
   }
@@ -57,7 +57,7 @@ export class TriciDocRepository implements ITriciDocRepository {
         .get(_id)
         .then((doc: PouchDB.Core.Document<any>) => {
           objFromDb = doc;
-          this.#logger.silly(`Logging objFromDb:${JSON.stringify(objFromDb)}`);
+          this.getLogger().debug(`Logging objFromDb:${JSON.stringify(objFromDb)}`);
           fulfill(objFromDb);
         })
         .catch((err: PouchDB.Core.Error) => {
@@ -65,7 +65,7 @@ export class TriciDocRepository implements ITriciDocRepository {
             objFromDb = null;
             fulfill(objFromDb);
           } else {
-            this.#logger.error('Error fetching objFromDb. Error: %o', err);
+            this.getLogger().error('Error fetching objFromDb. Error: %o', err);
             reject(err);
           }
         });
@@ -73,7 +73,7 @@ export class TriciDocRepository implements ITriciDocRepository {
   }
 
   public save(obj: ITriciPouchDocument & any, idOfDocToDelete: string | null): Promise<ITriciPouchDocument & any> {
-    this.#logger.debug(`Saving Obj in pouchDb:${JSON.stringify(obj)}`);
+    this.getLogger().debug(`Saving Obj in pouchDb:${JSON.stringify(obj)}`);
     return new Promise((fulfill, reject) => {
       this.#db
         .get(idOfDocToDelete)
@@ -82,21 +82,21 @@ export class TriciDocRepository implements ITriciDocRepository {
           const changes = jsonpatch.compare(objFromDb, obj);
           const updObjFromDb = jsonpatch.applyPatch(objFromDb, changes).newDocument; // the _id of the objFromDb changed after applying patched, _rev was also
           // deleted
-          this.#logger.debug(`objFromDb after changes: ${JSON.stringify(objFromDb)}`);
+          this.getLogger().debug(`objFromDb after changes: ${JSON.stringify(objFromDb)}`);
           this.#db
             .put(updObjFromDb)
             .then((resp: PouchDB.Core.Response) => {
-              this.#logger.debug(`Saved Obj successfully in Db. Resp: ${JSON.stringify(resp)}`);
+              this.getLogger().debug(`Saved Obj successfully in Db. Resp: ${JSON.stringify(resp)}`);
               this.#db
                 .remove(idOfDocToDelete, revToDelete)
                 .then((resp: PouchDB.Core.Response) => {
-                  this.#logger.debug(
+                  this.getLogger().debug(
                     `deleted doc from pouchDB with _id:${idOfDocToDelete} and rev:${revToDelete}. Resp:`,
                     resp,
                   );
                 })
                 .catch((error: PouchDB.Core.Error) => {
-                  this.#logger.error(
+                  this.getLogger().error(
                     `Error deleting doc from pouchDB. _id:${idOfDocToDelete} and rev:${revToDelete} and error:${JSON.stringify(
                       error,
                     )}`,
@@ -105,25 +105,25 @@ export class TriciDocRepository implements ITriciDocRepository {
               fulfill(updObjFromDb);
             })
             .catch((err: PouchDB.Core.Error) => {
-              this.#logger.error(`Error saving obj in pouchDB. Error: ${JSON.stringify(err)}`);
+              this.getLogger().error(`Error saving obj in pouchDB. Error: ${JSON.stringify(err)}`);
               reject(err);
             });
         })
         .catch((error: PouchDB.Core.Error) => {
-          this.#logger.error(
+          this.getLogger().error(
             `Error fetching objFromDB with idOfDocToDelete: ${idOfDocToDelete}. Error:${JSON.stringify(error)}`,
           );
           if (error.status === 404) {
             this.#db
               .put(obj)
               .then((resp: PouchDB.Core.Response) => {
-                this.#logger.silly(`Saved obj successfully in Db. Resp:${JSON.stringify(resp)}`);
+                this.getLogger().debug(`Saved obj successfully in Db. Resp:${JSON.stringify(resp)}`);
                 // earlier I was passing resp to fulfill, but we actually need the object, to cache appStateAtStartup on
                 // first run. I also think that in other places where we are returning the resp, we may want to change.
                 fulfill(obj);
               })
               .catch((err: PouchDB.Core.Error) => {
-                this.#logger.error(`Error saving new obj in pouchDB, Error:${JSON.stringify(err)}`);
+                this.getLogger().error(`Error saving new obj in pouchDB, Error:${JSON.stringify(err)}`);
                 reject(err);
               });
           }
@@ -149,11 +149,9 @@ export class TriciDocRepository implements ITriciDocRepository {
 
   public query(queryOptions: any): Promise<any> {
     return new Promise((fulfill, reject) => {
-      // logger.debug('queryOptions:%O', queryOptions);
       this.#db
         .allDocs(queryOptions)
         .then((result: PouchDB.Core.AllDocsResponse<any>) => {
-          // logger.info('queryResult:%O', result);
           fulfill(result);
         })
         .catch((error: PouchDB.Core.Error) => {
@@ -164,11 +162,10 @@ export class TriciDocRepository implements ITriciDocRepository {
 
   public queryAppEvents(queryOptions: any): Promise<any> {
     return new Promise((fulfill, reject) => {
-      // logger.debug('queryOptions:%O', queryOptions);
       this.#db
         .query(`${appEventsIndexViewName}/appEventsByTimestampAndType`, queryOptions)
         .then((result: PouchDB.Query.Response<any>) => {
-          this.#logger.info('queryResult:%O', result);
+          this.getLogger().info('queryResult:%O', result);
           fulfill(result);
         })
         .catch((error: PouchDB.Core.Error) => {
