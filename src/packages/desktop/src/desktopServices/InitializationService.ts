@@ -29,7 +29,6 @@ import { ScreenRecordingPlugin } from '../plugins/ScreenRecordingPlugin';
 import { SessionEndDataProcessingPlugin } from '../plugins/SessionEndDataProcessingPlugin';
 import actionDispatcher, { dispatch } from './ActionDispatcher';
 import { IUsedApplication, UserPreferences } from '@trici/models';
-import { IWindowManager } from './WindowManager';
 import { GlobalShortcutService } from './GlobalShortcutService';
 import { MainProcessDataAccessService } from './MainProcessDataAccessService';
 import { MainProcessIpcMessageHandlerService } from './MainProcessIpcMessageHandler';
@@ -59,7 +58,6 @@ let focusSessionService: FocusSessionService;
 
 LoggingService.on('defaultMetaChanged', () => {
   logger = LoggingService.getLogger();
-  // processManager.updateLogger(logger);
   global.logger = logger;
 });
 
@@ -114,13 +112,6 @@ export const InitializationService: IInitializationService = {
 
       // Create a bound logger getter function
       const getLoggerFn = () => LoggingService.getLogger();
-
-      LoggingService.updateLogLevel('debug');
-
-      logger.info('logger level after update:', logger.level);
-
-      logger.debug('logger level:', logger.level);
-      logger.debug('logger defaultMeta:', logger.defaultMeta, { category: 'loggerDefaultMeta' });
 
       // Get the UserPreferences and set it in the global object
       const lastSavedEntityIds = await appJsonStorageService.getLastSavedEntityIds();

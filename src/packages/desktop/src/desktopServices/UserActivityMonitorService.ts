@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { AppObserverService } from '@trici/app-observer';
-import type { Logger } from '@trici/logger';
+import type { IConsoleLogger, Logger } from '@trici/logger';
 import { Constants, DailyUserActivity, FocusSession, TriciAppEvent, UsedAppCategory } from '@trici/models';
 import { generateNewTriciId, generateUpdatedTriciId, isTriciIdValidForToday, isWebBrowser } from '@trici/utils';
 import { IAppJsonStorageService } from './AppJsonStorageService';
@@ -23,7 +23,7 @@ export interface IUserActivityMonitorService {
 
 export class UserActivityMonitorService implements ITriciDesktopService, IUserActivityMonitorService {
   appObserverServiceInstance: AppObserverService;
-  logger: Logger;
+  getLogger: () => Logger | IConsoleLogger;
   userActivityStateMachine: UserActivityStateMachine;
   lastIdleTime: number;
   todaysUserActitivity: DailyUserActivity | null;
@@ -38,7 +38,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   private _sleepTimer: NodeJS.Timeout | null = null;
 
   constructor(
-    logger: Logger,
+    getLogger: () => Logger | IConsoleLogger,
     appObserverServiceInstance: AppObserverService,
     appJsonStorageService: IAppJsonStorageService,
     appEventEmitter: AppEventEmitter,
@@ -46,7 +46,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     usedApplicationsService: UsedApplicationsService,
     userActivityStateMachine: UserActivityStateMachine,
   ) {
-    this.logger = logger;
+    this.getLogger = getLogger;
     this.appObserverServiceInstance = appObserverServiceInstance;
     this.userActivityStateMachine = userActivityStateMachine;
     this.lastIdleTime = -1;
@@ -129,14 +129,17 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
         await fs.promises.writeFile(filePath, protoBuffer);
         this.idleTimeProfile = [];
       } catch (error) {
-        this.logger.error(`UserActivityMonitorService: Error while writing idle time profile to file: ${error}`);
+        this.getLogger().error(`UserActivityMonitorService: Error while writing idle time profile to file: ${error}`);
       }
     });
 
     this.appEventEmitter.on(
       TriciAppEvent.USER_HYPER_ACTIVE,
-      async (idleTimeNearHistoryAverage: number, idleTimeImmediateHistoryAverage: number) => {
+      async ({ idleTimeNearHistoryAverage, idleTimeImmediateHistoryAverage, isAppSleeping }) => {
         console.log('UserHyperActive');
+        this.getLogger().debug(`onUserHyperActive: ${idleTimeNearHistoryAverage}, ${idleTimeImmediateHistoryAverage}`, {
+          category: 'sessionStartMetadata',
+        });
         const currentAppDetails = await this.getCurrentAppDetails();
         await this.handleTriciAppEvent(
           currentAppDetails.currentApplication,
@@ -145,7 +148,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
           {
             idleTimeNearHistoryAverage,
             idleTimeImmediateHistoryAverage,
-            isAppSleeping: this._isAppSleeping,
+            isAppSleeping,
           },
         );
       },
@@ -153,7 +156,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
     this.appEventEmitter.on(
       TriciAppEvent.USER_BECOMING_HYPER_ACTIVE,
-      async (idleTimeNearHistoryAverage: number, idleTimeImmediateHistoryAverage: number) => {
+      async ({ idleTimeNearHistoryAverage, idleTimeImmediateHistoryAverage, isAppSleeping }) => {
         // If the user is using a browser when hyperactive, then we want to know the url that
         // the user is browsing to figure out whether the user is working or leisure.
         // Thus I was thinking that we should enquire what is the url only when the user is hyperactive.
@@ -164,7 +167,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
         const appEventData = {
           idleTimeNearHistoryAverage,
           idleTimeImmediateHistoryAverage,
-          isAppSleeping: this._isAppSleeping,
+          isAppSleeping,
         };
         console.log('UserBecomingHyperActive');
         const currentAppDetails = await this.getCurrentAppDetails();
@@ -196,19 +199,18 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     },
   ) => {
     if (appEventData.isAppSleeping) {
-      this.logger.info('UserActivityMonitorService: App is sleeping, skipping user started working event');
+      this.getLogger().info('UserActivityMonitorService: App is sleeping, skipping user started working event');
       return;
     }
 
     if (!currentApplication) {
-      console.log('No current application');
+      this.getLogger().error('UserActivityMonitorService.handleTriciAppEvent: No current application');
       return;
     }
     const currentTimestamp = Date.now();
     const durationOfCurrentApp = currentApplication?.timestamp
       ? currentTimestamp - currentApplication.timestamp * 1000
       : 0;
-    console.log('durationOfCurrentApp:', durationOfCurrentApp);
 
     switch (currentAppCategory) {
       case UsedAppCategory.DEFINITELY_WORK:
@@ -249,8 +251,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       if (durationOfCurrentApp > 30 * 1000) {
         console.log('User might have started working');
         this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, {
-          appName: currentApplication.appName,
-          durationOfCurrentApp,
           appEventData,
         });
       } else {
@@ -261,8 +261,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       if (durationOfCurrentApp > 10 * 1000) {
         console.log('User is working');
         this.appEventEmitter.emit(TriciAppEvent.USER_STARTED_WORKING, {
-          appName: currentApplication.appName,
-          durationOfCurrentApp,
           appEventData,
         });
       } else {
@@ -345,7 +343,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.appObserverServiceInstance.on('idleTime', idleTime => this.handleTriciPing(idleTime));
 
     this.appObserverServiceInstance.on('frontmostAppChanged', (frontmostAppChangeData: any) => {
-      this.logger.info(`UserActivityMonitorService frontmostAppChanged:${JSON.stringify(frontmostAppChangeData)}`);
+      this.getLogger().info(`UserActivityMonitorService frontmostAppChanged:${JSON.stringify(frontmostAppChangeData)}`);
       this.appEventEmitter.emit(TriciAppEvent.FRONTMOST_APP_CHANGED, frontmostAppChangeData);
     });
 
@@ -373,7 +371,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     //   }
     //   this.todaysUserActitivity = new DailyUserActivity(result);
     // } catch (err) {
-    //   this.logger.error(`UserActivityMonitorService: Error while fetching today's user activity: ${err}`);
+    //   this.getLogger().error(`UserActivityMonitorService: Error while fetching today's user activity: ${err}`);
     // }
     this.appObserverServiceInstance.start(isRunningInAsar);
   }
