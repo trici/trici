@@ -1,4 +1,4 @@
-import { Logger } from '@trici/logger';
+import { getConsoleLogger } from '@trici/logger';
 import { beforeAllInitCommon, afterAllInitCommon } from './TestHelpers';
 import { FocusSessionRepository } from '../src/FocusSessionRepository';
 import sqlite3 from 'sqlite3';
@@ -7,11 +7,10 @@ import { FocusSession, SessionTrigger } from '@trici/models';
 describe('FocusSessionRepository', () => {
   let repository: FocusSessionRepository;
   let db: sqlite3.Database;
-  let logger: Logger;
 
   beforeAll(async () => {
-    const { db, logger } = await beforeAllInitCommon();
-    repository = new FocusSessionRepository(db, logger);
+    const { db } = await beforeAllInitCommon();
+    repository = new FocusSessionRepository(db, getConsoleLogger);
   });
 
   describe('create and save a new FocusSession', () => {

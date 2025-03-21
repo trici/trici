@@ -2,10 +2,9 @@ const AppObserverService = require('./dist/index').AppObserverService;
 const getConsoleLogger = require('@trici/logger').getConsoleLogger;
 
 console.log('Instantiating AppObserverService...');
-const consoleLogger = getConsoleLogger();
 const appRoot = __dirname;
 const appObserverLogsDirectory = '/Users/shashi/Library/Logs/TriciDev';
-const appObserver = new AppObserverService(consoleLogger, appRoot, appObserverLogsDirectory);
+const appObserver = new AppObserverService(getConsoleLogger, appRoot, appObserverLogsDirectory);
 
 appObserver.start();
 

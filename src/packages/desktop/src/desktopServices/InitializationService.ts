@@ -5,7 +5,7 @@ import { UserActivityStateMachineSingleton, IUserActivityStateMachine } from '@t
 import TrayService, { ITrayService } from './TrayService';
 import LoggingService from '@trici/logger';
 import AppJsonStorageService, { IAppJsonStorageService } from './AppJsonStorageService';
-import type { Logger } from '@trici/logger';
+import type { Logger, IConsoleLogger } from '@trici/logger';
 import { AppService, IAppService } from './AppService';
 import { WindowManager } from './WindowManager';
 import { CliMessageHandlerService } from './CliMessageHandlerService';
@@ -29,7 +29,6 @@ import { ScreenRecordingPlugin } from '../plugins/ScreenRecordingPlugin';
 import { SessionEndDataProcessingPlugin } from '../plugins/SessionEndDataProcessingPlugin';
 import actionDispatcher, { dispatch } from './ActionDispatcher';
 import { IUsedApplication, UserPreferences } from '@trici/models';
-import { IWindowManager } from './WindowManager';
 import { GlobalShortcutService } from './GlobalShortcutService';
 import { MainProcessDataAccessService } from './MainProcessDataAccessService';
 import { MainProcessIpcMessageHandlerService } from './MainProcessIpcMessageHandler';
@@ -59,7 +58,6 @@ let focusSessionService: FocusSessionService;
 
 LoggingService.on('defaultMetaChanged', () => {
   logger = LoggingService.getLogger();
-  processManager.updateLogger(logger);
   global.logger = logger;
 });
 
@@ -82,12 +80,12 @@ function regiserCorePlugins(
   pluginManager: PluginManager,
   recorder: TriciRecorder,
   appEventRepository: IAppEventRepository,
-  logger: Logger,
+  getLogger: () => Logger | IConsoleLogger,
 ) {
   const screenRecordingPlugin = new ScreenRecordingPlugin(recorder);
   pluginManager.register(screenRecordingPlugin, 10);
 
-  const sessionEndDataProcessingPlugin = new SessionEndDataProcessingPlugin(appEventRepository, logger);
+  const sessionEndDataProcessingPlugin = new SessionEndDataProcessingPlugin(appEventRepository, getLogger);
   pluginManager.register(sessionEndDataProcessingPlugin, 100);
 }
 
@@ -112,7 +110,9 @@ export const InitializationService: IInitializationService = {
       appJsonStorageService = AppJsonStorageService;
       const appEventEmitter = AppEventEmitter.getInstance();
 
-      logger.info('Load the TriciApp object as a global');
+      // Create a bound logger getter function
+      const getLoggerFn = () => LoggingService.getLogger();
+
       // Get the UserPreferences and set it in the global object
       const lastSavedEntityIds = await appJsonStorageService.getLastSavedEntityIds();
       const userPreferencesId = lastSavedEntityIds.userPreferencesId;
@@ -121,18 +121,18 @@ export const InitializationService: IInitializationService = {
       global.onboardingState = onboardingState;
 
       logger.info('Initialize the TrayService');
-      const userActivityStateMachine = UserActivityStateMachineSingleton.getInstance(logger);
+      const userActivityStateMachine = UserActivityStateMachineSingleton.getInstance(getLoggerFn);
       trayService = new TrayService(actionDispatcher, appEventEmitter, userActivityStateMachine);
       trayService.initService();
 
-      processManager = ProcessManagerSingleton.getInstance(logger);
-      const windowManager = new WindowManager(logger, actionDispatcher);
+      processManager = ProcessManagerSingleton.getInstance(getLoggerFn);
+      const windowManager = new WindowManager(getLoggerFn, actionDispatcher);
       windowManager.registerActionHandlers();
 
       const mainProcessIpcMessageSender = new MainProcessIpcMessageSender(windowManager);
       const appObserverLogsDirectory = app.getPath('logs');
       // Instantiate the AppObserver service. It is started inside UserActivityMonitorService
-      const appObserverService = new AppObserverService(logger, app.getAppPath(), appObserverLogsDirectory);
+      const appObserverService = new AppObserverService(getLoggerFn, app.getAppPath(), appObserverLogsDirectory);
 
       permissionsService = new PermissionsService(
         appJsonStorageService,
@@ -145,19 +145,19 @@ export const InitializationService: IInitializationService = {
       appService = new AppService(processManager, trayService, appJsonStorageService, permissionsService);
       await appService.checkUserDataDirectory();
 
-      repo = new TriciDocRepository(logger);
+      repo = new TriciDocRepository(getLoggerFn);
       repo.init(global.userDataDirectoryCheckResult.dataDir.path);
 
       //Set up the sqlite database
       console.log('knexfile:', knexfile);
-      dbManager = new SqliteDbManager(logger);
+      dbManager = new SqliteDbManager(getLoggerFn);
       await dbManager.init(global.userDataDirectoryCheckResult.dataDir.path, knexfile);
 
       sqliteDb = dbManager.getDb();
 
-      eventRepo = new AppEventRepository(sqliteDb, logger);
-      usedApplicationRepository = new UsedApplicationRepository(sqliteDb, logger);
-      focusSessionRepository = new FocusSessionRepository(sqliteDb, logger);
+      eventRepo = new AppEventRepository(sqliteDb, getLoggerFn);
+      usedApplicationRepository = new UsedApplicationRepository(sqliteDb, getLoggerFn);
+      focusSessionRepository = new FocusSessionRepository(sqliteDb, getLoggerFn);
 
       // Initialize the AppEventEmitter
       appEventEmitter.initializeRepo(eventRepo);
@@ -193,7 +193,7 @@ export const InitializationService: IInitializationService = {
         : config.builtFor === 'dev'
           ? path.join(app.getAppPath(), 'bin', 'dev', 'Recorder')
           : path.join(app.getAppPath(), 'bin', 'Recorder');
-      const triciRecorder = new TriciRecorder(ffmpegPath, logger, recorderPath);
+      const triciRecorder = new TriciRecorder(ffmpegPath, getLoggerFn, recorderPath);
 
       // Initialize the infra to listen to queries from the renderer process
       const mainProcessDataAccessService = MainProcessDataAccessService.getInstance(
@@ -202,10 +202,10 @@ export const InitializationService: IInitializationService = {
         eventRepo,
         appObserverService,
         focusSessionRepository,
-        logger,
+        getLoggerFn,
       );
       const mainProcessIpcMessageHandlerService = new MainProcessIpcMessageHandlerService(
-        logger,
+        getLoggerFn,
         mainProcessDataAccessService,
         appJsonStorageService,
       );
@@ -220,18 +220,24 @@ export const InitializationService: IInitializationService = {
       const shortcutService = new GlobalShortcutService();
       shortcutService.initService();
 
-      focusSessionService = new FocusSessionService(focusSessionRepository, appEventEmitter, actionDispatcher, logger);
+      focusSessionService = new FocusSessionService(
+        focusSessionRepository,
+        appObserverService,
+        appEventEmitter,
+        actionDispatcher,
+        getLoggerFn,
+      );
       focusSessionService.initService();
       cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
       cliMessageHandlerService.registerCliMessageHandlers();
 
-      const pluginManager = PluginManager.getInstance(logger, appEventEmitter);
+      const pluginManager = PluginManager.getInstance(getLoggerFn, appEventEmitter);
       pluginManager.initialize();
-      regiserCorePlugins(pluginManager, triciRecorder, eventRepo, logger);
+      regiserCorePlugins(pluginManager, triciRecorder, eventRepo, getLoggerFn);
 
       // Start the UserActivityMonitor service
       const userActivityMonitorService = new UserActivityMonitorService(
-        logger,
+        getLoggerFn,
         appObserverService,
         appJsonStorageService,
         appEventEmitter,

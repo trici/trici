@@ -15,7 +15,7 @@ export interface IWindowManager {
 }
 
 export class WindowManager implements IWindowManager {
-  logger: Logger | IConsoleLogger;
+  logger: () => Logger | IConsoleLogger;
   settingsWindow: BrowserWindow | null;
   alertWindow: BrowserWindow | null;
   triciWindow: BrowserWindow | null;
@@ -25,8 +25,8 @@ export class WindowManager implements IWindowManager {
   actionDispatcher: IActionDispatcher<TriciAction>;
   preloadScriptPath: string;
 
-  constructor(logger: Logger | IConsoleLogger, actionDispatcher: IActionDispatcher<TriciAction>) {
-    this.logger = logger;
+  constructor(getLogger: () => Logger | IConsoleLogger, actionDispatcher: IActionDispatcher<TriciAction>) {
+    this.logger = getLogger;
     this.settingsWindow = null;
     this.triciWindow = null;
     this.alertWindow = null;

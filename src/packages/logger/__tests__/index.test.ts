@@ -2,10 +2,10 @@
  * Test for logger.
  */
 
-import LoggingService from "../dist/index";
-import fs from "fs";
-import path from "path";
-import config from "@trici/config";
+import LoggingService from '../dist/index';
+import fs from 'fs';
+import path from 'path';
+import config from '@trici/config';
 
 function getLogFileName() {
   const now = new Date();
@@ -16,45 +16,46 @@ function getLogFileName() {
   return `test-${year}-${month}-${day}-${hour}.log`;
 }
 
-describe("Logging library", () => {
-  beforeAll((done) => {
+describe('Logging library', () => {
+  beforeAll(done => {
     // delete the logs directory
-    const dirPath = path.join(__dirname, "logs");
+    const dirPath = path.join(__dirname, 'logs');
     try {
-      fs.rm(dirPath, { recursive: true }, (err) => {
+      fs.rm(dirPath, { recursive: true }, err => {
         if (err) {
           // throw err;
         }
-        console.log("Deleted logs directory");
+        console.log('Deleted logs directory');
         // Initialize the logging library with a test logs directory and log file name format
-        LoggingService.init(path.join(__dirname, "logs"), "test-%DATE%.log", {
+        LoggingService.init(path.join(__dirname, 'logs'), 'test-%DATE%.log', {
           installationId: config.defaultInstallationId,
-          appDetails: "darwin-dev-2.1.1",
+          appDetails: 'darwin-dev-2.1.1',
         });
         done();
       });
     } catch (err) {
-      console.log("Error deleting logs directory: ", err);
+      console.log('Error deleting logs directory: ', err);
       done();
     }
   });
 
-  it("should create a log file", (done) => {
+  it('should create a log file', done => {
     // Get the logger
     const logger = LoggingService.getLogger();
 
     // Log a message
-    logger.info("Test log message");
+    logger.info('Test log message');
+    logger.info('Test log message', { category: 'test' });
 
     // Wait for the log file to be written
     setTimeout(() => {
       // Read the contents of the log file
-      const logFilePath = path.join(__dirname, "logs", getLogFileName());
-      const logFileContent = fs.readFileSync(logFilePath, "utf-8");
+      const logFilePath = path.join(__dirname, 'logs', getLogFileName());
+      const logFileContent = fs.readFileSync(logFilePath, 'utf-8');
 
       // Verify that the log file contains the expected message
-      expect(logFileContent).toContain("Logger initialized");
-      expect(logFileContent).toContain("Test log message");
+      expect(logFileContent).toContain('Logger initialized');
+      expect(logFileContent).toContain('Test log message');
 
       done();
     }, 1000);

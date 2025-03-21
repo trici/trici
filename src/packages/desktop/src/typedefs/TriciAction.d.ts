@@ -1,6 +1,14 @@
 import { SessionStartedBy, SESSION_STARTED_FROM, UsedApplicationRecord, SessionTrigger } from '@trici/models';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
 
+export type SessionStartMetadata = {
+  appData: {
+    appName: string;
+    appDuration: number;
+  };
+  [key: string]: any;
+};
+
 export type TriciAction =
   | {
       type: 'OPEN_SETTINGS_WINDOW';
@@ -9,7 +17,7 @@ export type TriciAction =
   | {
       type: 'START_FOCUS_SESSION';
       startTrigger: SessionTrigger;
-      sessionStartMetadata?: any;
+      sessionStartMetadata: any;
     }
   | {
       type: 'END_FOCUS_SESSION';

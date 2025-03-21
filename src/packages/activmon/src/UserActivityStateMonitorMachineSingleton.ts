@@ -1,4 +1,4 @@
-import { Logger } from '@trici/logger';
+import { Logger, IConsoleLogger } from '@trici/logger';
 import { UserActivityStateMachine } from './UserActivityStateMachine';
 
 export class UserActivityStateMachineSingleton {
@@ -6,9 +6,9 @@ export class UserActivityStateMachineSingleton {
 
   private constructor() {}
 
-  public static getInstance(logger: Logger): UserActivityStateMachine {
+  public static getInstance(getLogger: () => Logger | IConsoleLogger): UserActivityStateMachine {
     if (!UserActivityStateMachineSingleton.instance) {
-      UserActivityStateMachineSingleton.instance = new UserActivityStateMachine(logger);
+      UserActivityStateMachineSingleton.instance = new UserActivityStateMachine(getLogger);
     }
 
     return UserActivityStateMachineSingleton.instance;

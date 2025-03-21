@@ -1,6 +1,6 @@
 import { AppEventRepository } from '../src/AppEventRepository';
 import sqlite3 from 'sqlite3';
-import type { Logger } from '@trici/logger';
+import { getConsoleLogger } from '@trici/logger';
 import { IAppEvent, TriciAppEvent } from '@trici/models';
 import { v4 as uuidv4 } from 'uuid';
 import { beforeAllInitCommon, afterAllInitCommon } from './TestHelpers';
@@ -8,11 +8,10 @@ import { beforeAllInitCommon, afterAllInitCommon } from './TestHelpers';
 describe('AppEventRepository', () => {
   let repository: AppEventRepository;
   let db: sqlite3.Database;
-  let logger: Logger;
 
   beforeAll(async () => {
-    const { db, logger } = await beforeAllInitCommon();
-    repository = new AppEventRepository(db, logger);
+    const { db } = await beforeAllInitCommon();
+    repository = new AppEventRepository(db, getConsoleLogger);
   });
 
   afterAll(async () => {

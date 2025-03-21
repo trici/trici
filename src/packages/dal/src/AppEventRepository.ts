@@ -1,6 +1,6 @@
 import { IAppEvent, TriciAppEvent } from '@trici/models';
 import sqlite3 from 'sqlite3';
-import { Logger } from '@trici/logger';
+import { IConsoleLogger, Logger } from '@trici/logger';
 
 export interface IAppEventRepository {
   save(tapEvent: IAppEvent): Promise<void>;
@@ -10,15 +10,15 @@ export interface IAppEventRepository {
 
 export class AppEventRepository implements IAppEventRepository {
   db: sqlite3.Database | null = null;
-  logger: Logger | null = null;
+  getLogger: () => Logger | IConsoleLogger;
 
-  constructor(db: sqlite3.Database, logger: Logger) {
+  constructor(db: sqlite3.Database, getLogger: () => Logger | IConsoleLogger) {
     this.db = db;
-    this.logger = logger;
+    this.getLogger = getLogger;
   }
   getAllAppEvents(from: number, to: number): Promise<Array<IAppEvent>> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
@@ -27,7 +27,7 @@ export class AppEventRepository implements IAppEventRepository {
     return new Promise((resolve, reject) => {
       this.db!.all(selectQuery, params, (err, rows: any[]) => {
         if (err) {
-          this.logger?.error('Error retrieving app events from the database', err);
+          this.getLogger().error('Error retrieving app events from the database', err);
           reject(err);
         } else {
           resolve(
@@ -45,7 +45,7 @@ export class AppEventRepository implements IAppEventRepository {
 
   public async save(tapEvent: IAppEvent): Promise<void> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
@@ -55,7 +55,7 @@ export class AppEventRepository implements IAppEventRepository {
     return new Promise((resolve, reject) => {
       this.db!.run(insertQuery, params, err => {
         if (err) {
-          this.logger?.error('Error saving app event to the database', err);
+          this.getLogger().error('Error saving app event to the database', err);
           reject(err);
         } else {
           resolve();
@@ -71,7 +71,7 @@ export class AppEventRepository implements IAppEventRepository {
     count: number = 20,
   ): Promise<Array<IAppEvent>> {
     if (!this.db) {
-      this.logger?.error('Database not initialized');
+      this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
@@ -89,7 +89,7 @@ export class AppEventRepository implements IAppEventRepository {
     return new Promise((resolve, reject) => {
       this.db!.all(selectQuery, params, (err, rows: any[]) => {
         if (err) {
-          this.logger?.error('Error retrieving app events from the database', err);
+          this.getLogger().error('Error retrieving app events from the database', err);
           reject(err);
         } else {
           resolve(

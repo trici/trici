@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-screen w-screen m-0 p-0">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -16,14 +16,10 @@
       font-weight: normal;
       font-style: normal;
     }
-    body {
-      height: 100%;
-      width: 100%;
-    }
   </style>
 </head>
-<body>
-  <div id="root"></div>
+<body class="h-screen w-screen m-0 p-0">
+  <div id="root" class="h-full w-full overflow-hidden"></div>
   <script>
     function getScriptUrlByEnv(type) {
       if (bridgeApi.env === 'development') {
@@ -36,20 +32,20 @@
     }
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get('type');
-    var root = document.getElementById('root');
-    if (type === 'settings') {
-      document.title = 'Trici Settings';
-      root.style.height = '100vh';
-      root.style.width = '100vw';
-    } else if (type === 'eventviewer') {
-      document.title = 'Trici Event Viewer';
-      root.style.height = '100vh';
-      root.style.width = '100vw';
-    } else if (type === 'trici') {
-      document.title = 'Trici';
-      root.style.height = '100%';
-      root.style.width = '100%';
-    }
+    // var root = document.getElementById('root');
+    // if (type === 'settings') {
+    //   document.title = 'Trici Settings';
+    //   root.style.height = '100vh';
+    //   root.style.width = '100vw';
+    // } else if (type === 'eventviewer') {
+    //   document.title = 'Trici Event Viewer';
+    //   root.style.height = '100vh';
+    //   root.style.width = '100vw';
+    // } else if (type === 'trici') {
+    //   document.title = 'Trici';
+    //   // root.style.height = '100%';
+    //   // root.style.width = '100%';
+    // }
     let scriptUrl = getScriptUrlByEnv(type);
     (function() {
       console.log("Inside IIFE");

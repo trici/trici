@@ -24,16 +24,16 @@ export type AppObserverResponse = {
 
 export class AppObserverService extends EventEmitter implements IAppObserverService {
   child: any;
-  logger: Logger | IConsoleLogger;
+  getLogger: () => Logger | IConsoleLogger;
   appRoot: string;
   appObserverLogsDirectory: string;
   idleTimeIntervalId: NodeJS.Timeout | null;
   appChangeHistory: AppChangeHistory;
 
-  constructor(logger: Logger, appRoot: string, appObserverLogsDirectory: string) {
+  constructor(getLogger: () => Logger | IConsoleLogger, appRoot: string, appObserverLogsDirectory: string) {
     super();
     this.child = null;
-    this.logger = logger ? logger : getConsoleLogger();
+    this.getLogger = getLogger;
     this.appRoot = appRoot;
     this.appObserverLogsDirectory = appObserverLogsDirectory;
     this.idleTimeIntervalId = null;
@@ -57,10 +57,10 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
             config.builtFor === 'dev' || config.builtFor === 'livedev'
               ? path.join(this.appRoot, 'bin', 'dev', 'triciobserver')
               : path.join(this.appRoot, 'bin', 'triciobserver');
-          this.logger.info(`pathToExecutable:${pathToExecutable}`);
+          this.getLogger().info(`pathToExecutable:${pathToExecutable}`);
         }
         this.child = child_process.spawn(pathToExecutable, [this.appObserverLogsDirectory]);
-        this.logger.info(`AppObserverService started:${this.child.pid}`);
+        this.getLogger().info(`AppObserverService started:${this.child.pid}`);
         this.child.stdout.on('data', function (data: Buffer) {
           const rawData = data.toString('utf8');
           // self.logger.info(` Parsing AppObserverService stdout data:${rawData}`);
@@ -101,35 +101,35 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
 
                 self.emit('frontmostAppChanged', frontmostAppChangedData);
               } else if (appObserverResponse.type === 'stdLog') {
-                self.logger.info(`AppObserverService stdLog:${JSON.stringify(appObserverResponse.response)}`);
+                self.getLogger().info(`AppObserverService stdLog:${JSON.stringify(appObserverResponse.response)}`);
               } else if (appObserverResponse.type === 'stdError') {
-                self.logger.error(`AppObserverService stdError:${JSON.stringify(appObserverResponse.response)}`);
+                self.getLogger().error(`AppObserverService stdError:${JSON.stringify(appObserverResponse.response)}`);
               } else if (appObserverResponse.type === 'idleTime') {
                 self.emit('idleTime', appObserverResponse.response);
               }
             }
           } catch (error) {
-            self.logger.info(`Failed to parse appObserverResponse:${rawData}`);
-            self.logger.error(`AppObserverService failed to parse appObserverResponse:${error}`);
+            self.getLogger().info(`Failed to parse appObserverResponse:${rawData}`);
+            self.getLogger().error(`AppObserverService failed to parse appObserverResponse:${error}`);
           }
         });
         this.child.stderr.on('data', function (data: Buffer) {
-          self.logger.error('Error: ' + data.toString('utf8'));
+          self.getLogger().error('Error: ' + data.toString('utf8'));
         });
         this.child.on('exit', function (code: number) {
-          self.logger.info('AppObserver child process exited with code ' + code);
+          self.getLogger().info('AppObserver child process exited with code ' + code);
         });
         this.idleTimeIntervalId = setInterval(() => {
           self.child.stdin.write('getSystemIdleTime\n');
         }, 500);
       }
     } catch (error) {
-      this.logger.error(`AppObserverService failed to start:${error}`);
+      this.getLogger().error(`AppObserverService failed to start:${error}`);
     }
   }
 
   stop(): void {
-    this.logger.info('AppObserverService stopping:', this.child.pid);
+    this.getLogger().info('AppObserverService stopping:', this.child.pid);
     // kill the child process
     // TOOD: Write code to close the AppObserverService gracefully.
     this.child.kill();

@@ -109,6 +109,7 @@ export class GlobalShortcutService implements IGlobalShortcutService {
           dispatch({
             type: 'START_FOCUS_SESSION',
             startTrigger: SessionTrigger.SHORTCUT,
+            sessionStartMetadata: {},
           });
         },
       );

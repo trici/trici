@@ -1,5 +1,5 @@
 import { ProcessManager } from './ProcessManager';
-import type { Logger } from '@trici/logger';
+import type { IConsoleLogger, Logger } from '@trici/logger';
 
 export interface IProcessManagerSingleton {
   getInstance(logger: Logger): ProcessManager;
@@ -9,10 +9,10 @@ export class ProcessManagerSingleton {
 
   private constructor() {}
 
-  public static getInstance(logger: Logger): ProcessManager {
+  public static getInstance(getLogger: () => Logger | IConsoleLogger): ProcessManager {
     if (!ProcessManagerSingleton.instance) {
       console.log('Starting Process Manager ');
-      ProcessManagerSingleton.instance = new ProcessManager(logger);
+      ProcessManagerSingleton.instance = new ProcessManager(getLogger);
     }
 
     return ProcessManagerSingleton.instance;

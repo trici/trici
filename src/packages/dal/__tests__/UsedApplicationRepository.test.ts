@@ -1,5 +1,4 @@
-console.log('Executing file UsedApplicationRepository');
-import { Logger } from '@trici/logger';
+import { getConsoleLogger } from '@trici/logger';
 import { SqliteDbManager } from '../src/SqliteDbManager';
 import { UsedApplicationRepository } from '../src/UsedApplicationRepository';
 import sqlite3 from 'sqlite3';
@@ -13,40 +12,27 @@ import { IUsedApplication, UsedAppCategory } from '@trici/models';
 describe('UsedApplicationRepository', () => {
   let repository: UsedApplicationRepository;
   let db: sqlite3.Database;
-  let logger: Logger;
   let dbManager: SqliteDbManager;
 
   beforeAll(async () => {
-    const logsDirPath = path.join(__dirname, 'logs');
     const testDbDirPath = path.join(__dirname, 'testAppData');
 
     try {
-      console.log('Cleaning test logs directory');
-      await deleteDirectoryWithContents(logsDirPath);
-      console.log('Cleaned test logs directory');
-      console.log('Cleaning test db directory');
       await deleteDirectoryWithContents(testDbDirPath);
 
       if (!fs.existsSync(testDbDirPath)) {
         fs.mkdirSync(testDbDirPath, { recursive: true });
-        console.log('Test db directory created');
       }
     } catch (err) {
       console.log('Error iniitializing logger: ', err);
     }
 
-    logger = LoggingService.init(logsDirPath, 'testsql-%DATE%.log', {
-      installationId: 'test-installation-id',
-      appDetails: 'darwin-dev-2.2.2',
-    });
-    console.log('Initialized logger');
-
     try {
-      dbManager = new SqliteDbManager(logger);
+      dbManager = new SqliteDbManager(getConsoleLogger);
       await dbManager.init(testDbDirPath, knexfile);
       db = dbManager.getDb();
 
-      repository = new UsedApplicationRepository(db, logger);
+      repository = new UsedApplicationRepository(db, getConsoleLogger);
     } catch (err) {
       console.log('Error initializing repository: ', err);
     }
