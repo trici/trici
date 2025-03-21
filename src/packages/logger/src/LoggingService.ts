@@ -182,7 +182,16 @@ export class LoggingService extends EventEmitter implements ILoggingService {
       throw new Error('Logger not initialized');
     }
 
+    // Update the logger's level
     this.logger.level = logLevel;
+
+    // Update all transport log levels
+    if (this.transports) {
+      Object.values(this.transports).forEach(transport => {
+        transport.level = logLevel;
+      });
+    }
+
     this.emit('logLevelChanged', logLevel);
   }
 
@@ -194,7 +203,7 @@ export class LoggingService extends EventEmitter implements ILoggingService {
       // update logger config based on installationId
       this.logger.info(`Changing logger default meta to: ${JSON.stringify(defaultMeta)}`);
       const updatedLogger = winston.createLogger({
-        level: 'info',
+        level: this.logger.level,
         transports: this._getTransportsConfig(),
         exceptionHandlers: this._getExceptionHandlersTransportsConfig(),
         exitOnError: false,
