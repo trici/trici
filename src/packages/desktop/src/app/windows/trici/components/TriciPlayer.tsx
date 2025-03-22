@@ -168,6 +168,8 @@ export const TriciPlayer = forwardRef<TriciPlayerHandle, TriciPlayerProps>(({ se
     // Ensure player is ready
     playerRef.current.ready(() => {
       console.log('Player ready with new source');
+      // Reset playback rate to 4x after loading new source
+      playerRef.current?.playbackRate(4);
     });
   }, [selectedSession]);
 
