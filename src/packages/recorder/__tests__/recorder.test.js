@@ -17,7 +17,7 @@ const recordingStorageLocation = path.join(__dirname, '..', 'recordings');
 async function runTest() {
   const triciRecorder = new TriciRecorder(
     ffmpegPath,
-    getConsoleLogger(),
+    getConsoleLogger,
     path.join(__dirname, '..', 'bin', 'dev', 'Recorder'),
   );
 
