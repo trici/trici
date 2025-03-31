@@ -103,9 +103,22 @@ inputSource.setEventHandler {
             logger.error("No startSessionTimestamp passed")
           }
           Task {
-            await screenRecorder.start()
+            let outputPath = "/tmp/testing.mp4"
+            await screenRecorder.start(outputPath: outputPath)
           }
+        
+        case "startraw":
 
+          if components.count > 1 {
+            let startSessionTimestamp = String(components[1])
+            logger.info("startSessionTimestamp:\(startSessionTimestamp)")
+          }
+          else {
+            logger.error("No startSessionTimestamp passed")
+          }
+          Task {
+            await screenRecorder.startraw()
+          }
         case "startdebug":
           Task {
             await screenRecorder.startDebug()
