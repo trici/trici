@@ -111,8 +111,6 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     // Named pipe should be created before starting the recording process
     await this.createNamedPipe();
 
-    let screenResolution = null;
-
     let recordingProcessStarted = false;
 
     try {
@@ -124,16 +122,42 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
         });
 
         this.recordingProcess.stderr.on('data', (data: any) => {
-          const logData = JSON.parse(data.toString('utf8'));
-          if (logData.type === 'stdErr') {
-            this.getLogger().error(`TriciRecorder process stderr: ${JSON.stringify(logData.response)}`);
-          } else {
-            this.getLogger().info(`${logData.type}: ${JSON.stringify(logData.response)}`);
+          const rawData = data.toString('utf8');
+          try {
+            // Try parsing as JSON first
+            const logData = JSON.parse(rawData);
+            if (logData.type === 'stdErr') {
+              this.getLogger().error(`TriciRecorder process stderr: ${JSON.stringify(logData.response)}`);
+            } else {
+              this.getLogger().info(`${logData.type}: ${JSON.stringify(logData.response)}`);
+            }
+          } catch (parseError) {
+            // If JSON parsing fails, log the raw data as potential error output
+            this.getLogger().error(`TriciRecorder process raw stderr: ${rawData}`);
+          }
+        });
+
+        this.recordingProcess.stdout.on('data', (data: any) => {
+          this.getLogger().info(`TriciRecorder process stdout: ${data}`);
+          const response = JSON.parse(data.toString('utf8')).response;
+          if (response.message === 'screenRecorderStopped') {
+            this.#isRecording = false;
+            this.recordingProcess.kill('SIGTERM');
+          }
+        });
+
+        // Add an exit handler to log when the process terminates
+        this.recordingProcess.on('exit', (code: number | null, signal: string | null) => {
+          this.getLogger().warn(`TriciRecorder process exited with code: ${code}, signal: ${signal}`);
+          if (this.#isRecording) {
+            this.emit('recordingProcessExitedUnexpectedly', { code, signal });
+            this.stopLiveRecording().catch(err =>
+              this.getLogger().error(`Error stopping recording after unexpected exit: ${err}`),
+            );
           }
         });
 
         console.log('Recording process pid:', this.recordingProcess.pid);
-        screenResolution = await this.getScreenResolution();
         recordingProcessStarted = true;
       }
     } catch (error) {
@@ -191,7 +215,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       '-hls_list_size',
       '0',
       '-hls_flags',
-      'delete_segments',
+      'split_by_time',
       '-hls_segment_filename',
       `${recordingFileNameWithPath}-%04d.ts`,
       `${recordingFileNameWithPath}.m3u8`,
@@ -206,7 +230,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       });
       this.getLogger().info(`TriciRecorder startLiveRecording: ${recordingFileName}`);
 
-      this.recordingProcess.stdin.write('start\n');
+      this.recordingProcess.stdin.write(`start ${recordingFileName}\n`);
 
       this.ffmpegProcess.stdout.pipe(recordingCommandStdOutStdErrFileStream);
       this.ffmpegProcess.stderr.pipe(recordingCommandStdOutStdErrFileStream);
@@ -220,7 +244,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
       });
       this.ffmpegProcess.on('exit', (code: number) => {
         this.getLogger().info(`TriciEncoder exit: ${code}`);
-        this.emit('recordingProcessExited', code);
+        this.emit('encodingProcessExited', code);
       });
       this.ffmpegProcess.on('error', (error: any) => {
         this.getLogger().error(`TriciRecordingEncoder process error: ${error}`);
@@ -241,29 +265,28 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   }
 
   async stopLiveRecording(): Promise<void> {
+    const sessionEndTimestamp = Date.now();
     if (this.#isRecording) {
       return new Promise((resolve, reject) => {
         console.log('Stopping live recording');
-
         const cleanup = () => {
           console.log('Inside cleanup');
           if (this.recordingProcess) {
-            this.recordingProcess.stdin.write('stop\n');
             this.recordingProcess.stdin.end();
-            this.recordingProcess.kill();
-            this.recordingProcess = null;
+            this.recordingProcess.kill('SIGTERM');
           }
+
           if (this.ffmpegProcess) {
             console.log('killing ffmpegProcess');
             this.ffmpegProcess.stdin.end();
-            this.ffmpegProcess.kill();
+            this.ffmpegProcess.kill('SIGTERM');
             this.ffmpegProcess = null;
           }
         };
 
         if (this.recordingProcess && this.recordingProcess.stdin.writable) {
           console.log('Writing stop command to recordingProcess.stdin');
-          this.recordingProcess.stdin.write('stop\n', (err: any) => {
+          this.recordingProcess.stdin.write(`stop ${sessionEndTimestamp}\n`, (err: any) => {
             if (err) this.getLogger().warn(`Error writing stop command: ${err}`);
           });
         }
@@ -284,13 +307,6 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
           cleanup();
           resolve();
         }
-
-        // Set a timeout in case FFmpeg doesn't close properly
-        setTimeout(() => {
-          this.getLogger().warn('FFmpeg process did not close in time, forcing cleanup');
-          cleanup();
-          resolve();
-        }, 5000);
       });
     }
   }
