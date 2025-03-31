@@ -367,7 +367,9 @@ class ScreenRecorder: NSObject {
               AVVideoCompressionPropertiesKey: [
                   AVVideoAverageBitRateKey: 2000000, // 2 Mbps
                   AVVideoMaxKeyFrameIntervalKey: 50,
-                  AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel
+                  AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
+                  AVVideoAllowFrameReorderingKey: false, // Disable frame reordering for real-time
+                  AVVideoExpectedSourceFrameRateKey: 7 // Tell encoder our expected frame rate
               ]
           ]
 
@@ -379,7 +381,8 @@ class ScreenRecorder: NSObject {
           let sourcePixelBufferAttributes: [String: Any] = [
               kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
               kCVPixelBufferWidthKey as String: config.width,
-              kCVPixelBufferHeightKey as String: config.height
+              kCVPixelBufferHeightKey as String: config.height,
+              kCVPixelBufferIOSurfacePropertiesKey as String: [:]
           ]
 
           let adaptor = AVAssetWriterInputPixelBufferAdaptor(
@@ -390,10 +393,10 @@ class ScreenRecorder: NSObject {
 
           writer.add(writerInput)
           writer.startWriting()
-          writer.startSession(atSourceTime: .zero)
 
-          videoWriteQueue = DispatchQueue(label: "com.gettrici.Recorder.VideoWriteQueue")
+          videoWriteQueue = DispatchQueue(label: "com.gettrici.Recorder.VideoWriteQueue", qos: .userInteractive)
           var frameCount = 0
+          var firstFrameTime: CMTime?
 
           logger.info("Starting video capture to \(outputPath)")
           startTime = Date()
@@ -403,15 +406,29 @@ class ScreenRecorder: NSObject {
                   for try await output in captureEngine.startCapture(configuration: config, filter: filter, outputMode: true) {
                       if case .pixelBuffer(let pixelBuffer) = output {
                           if writerInput.isReadyForMoreMediaData {
-                              let presentationTime = CMTime(value: Int64(frameCount), timescale: 7) // 7 fps
+                              // Get the actual timestamp for this frame
+                              let timestamp = CMClockGetTime(CMClockGetHostTimeClock())
+
+                              if firstFrameTime == nil {
+                                  firstFrameTime = timestamp
+                                  writer.startSession(atSourceTime: .zero)
+                              }
+
+                              // Calculate the presentation time relative to the first frame
+                              let presentationTime = CMTimeSubtract(timestamp, firstFrameTime ?? timestamp)
+
                               videoWriteQueue?.async {
                                   adaptor.append(pixelBuffer, withPresentationTime: presentationTime)
                               }
                               frameCount += 1
 
-                              if frameCount % 70 == 0 { // Log every 10 seconds
-                                  self.logger.info("Processed \(frameCount) frames")
+                              if frameCount % 70 == 0 {
+                                  let currentTime = CMTimeGetSeconds(presentationTime)
+                                  let currentFPS = Double(frameCount) / currentTime
+                                  self.logger.info("Processed \(frameCount) frames. Current FPS: \(String(format: "%.2f", currentFPS))")
                               }
+                          } else {
+                              self.logger.warn("Dropped frame - writer not ready")
                           }
                       }
                   }
@@ -442,7 +459,16 @@ class ScreenRecorder: NSObject {
               writer.finishWriting {
                   let endTime = Date()
                   let duration = endTime.timeIntervalSince(startTime)
+                  let status = writer.status
+                  let error = writer.error
+
                   self.logger.info("Finished recording. Duration: \(duration) seconds")
+                  if let error = error {
+                      self.logger.error("AssetWriter finished with error: \(error.localizedDescription)")
+                  }
+                  if status == .failed {
+                      self.logger.error("AssetWriter failed")
+                  }
 
                   // Clean up resources
                   self.assetWriter = nil
