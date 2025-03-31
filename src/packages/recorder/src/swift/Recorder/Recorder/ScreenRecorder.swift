@@ -430,8 +430,6 @@ class ScreenRecorder: NSObject {
   func stop() async {
       guard isRunning else { return }
 
-      // Attempt to stop the capture engine asynchronously
-      do {
           // Call the asynchronous stopCapture method
         logger.debug("Stopping Capture")
           await captureEngine.stopCapture()
@@ -446,10 +444,6 @@ class ScreenRecorder: NSObject {
               self.namedPipeFileHandle = nil // Clear the handle after closing
           }
 
-      } catch {
-          // Log error if stopping the capture failed
-          logger.error("Failed to stop capture: \(error.localizedDescription)")
-      }
   }
 
   func takeScreenshot(path: String) async {

@@ -95,6 +95,13 @@ inputSource.setEventHandler {
 
         switch command {
         case "start":
+          if components.count > 1 {
+            let startSessionTimestamp = String(components[1])
+            logger.info("startSessionTimestamp:\(startSessionTimestamp)")
+          }
+          else {
+            logger.error("No startSessionTimestamp passed")
+          }
           Task {
             await screenRecorder.start()
           }
@@ -104,10 +111,17 @@ inputSource.setEventHandler {
             await screenRecorder.startDebug()
           }
         case "stop":
+          if components.count > 1 {
+            let stopSessionTimestamp = String(components[1])
+            logger.info("stopSessionTimestamp:\(stopSessionTimestamp)")
+          } else {
+            logger.error("No stopSessionTimestamp passed")
+          }
           Task {
             await screenRecorder.stop()
+            LoggingService.writeToStandardOutput(message: ["message": "screenRecorderStopped"])
           }
-        case "screenshot":
+        case "screenshot":	
           if components.count > 1 {
               let screenshotPath = String(components[1])
               Task {
