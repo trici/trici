@@ -150,6 +150,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
         this.recordingProcess.on('exit', (code: number | null, signal: string | null) => {
           this.getLogger().warn(`TriciRecorder process exited with code: ${code}, signal: ${signal}`);
           if (this.#isRecording) {
+            this.getLogger().warn(`Recording process exited unexpectedly with code: ${code}, signal: ${signal}`);
             this.emit('recordingProcessExitedUnexpectedly', { code, signal });
             this.stopLiveRecording().catch(err =>
               this.getLogger().error(`Error stopping recording after unexpected exit: ${err}`),
