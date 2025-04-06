@@ -74,7 +74,7 @@ export class UpdateService {
         this.logger.info('Checking for updates...');
       });
 
-      autoUpdater.on('update-available', (event: Electron.Event) => {
+      autoUpdater.on('update-available', () => {
         this.logger.info('Update available');
         this.isUpdateServerReachable = true;
         // Show the update available alert
@@ -87,7 +87,7 @@ export class UpdateService {
         });
       });
 
-      autoUpdater.on('update-not-available', (event: Electron.Event) => {
+      autoUpdater.on('update-not-available', () => {
         this.logger.info('Update not available');
         this.isUpdateServerReachable = true;
       });
