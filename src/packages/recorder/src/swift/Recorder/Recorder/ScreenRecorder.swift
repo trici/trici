@@ -11,6 +11,7 @@ import ScreenCaptureKit
 import AVFoundation
 import CoreGraphics
 import ImageIO
+import VideoToolbox
 
 class ScreenRecorder: NSObject {
   private var logger: Logger
@@ -359,7 +360,7 @@ class ScreenRecorder: NSObject {
           }
           assetWriter = writer
 
-          // Configure video settings
+          // Configure video settings for fragmented MP4
           let videoSettings: [String: Any] = [
               AVVideoCodecKey: AVVideoCodecType.h264,
               AVVideoWidthKey: config.width,
@@ -369,9 +370,14 @@ class ScreenRecorder: NSObject {
                   AVVideoMaxKeyFrameIntervalKey: 50,
                   AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
                   AVVideoAllowFrameReorderingKey: false, // Disable frame reordering for real-time
-                  AVVideoExpectedSourceFrameRateKey: 7 // Tell encoder our expected frame rate
+                  AVVideoExpectedSourceFrameRateKey: 7, // Tell encoder our expected frame rate
+                  kVTCompressionPropertyKey_RealTime as String: true
               ]
           ]
+
+          // Enable fragmented MP4 writing
+          writer.movieFragmentInterval = CMTime(seconds: 1, preferredTimescale: 1) // Create fragments every second
+          writer.shouldOptimizeForNetworkUse = true // This enables fragmented MP4
 
           let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
           writerInput.expectsMediaDataInRealTime = true
@@ -398,7 +404,7 @@ class ScreenRecorder: NSObject {
           var frameCount = 0
           var firstFrameTime: CMTime?
 
-          logger.info("Starting video capture to \(outputPath)")
+          logger.info("Starting fragmented MP4 video capture to \(outputPath)")
           startTime = Date()
 
           Task {
