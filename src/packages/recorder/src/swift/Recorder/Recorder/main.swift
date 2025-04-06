@@ -95,19 +95,47 @@ inputSource.setEventHandler {
 
         switch command {
         case "start":
-          Task {
-            await screenRecorder.start()
+          if components.count > 1 {
+            let outputPath = String(components[1])
+            logger.info("outputPath:\(outputPath)")
+            Task {
+              await screenRecorder.start(outputPath: outputPath)
+            }
           }
+          else {
+            logger.error("No outputPath passed")
+            LoggingService.logToStandardError(message: ["error": "No outputPath passed"], isError: true)
+          }
+        
+        case "startraw":
 
+          if components.count > 1 {
+            let startSessionTimestamp = String(components[1])
+            logger.info("startSessionTimestamp:\(startSessionTimestamp)")
+          }
+          else {
+            logger.error("No startSessionTimestamp passed")
+          }
+          Task {
+            await screenRecorder.startraw()
+          }
         case "startdebug":
           Task {
             await screenRecorder.startDebug()
           }
         case "stop":
+          if components.count > 1 {
+            let stopSessionTimestamp = String(components[1])
+            logger.info("stopSessionTimestamp:\(stopSessionTimestamp)")
+          } else {
+            logger.error("No stopSessionTimestamp passed")
+          }
           Task {
             await screenRecorder.stop()
+            logger.info("screenRecorderStopped")
+            LoggingService.writeToStandardOutput(message: ["message": "screenRecorderStopped"])
           }
-        case "screenshot":
+        case "screenshot":	
           if components.count > 1 {
               let screenshotPath = String(components[1])
               Task {

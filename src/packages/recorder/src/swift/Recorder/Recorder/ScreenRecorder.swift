@@ -11,7 +11,7 @@ import ScreenCaptureKit
 import AVFoundation
 import CoreGraphics
 import ImageIO
-
+import VideoToolbox
 
 class ScreenRecorder: NSObject {
   private var logger: Logger
@@ -48,6 +48,8 @@ class ScreenRecorder: NSObject {
   private var assetWriterInput: AVAssetWriterInput?
   private var pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor?
   private var outputURL: URL?
+  private var videoWriteQueue: DispatchQueue?
+  private var startTime: Date?
 
 
     private var streamConfiguration: SCStreamConfiguration {
@@ -60,14 +62,6 @@ class ScreenRecorder: NSObject {
 
       streamConfig.width = 1920
       streamConfig.height = 1080
-//      if let display = activeDisplay {
-//        streamConfig.width = display.width * scaleFactor
-//        streamConfig.height = display.height * scaleFactor
-//      } else {
-//        streamConfig.width = Int(largestResolution.width)
-//        streamConfig.height = Int(largestResolution.height)
-//
-//      }
 
         streamConfig.showsCursor = true
         streamConfig.pixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
@@ -181,7 +175,7 @@ class ScreenRecorder: NSObject {
     }
 
 
-  func start() async {
+  func startraw() async {
       // Exit if already running
       guard !isRunning else { return }
 
@@ -192,33 +186,17 @@ class ScreenRecorder: NSObject {
           logger.info("streamConfig: \(config)")
           logger.info("Opening named pipe")
 
-          // Attempt to open the named pipe file handle
-//          if namedPipeFileHandle == nil {
-//              let path = "/tmp/tricistream"
-//              if let handle = FileHandle(forWritingAtPath: path) {
-//                  namedPipeFileHandle = handle
-//              } else {
-//                  logger.error("Failed to open named pipe: The pipe might not be ready for writing.")
-//                  return
-//              }
-//          }
-//
-//          // Create a serial dispatch queue for writing
-//          let writeQueue = DispatchQueue(label: "com.gettrici.Recorder.WriteQueue")
-//
-//          logger.info("Starting capture")
-        
         logger.debug("Checking namedPipeFileHandle: \(namedPipeFileHandle == nil ? "nil" : "not nil")")
 
         if namedPipeFileHandle == nil {
             let path = "/tmp/tricistream"
-            
+
             if !FileManager.default.fileExists(atPath: path) {
                 logger.error("Named pipe does not exist at \(path)")
             } else {
                 logger.debug("Named pipe exists at \(path), but FileHandle initialization still failed.")
             }
-            
+
             if let handle = FileHandle(forWritingAtPath: path) {
                 namedPipeFileHandle = handle
             } else {
@@ -232,44 +210,29 @@ class ScreenRecorder: NSObject {
 
         logger.info("Starting capture")
 
-        
           Task {
               var frameCounter = 0
               let startTime = Date()
               do {
-                  for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
-                    let frameReceivedTime = Date()
+                  for try await output in captureEngine.startCapture(configuration: config, filter: filter, outputMode: false) {
+                      if case .rawData(let rawData) = output {
+                          let frameReceivedTime = Date()
 
-                    // create a copy of the data so that the object is discarded and the surface is returned to the pool
-                    // this prevents frame loss
-                    let copiedData = Data(rawData)
+                          // create a copy of the data so that the object is discarded and the surface is returned to the pool
+                          // this prevents frame loss
+                          let copiedData = Data(rawData)
 
-                        // Dispatch the write operation to the writeQueue
-                        writeQueue.async {
-                            self.namedPipeFileHandle?.write(copiedData)
-                            do {
-                                try self.namedPipeFileHandle?.synchronize()
-                            } catch {
-                                self.logger.error("Failed to synchronize data to pipe: \(error.localizedDescription)")
-                            }
-                        }
-                        let frameProcessedTime = Date()
-                        let processingTime = frameProcessedTime.timeIntervalSince(frameReceivedTime)
-
-//                        self.logger.info("Frame \(frameCounter) processing time: \(processingTime) seconds")
-
-                        frameCounter += 1
-//                      // Dispatch the write operation to the writeQueue
-//                      writeQueue.async {
-//                          self.namedPipeFileHandle?.write(rawData)
-//                          do {
-//                              try self.namedPipeFileHandle?.synchronize()
-//                          } catch {
-//                              self.logger.error("Failed to synchronize data to pipe: \(error.localizedDescription)")
-//                          }
-//                      }
-//                      frameCounter += 1
-
+                          // Dispatch the write operation to the writeQueue
+                          writeQueue.async {
+                              self.namedPipeFileHandle?.write(copiedData)
+                              do {
+                                  try self.namedPipeFileHandle?.synchronize()
+                              } catch {
+                                  self.logger.error("Failed to synchronize data to pipe: \(error.localizedDescription)")
+                              }
+                          }
+                          frameCounter += 1
+                      }
                   }
 
                   // Wait for all pending write operations to complete
@@ -296,56 +259,6 @@ class ScreenRecorder: NSObject {
       }
   }
 
-//  func startDebug() async {
-//      // Exit if already running
-//      guard !isRunning else { return }
-//
-//      do {
-//        isRunning = true
-//        let config = streamConfiguration
-//        let filter = contentFilter
-//
-//          let rawFilePath = "/Users/shashi/projects/trici/src/packages/recorder/recordings/testRecording.raw"
-//          let rawFileURL = URL(fileURLWithPath: rawFilePath)
-//          guard let fileHandle = try? FileHandle(forWritingTo: rawFileURL) else {
-//                   logger.error("Failed to open raw data file for writing.")
-//                   return
-//               }
-//
-//        logger.info("Starting Debug capture")
-//        Task {
-//          var frameCount = 0;
-//          let expectedSize = config.width * config.height * 3 / 2
-//          logger.info("Expected frame size:\(expectedSize) bytes")
-//          logger.info("Configured resolution:\(config.width)x\(config.height)")
-//
-//          for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
-//            fileHandle.write(rawData)
-//            frameCount += 1
-//
-//            if (frameCount == 1 || frameCount == 40) {
-//              let actualWidth = rawData.count/(config.height * 3/2)
-//              logger.info("Actual capture width (based on data size): \(actualWidth)")
-//              logger.info("Actual capture height (based on config): \(config.height)")
-//              logger.info("Actual data size: \(rawData.count)")
-//            }
-//
-//            if frameCount % 30 == 0 {  // Log every 30 frames
-//              logger.info("Processed \(frameCount) frames. Last frame size: \(rawData.count)")
-//            }
-//          }
-//          logger.info("Capture Engine stopped frames")
-//          logger.info("Total frames written:\(frameCount)")
-//          fileHandle.closeFile()
-//            logger.info("Finished writing raw data to \(rawFilePath)")
-//        }
-//
-//      } catch {
-//          logger.error("\(error.localizedDescription)")
-//          // Unable to start the stream. Set the running state to false.
-//          isRunning = false
-//      }
-//  }
 
   func startDebug() async {
       // Exit if already running
@@ -358,10 +271,10 @@ class ScreenRecorder: NSObject {
 
           let rawFilePath = "/Users/shashi/projects/trici/src/packages/recorder/recordings/testRecording.raw"
           let rawFileURL = URL(fileURLWithPath: rawFilePath)
-        
-        if !FileManager.default.fileExists(atPath: rawFilePath) {
-          FileManager.default.createFile(atPath: rawFilePath, contents: nil, attributes: nil)
-        }
+
+          if !FileManager.default.fileExists(atPath: rawFilePath) {
+              FileManager.default.createFile(atPath: rawFilePath, contents: nil, attributes: nil)
+          }
           guard let fileHandle = try? FileHandle(forWritingTo: rawFileURL) else {
               logger.error("Failed to open raw data file for writing.")
               return
@@ -379,27 +292,27 @@ class ScreenRecorder: NSObject {
               let startTime = Date()
               logger.info("Capture started at: \(startTime)")
 
-              for try await rawData in captureEngine.startCapture(configuration: config, filter: filter) {
-                writeQueue.async {
-                  fileHandle.write(rawData)
-                }
-                  frameCount += 1
+              for try await output in captureEngine.startCapture(configuration: config, filter: filter, outputMode: false) {
+                  if case .rawData(let rawData) = output {
+                      writeQueue.async {
+                          fileHandle.write(rawData)
+                      }
+                      frameCount += 1
 
-                  if frameCount == 1 || frameCount == 40 {
-                      let actualWidth = rawData.count / (config.height * 3 / 2)
-                      logger.info("Actual capture width (based on data size): \(actualWidth)")
-                      logger.info("Actual capture height (based on config): \(config.height)")
-                      logger.info("Actual data size: \(rawData.count) bytes")
-                  }
+                      if frameCount == 1 || frameCount == 40 {
+                          let actualSize = rawData.count
+                          logger.info("Actual data size: \(actualSize) bytes")
+                      }
 
-                  if frameCount % 30 == 0 {  // Log every 30 frames
-                      logger.info("Processed \(frameCount) frames. Last frame size: \(rawData.count) bytes")
+                      if frameCount % 30 == 0 {  // Log every 30 frames
+                          logger.info("Processed \(frameCount) frames. Last frame size: \(rawData.count) bytes")
+                      }
                   }
               }
 
-            writeQueue.sync {
-              logger.info("Finished writing queue contents")
-            }
+              writeQueue.sync {
+                  logger.info("Finished writing queue contents")
+              }
 
               // Log the end time
               let endTime = Date()
@@ -422,33 +335,180 @@ class ScreenRecorder: NSObject {
 
       } catch {
           logger.error("\(error.localizedDescription)")
-          // Unable to start the stream. Set the running state to false.
           isRunning = false
+      }
+  }
+
+  func start(outputPath: String) async {
+      // Exit if already running
+      guard !isRunning else { return }
+
+      do {
+          isRunning = true
+          let config = streamConfiguration
+          let filter = contentFilter
+
+          // Setup Asset Writer
+          outputURL = URL(fileURLWithPath: outputPath)
+          // Remove existing file if it exists
+          try? FileManager.default.removeItem(at: outputURL!)
+
+          guard let writer = try? AVAssetWriter(outputURL: outputURL!, fileType: .mp4) else {
+              logger.error("Failed to create asset writer.")
+              isRunning = false
+              return
+          }
+          assetWriter = writer
+
+          // Configure video settings for fragmented MP4
+          let videoSettings: [String: Any] = [
+              AVVideoCodecKey: AVVideoCodecType.h264,
+              AVVideoWidthKey: config.width,
+              AVVideoHeightKey: config.height,
+              AVVideoCompressionPropertiesKey: [
+                  AVVideoAverageBitRateKey: 2000000, // 2 Mbps
+                  AVVideoMaxKeyFrameIntervalKey: 50,
+                  AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
+                  AVVideoAllowFrameReorderingKey: false, // Disable frame reordering for real-time
+                  AVVideoExpectedSourceFrameRateKey: 7, // Tell encoder our expected frame rate
+                  kVTCompressionPropertyKey_RealTime as String: true
+              ]
+          ]
+
+          // Enable fragmented MP4 writing
+          writer.movieFragmentInterval = CMTime(seconds: 1, preferredTimescale: 1) // Create fragments every second
+          writer.shouldOptimizeForNetworkUse = true // This enables fragmented MP4
+
+          let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
+          writerInput.expectsMediaDataInRealTime = true
+          assetWriterInput = writerInput
+
+          // Create pixel buffer adaptor
+          let sourcePixelBufferAttributes: [String: Any] = [
+              kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
+              kCVPixelBufferWidthKey as String: config.width,
+              kCVPixelBufferHeightKey as String: config.height,
+              kCVPixelBufferIOSurfacePropertiesKey as String: [:]
+          ]
+
+          let adaptor = AVAssetWriterInputPixelBufferAdaptor(
+              assetWriterInput: writerInput,
+              sourcePixelBufferAttributes: sourcePixelBufferAttributes
+          )
+          pixelBufferAdaptor = adaptor
+
+          writer.add(writerInput)
+          writer.startWriting()
+
+          videoWriteQueue = DispatchQueue(label: "com.gettrici.Recorder.VideoWriteQueue", qos: .userInteractive)
+          var frameCount = 0
+          var firstFrameTime: CMTime?
+
+          logger.info("Starting fragmented MP4 video capture to \(outputPath)")
+          startTime = Date()
+
+          Task {
+              do {
+                  for try await output in captureEngine.startCapture(configuration: config, filter: filter, outputMode: true) {
+                      if case .pixelBuffer(let pixelBuffer) = output {
+                          if writerInput.isReadyForMoreMediaData {
+                              // Get the actual timestamp for this frame
+                              let timestamp = CMClockGetTime(CMClockGetHostTimeClock())
+
+                              if firstFrameTime == nil {
+                                  firstFrameTime = timestamp
+                                  writer.startSession(atSourceTime: .zero)
+                              }
+
+                              // Calculate the presentation time relative to the first frame
+                              let presentationTime = CMTimeSubtract(timestamp, firstFrameTime ?? timestamp)
+
+                              videoWriteQueue?.async {
+                                  adaptor.append(pixelBuffer, withPresentationTime: presentationTime)
+                              }
+                              frameCount += 1
+
+                              if frameCount % 70 == 0 {
+                                  let currentTime = CMTimeGetSeconds(presentationTime)
+                                  let currentFPS = Double(frameCount) / currentTime
+                                  self.logger.info("Processed \(frameCount) frames. Current FPS: \(String(format: "%.2f", currentFPS))")
+                              }
+                          } else {
+                              self.logger.warn("Dropped frame - writer not ready")
+                          }
+                      }
+                  }
+              } catch {
+                  logger.error("Error during video capture: \(error.localizedDescription)")
+                  await stopRecording()
+              }
+          }
+
+      } catch {
+          logger.error("\(error.localizedDescription)")
+          isRunning = false
+      }
+  }
+
+  private func stopRecording() async {
+      guard let writer = assetWriter,
+            let writerInput = assetWriterInput,
+            let writeQueue = videoWriteQueue,
+            let startTime = startTime else {
+          return
+      }
+
+      // Wait for all pending write operations to complete
+      await withCheckedContinuation { continuation in
+          writeQueue.async {
+              writerInput.markAsFinished()
+              writer.finishWriting {
+                  let endTime = Date()
+                  let duration = endTime.timeIntervalSince(startTime)
+                  let status = writer.status
+                  let error = writer.error
+
+                  self.logger.info("Finished recording. Duration: \(duration) seconds")
+                  if let error = error {
+                      self.logger.error("AssetWriter finished with error: \(error.localizedDescription)")
+                  }
+                  if status == .failed {
+                      self.logger.error("AssetWriter failed")
+                  }
+
+                  // Clean up resources
+                  self.assetWriter = nil
+                  self.assetWriterInput = nil
+                  self.pixelBufferAdaptor = nil
+                  self.videoWriteQueue = nil
+                  self.startTime = nil
+                  self.outputURL = nil
+
+                  continuation.resume()
+              }
+          }
       }
   }
 
   func stop() async {
       guard isRunning else { return }
 
-      // Attempt to stop the capture engine asynchronously
-      do {
-          // Call the asynchronous stopCapture method
-        logger.debug("Stopping Capture")
-          await captureEngine.stopCapture()
-          isRunning = false
+      // Call the asynchronous stopCapture method
+      logger.debug("Stopping Capture")
+      await captureEngine.stopCapture()
 
+      // If we were recording video, finalize it
+      if assetWriter != nil {
+          await stopRecording()
+      }
 
-        logger.info("Stopped Recording")
+      isRunning = false
+      logger.info("Stopped Recording")
 
-//           Assuming fileHandle is managed and should be closed after stopping the capture
-          if let handle = self.namedPipeFileHandle {
-              handle.closeFile()
-              self.namedPipeFileHandle = nil // Clear the handle after closing
-          }
-
-      } catch {
-          // Log error if stopping the capture failed
-          logger.error("Failed to stop capture: \(error.localizedDescription)")
+      // Close named pipe if it was being used
+      if let handle = self.namedPipeFileHandle {
+          handle.closeFile()
+          self.namedPipeFileHandle = nil
       }
   }
 

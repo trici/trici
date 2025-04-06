@@ -155,14 +155,12 @@ export const TriciPlayer = forwardRef<TriciPlayerHandle, TriciPlayerProps>(({ se
     const focusSessionRecordingsDir = `${recordingStorageLocation}/${timestamp}`;
 
     // Use the playlist file instead of individual segments
-    const playlistUrl = `${focusSessionRecordingsDir}/${timestamp}.m3u8`;
-
-    console.log('Loading video source:', playlistUrl);
+    const recordingFile = `${focusSessionRecordingsDir}/${timestamp}.mp4`;
 
     // Update video source with the playlist
     playerRef.current.src({
-      src: playlistUrl,
-      type: 'application/x-mpegURL', // This is the MIME type for HLS playlists
+      src: recordingFile,
+      type: 'video/mp4', // This is the MIME type for HLS playlists
     });
 
     // Ensure player is ready

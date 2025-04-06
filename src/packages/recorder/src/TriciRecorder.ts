@@ -30,8 +30,6 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   ffmpegProcess: any;
   #isRecording: boolean = false;
 
-  private readonly namedPipePath: string = '/tmp/tricistream';
-
   constructor(ffmpgBinPath: string, getLogger: () => Logger | IConsoleLogger, recorderBinPath: string) {
     super();
     this.#ffmpegBinPath = ffmpgBinPath;
@@ -48,23 +46,6 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   //   const output = child_process.execSync(command).toString().trim();
   //   return parseInt(output);
   // }
-
-  private async createNamedPipe(): Promise<void> {
-    try {
-      // Check if the pipe already exists
-      await fs.promises.access(this.namedPipePath, fs.constants.F_OK);
-      this.getLogger().info(`Named pipe already exists at ${this.namedPipePath}`);
-    } catch (error) {
-      // If the pipe doesn't exist, create it
-      try {
-        await execAsync(`mkfifo ${this.namedPipePath}`);
-        this.getLogger().info(`Named pipe created at ${this.namedPipePath}`);
-      } catch (mkfifoError: any) {
-        this.getLogger().error(`Error creating named pipe: ${mkfifoError.message}`);
-        throw mkfifoError;
-      }
-    }
-  }
 
   async getScreenResolution(): Promise<any> {
     if (!this.recordingProcess) {
@@ -108,32 +89,56 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     includeWatermark: boolean,
     waterMarkImagePath: string,
   ): Promise<void> {
-    // Named pipe should be created before starting the recording process
-    await this.createNamedPipe();
-
-    let screenResolution = null;
-
     let recordingProcessStarted = false;
 
     try {
       if (!this.recordingProcess) {
         this.recordingProcess = spawn(this.#recorderBinPath);
         this.recordingProcess.on('error', (error: any) => {
-          console.log('TriciRecorder process error:', error);
           this.getLogger().error(`TriciRecorder process error: ${error}`);
         });
 
         this.recordingProcess.stderr.on('data', (data: any) => {
-          const logData = JSON.parse(data.toString('utf8'));
-          if (logData.type === 'stdErr') {
-            this.getLogger().error(`TriciRecorder process stderr: ${JSON.stringify(logData.response)}`);
-          } else {
-            this.getLogger().info(`${logData.type}: ${JSON.stringify(logData.response)}`);
+          const rawData = data.toString('utf8');
+          try {
+            // Try parsing as JSON first
+            const logData = JSON.parse(rawData);
+            if (logData.type === 'stdErr') {
+              this.getLogger().error(`TriciRecorder process stderr: ${JSON.stringify(logData.response)}`);
+            } else {
+              this.getLogger().info(`${logData.type}: ${JSON.stringify(logData.response)}`);
+            }
+          } catch (parseError) {
+            // If JSON parsing fails, log the raw data as potential error output
+            this.getLogger().error(`TriciRecorder process raw stderr: ${rawData}`);
+          }
+        });
+
+        this.recordingProcess.stdout.on('data', (data: any) => {
+          this.getLogger().info(`TriciRecorder process stdout: ${data}`);
+          const response = JSON.parse(data.toString('utf8')).response;
+          if (response.message === 'screenRecorderStopped') {
+            this.#isRecording = false;
+            this.recordingProcess.kill('SIGTERM');
+          }
+          if (response.message === 'screenRecorderStarted') {
+            this.getLogger().info('Screen recorder started');
+          }
+        });
+
+        // Add an exit handler to log when the process terminates
+        this.recordingProcess.on('exit', (code: number | null, signal: string | null) => {
+          this.getLogger().warn(`TriciRecorder process exited with code: ${code}, signal: ${signal}`);
+          if (this.#isRecording) {
+            this.getLogger().warn(`Recording process exited unexpectedly with code: ${code}, signal: ${signal}`);
+            this.emit('recordingProcessExitedUnexpectedly', { code, signal });
+            this.stopLiveRecording().catch(err =>
+              this.getLogger().error(`Error stopping recording after unexpected exit: ${err}`),
+            );
           }
         });
 
         console.log('Recording process pid:', this.recordingProcess.pid);
-        screenResolution = await this.getScreenResolution();
         recordingProcessStarted = true;
       }
     } catch (error) {
@@ -142,95 +147,16 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     }
 
     const recordingFileNameWithPath = `${recordingStorageLocation}/${recordingFileName}`;
-    const recordingCommandStdOutStdErrFileNameWithPath = `${recordingStorageLocation}/${recordingFileName}.log`;
-    const recordingCommandStdOutStdErrFileStream = fs.createWriteStream(recordingCommandStdOutStdErrFileNameWithPath, {
-      flags: 'a',
-    });
-    // The below sizeParam is not being used and the value is hardcoded because of noise in the recording
-    // output issue. By having a standard resolution, the video comes clear.
-    // const sizeParam = `${screenResolution.width}x${screenResolution.height}`;
-    const sizeParam = `1920x1080`;
-    console.log('this.#ffmpegBinPath:', this.#ffmpegBinPath);
-    const waterMarkImagePathParam = `${waterMarkImagePath}`;
-    const args = [
-      '-hide_banner',
-      '-loglevel',
-      'debug',
-      '-pixel_format',
-      'nv12',
-      '-video_size',
-      sizeParam,
-      '-f',
-      'rawvideo',
-      '-framerate',
-      '7',
-      '-fflags',
-      '+genpts',
-      '-use_wallclock_as_timestamps',
-      '1',
-      '-i',
-      this.namedPipePath,
-      '-i',
-      waterMarkImagePathParam,
-      '-filter_complex',
-      `scale=-2:1080,setsar=1,overlay=W-w-5:H-h-5`,
-      '-c:v',
-      'h264_videotoolbox',
-      '-b:v',
-      '1526K',
-      '-profile:v',
-      'high',
-      '-fps_mode',
-      'vfr',
-      '-force_key_frames',
-      'expr:gte(t,n_forced*7)',
-      '-reset_timestamps',
-      '1',
-      '-hls_time',
-      '7',
-      '-hls_list_size',
-      '0',
-      '-hls_flags',
-      'delete_segments',
-      '-hls_segment_filename',
-      `${recordingFileNameWithPath}-%04d.ts`,
-      `${recordingFileNameWithPath}.m3u8`,
-    ];
-
-    this.getLogger().info(`ffmpegProcess args: ${JSON.stringify(args)}`);
-    console.log('args:', args);
+    // const recordingCommandStdOutStdErrFileNameWithPath = `${recordingStorageLocation}/${recordingFileName}-rec.log`;
+    // const recordingCommandStdOutStdErrFileStream = fs.createWriteStream(recordingCommandStdOutStdErrFileNameWithPath, {
+    //   flags: 'a',
+    // });
 
     try {
-      this.ffmpegProcess = spawn(this.#ffmpegBinPath, args, {
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
       this.getLogger().info(`TriciRecorder startLiveRecording: ${recordingFileName}`);
 
-      this.recordingProcess.stdin.write('start\n');
+      this.recordingProcess.stdin.write(`start ${recordingFileNameWithPath}.mp4\n`);
 
-      this.ffmpegProcess.stdout.pipe(recordingCommandStdOutStdErrFileStream);
-      this.ffmpegProcess.stderr.pipe(recordingCommandStdOutStdErrFileStream);
-      this.ffmpegProcess.stdin.on('error', (error: any) => {
-        if (error.code === 'EPIPE') {
-          this.getLogger().warn('FFmpeg input stream closed unexpectedly');
-          this.stopLiveRecording().catch(err => this.getLogger().error(`Error stopping recording: ${err}`));
-        } else {
-          this.getLogger().error(`FFmpeg input stream error: ${error}`);
-        }
-      });
-      this.ffmpegProcess.on('exit', (code: number) => {
-        this.getLogger().info(`TriciEncoder exit: ${code}`);
-        this.emit('recordingProcessExited', code);
-      });
-      this.ffmpegProcess.on('error', (error: any) => {
-        this.getLogger().error(`TriciRecordingEncoder process error: ${error}`);
-      });
-      console.log('Encoding process pid:', this.ffmpegProcess.pid);
-
-      // this.recordingProcess.stdout.pipe(this.ffmpegProcess.stdin).on('error', (error: any) => {
-      //   this.logger.error(`Error piping recordingProcess.stdout to ffmpegProcess.stdin: ${error}`);
-      //   reject(error);
-      // });
       this.#isRecording = true;
       // resolve();
     } catch (error) {
@@ -241,56 +167,16 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   }
 
   async stopLiveRecording(): Promise<void> {
+    const sessionEndTimestamp = Date.now();
     if (this.#isRecording) {
       return new Promise((resolve, reject) => {
         console.log('Stopping live recording');
-
-        const cleanup = () => {
-          console.log('Inside cleanup');
-          if (this.recordingProcess) {
-            this.recordingProcess.stdin.write('stop\n');
-            this.recordingProcess.stdin.end();
-            this.recordingProcess.kill();
-            this.recordingProcess = null;
-          }
-          if (this.ffmpegProcess) {
-            console.log('killing ffmpegProcess');
-            this.ffmpegProcess.stdin.end();
-            this.ffmpegProcess.kill();
-            this.ffmpegProcess = null;
-          }
-        };
-
         if (this.recordingProcess && this.recordingProcess.stdin.writable) {
           console.log('Writing stop command to recordingProcess.stdin');
-          this.recordingProcess.stdin.write('stop\n', (err: any) => {
+          this.recordingProcess.stdin.write(`stop ${sessionEndTimestamp}\n`, (err: any) => {
             if (err) this.getLogger().warn(`Error writing stop command: ${err}`);
           });
         }
-
-        if (this.ffmpegProcess) {
-          this.ffmpegProcess.once('close', (code: number) => {
-            this.getLogger().info(`FFmpeg process closed with code: ${code}`);
-            cleanup();
-            this.#isRecording = false;
-            resolve();
-          });
-
-          // Attempt to end FFmpeg input stream
-          if (this.ffmpegProcess.stdin.writable) {
-            this.ffmpegProcess.stdin.end();
-          }
-        } else {
-          cleanup();
-          resolve();
-        }
-
-        // Set a timeout in case FFmpeg doesn't close properly
-        setTimeout(() => {
-          this.getLogger().warn('FFmpeg process did not close in time, forcing cleanup');
-          cleanup();
-          resolve();
-        }, 5000);
       });
     }
   }
