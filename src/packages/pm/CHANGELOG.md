@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.6](https://github.com/trici/trici/compare/@trici/pm@0.4.5...@trici/pm@0.4.6) (2025-04-07)
+
+### Bug Fixes
+
+- Logger was not getting updated with updated defaultMeta. Now fetch the latest logger always ([2272d2a](https://github.com/trici/trici/commit/2272d2aa260db5b7b7a9fcd7cf79684bb8eb8150))
+
 ## [0.4.5](https://github.com/trici/trici/compare/@trici/pm@0.4.4...@trici/pm@0.4.5) (2025-03-06)
 
 **Note:** Version bump only for package @trici/pm

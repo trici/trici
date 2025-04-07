@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.8.0](https://github.com/trici/trici/compare/@trici/models@1.7.0...@trici/models@1.8.0) (2025-04-07)
+
+### Features
+
+- Added the ability to make the app sleep ([34816ec](https://github.com/trici/trici/commit/34816ecd3d2bab579650109398898b36ba122ce2))
+
 # [1.7.0](https://github.com/trici/trici/compare/@trici/models@1.6.0...@trici/models@1.7.0) (2025-03-06)
 
 ### Bug Fixes

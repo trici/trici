@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.3](https://github.com/trici/trici/compare/@trici/activmon@1.1.2...@trici/activmon@1.1.3) (2025-04-07)
+
+### Bug Fixes
+
+- Logger was not getting updated with updated defaultMeta. Now fetch the latest logger always ([2272d2a](https://github.com/trici/trici/commit/2272d2aa260db5b7b7a9fcd7cf79684bb8eb8150))
+
 ## [1.1.2](https://github.com/trici/trici/compare/@trici/activmon@1.1.1...@trici/activmon@1.1.2) (2025-03-06)
 
 **Note:** Version bump only for package @trici/activmon

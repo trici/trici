@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.11.0](https://github.com/trici/trici/compare/@trici/desktop@0.10.0...@trici/desktop@0.11.0) (2025-04-07)
+
+### Bug Fixes
+
+- **@trici/desktop:** Change the url of the recording as now we are not outputting HLS playlist ([1bfc36c](https://github.com/trici/trici/commit/1bfc36cbe711ab885ef50bfff78833b442d91c48))
+- **@trici/desktop:** Fix ts errors by using the correct method signatures ([da53402](https://github.com/trici/trici/commit/da534021b29194b5a9e763d9bdaa8d0a8639b697))
+- Fixed the UI of marker for current position ([f6b36b5](https://github.com/trici/trici/commit/f6b36b5fd7ad7f03b374e490061a421a4d3c312f))
+- Include which app was in use in sessionStartMetadata. ([6d6c5ea](https://github.com/trici/trici/commit/6d6c5ea1fcfaed90447722dadf8cf25384e98de9))
+- Logger was not getting updated with updated defaultMeta. Now fetch the latest logger always ([2272d2a](https://github.com/trici/trici/commit/2272d2aa260db5b7b7a9fcd7cf79684bb8eb8150))
+- Moved the Focus Sessions list back to the side. Reduced the width of the video to ensure that the height does not overflow. Added tailwind css classes to html and body as suggested by o3-mini ([6c59457](https://github.com/trici/trici/commit/6c59457e25a8533fb7b8618c9cb7ac0476fcfead))
+- Set environment variable APP_ENV and pass it to child processes. ([f460b00](https://github.com/trici/trici/commit/f460b008ea998aa374a5bc7bf30df6b597d66e24))
+- Show the duration of the focus session in the placeholder instead of image preview ([3919617](https://github.com/trici/trici/commit/3919617a8a88cb888ed64b318bb3f4d7f38708ba))
+- The default playback speed was reset to normal and not 4x as intended ([93e9791](https://github.com/trici/trici/commit/93e97911457f01b6020b2da158736f49708d812b))
+
+### Features
+
+- Added the ability to make the app sleep ([34816ec](https://github.com/trici/trici/commit/34816ecd3d2bab579650109398898b36ba122ce2))
+- Changed the FocusSessionView to show FS list on the bottom. Now showing a SessionTimeline alongwith the video, which gets updated as the video plays in the TriciPlayer. (VibeCoded) ([b62dc62](https://github.com/trici/trici/commit/b62dc624c51842ecf403986e1d288714c9b85f34))
+- Fetching IdleTimeProfile and displaying active regions in SessionTimeline ([ef3f7e1](https://github.com/trici/trici/commit/ef3f7e105c971156ac4f0fe23ec891826c89baa9))
+
 # [0.10.0](https://github.com/trici/trici/compare/@trici/desktop@0.9.0...@trici/desktop@0.10.0) (2025-03-06)
 
 ### Bug Fixes

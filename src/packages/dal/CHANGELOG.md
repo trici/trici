@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.3.1](https://github.com/trici/trici/compare/@trici/dal@2.3.0...@trici/dal@2.3.1) (2025-04-07)
+
+### Bug Fixes
+
+- Logger was not getting updated with updated defaultMeta. Now fetch the latest logger always ([2272d2a](https://github.com/trici/trici/commit/2272d2aa260db5b7b7a9fcd7cf79684bb8eb8150))
+
 # [2.3.0](https://github.com/trici/trici/compare/@trici/dal@2.2.0...@trici/dal@2.3.0) (2025-03-06)
 
 ### Bug Fixes

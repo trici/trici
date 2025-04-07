@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.6.2](https://github.com/trici/trici/compare/@trici/app-observer@1.6.1...@trici/app-observer@1.6.2) (2025-04-07)
+
+### Bug Fixes
+
+- Logger was not getting updated with updated defaultMeta. Now fetch the latest logger always ([2272d2a](https://github.com/trici/trici/commit/2272d2aa260db5b7b7a9fcd7cf79684bb8eb8150))
+- Set environment variable APP_ENV and pass it to child processes. ([f460b00](https://github.com/trici/trici/commit/f460b008ea998aa374a5bc7bf30df6b597d66e24))
+
 ## [1.6.1](https://github.com/trici/trici/compare/@trici/app-observer@1.6.0...@trici/app-observer@1.6.1) (2025-03-06)
 
 **Note:** Version bump only for package @trici/app-observer

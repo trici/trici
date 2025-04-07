@@ -341,8 +341,8 @@ importers:
         specifier: ^7.0.3
         version: 7.0.3
       electron:
-        specifier: ^23.3.13
-        version: 23.3.13
+        specifier: 34.3.1
+        version: 34.3.1
       playwright:
         specifier: ^1.31.2
         version: 1.49.0
@@ -1978,10 +1978,6 @@ packages:
     resolution:
       { integrity: sha512-F0KIgDJfy2nA3zMLmWGKxcH2ZVEtCZXHHdOQs2gSaQ27+lNeEfGxzkIw90aXswATX7AZ33tahPbzy6KAfUreVw== }
 
-  '@types/node@16.18.121':
-    resolution:
-      { integrity: sha512-Gk/pOy8H0cvX8qNrwzElYIECpcUn87w4EAEFXFvPJ8qsP9QR/YqukUORSy0zmyDyvdo149idPpy4W6iC5aSbQA== }
-
   '@types/node@20.17.9':
     resolution:
       { integrity: sha512-0JOXkRyLanfGPE2QRCwgxhzlBAvaRdCNMcvbd7jFfpmD4eEXll7LRwy5ymJmyeZqk7Nh7eD2LeUyQ68BbndmXw== }
@@ -3499,9 +3495,9 @@ packages:
     resolution:
       { integrity: sha512-6BsLnBg+i96eUnbaIFZyYdyfNX3f80/Nlfqy34YEMxXT9JP3ddNsNnUeiOF8ezN4+et4t4D37gjghKTP0V3jyw== }
 
-  electron@23.3.13:
+  electron@34.3.1:
     resolution:
-      { integrity: sha512-BaXtHEb+KYKLouUXlUVDa/lj9pj4F5kiE0kwFdJV84Y2EU7euIDgPthfKtchhr5MVHmjtavRMIV/zAwEiSQ9rQ== }
+      { integrity: sha512-Vsgxc4FDGg7hjduKyvTP5qfNDxZHTliZIiWD1HlR5hHXx3BFjyVv3db/uEH1GaCU0KKyeNsBXRwS4WAOMaSH5g== }
     engines: { node: '>= 12.20.55' }
     hasBin: true
 
@@ -9415,8 +9411,6 @@ snapshots:
 
   '@types/node@10.17.60': {}
 
-  '@types/node@16.18.121': {}
-
   '@types/node@20.17.9':
     dependencies:
       undici-types: 6.19.8
@@ -10859,10 +10853,10 @@ snapshots:
       lodash.debounce: 4.0.8
       serialize-error: 8.1.0
 
-  electron@23.3.13:
+  electron@34.3.1:
     dependencies:
       '@electron/get': 2.0.3
-      '@types/node': 16.18.121
+      '@types/node': 20.17.9
       extract-zip: 2.0.1
     transitivePeerDependencies:
       - supports-color

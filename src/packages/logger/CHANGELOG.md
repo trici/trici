@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.3.0](https://github.com/trici/trici/compare/@trici/logger@1.2.3...@trici/logger@1.3.0) (2025-04-07)
+
+### Bug Fixes
+
+- Logger was not getting updated with updated defaultMeta. Now fetch the latest logger always ([2272d2a](https://github.com/trici/trici/commit/2272d2aa260db5b7b7a9fcd7cf79684bb8eb8150))
+- Update the logging level of transports when level is updated for LoggingService ([7e3832e](https://github.com/trici/trici/commit/7e3832edafdd0b3d054b9a95722a8dc6b3e94ab2))
+
+### Features
+
+- Changed the logging format to include a category if provided. This can be used to filter logs which is useful when debugging ([06e913a](https://github.com/trici/trici/commit/06e913a9ddcafc4d06848a176547289032085aff))
+
 ## [1.2.3](https://github.com/trici/trici/compare/@trici/logger@1.2.2...@trici/logger@1.2.3) (2025-02-19)
 
 **Note:** Version bump only for package @trici/logger
