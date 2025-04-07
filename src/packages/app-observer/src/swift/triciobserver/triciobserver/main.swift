@@ -9,7 +9,7 @@ import Foundation
 
 let logger: Logger
 
-let env = ProcessInfo.processInfo.environment["APP_ENV"] ?? "dev"
+let env = ProcessInfo.processInfo.environment["APP_ENV"] ?? "devon"
 
 let isProd = env == "prod"
 
@@ -48,7 +48,7 @@ if (!LoggingService.isInitialized()) {
 }
 logger = LoggingService.getLogger()
 
-logger.info("Logger initialized")
+logger.info("Logger initialized. env:\(env)")
 
 let frontmostObserver = FrontmostObserver(logger: logger)
 let appObserverMethods = AppObserverMethods(logger: logger)

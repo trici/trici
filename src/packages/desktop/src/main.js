@@ -12,6 +12,12 @@ electronUnhandled({
 
 global.config = config;
 
+if (config.builtFor === 'prod') {
+  process.env.APP_ENV = 'prod';
+} else {
+  process.env.APP_ENV = 'dev';
+}
+
 const isRunningInAsar = __dirname.includes('app.asar');
 console.log('process.resourcesPath:', process.resourcesPath);
 

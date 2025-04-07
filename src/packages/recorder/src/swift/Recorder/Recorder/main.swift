@@ -9,7 +9,7 @@ import Foundation
 
 let logger: Logger
 
-let env = ProcessInfo.processInfo.environment["APP_ENV"] ?? "dev"
+let env = ProcessInfo.processInfo.environment["APP_ENV"] ?? "devon"
 
 let isProd = env == "prod"
 

@@ -1,6 +1,5 @@
 import type { Logger, IConsoleLogger } from '@trici/logger';
 import { spawn, exec } from 'child_process';
-import fs from 'fs';
 import EventEmitter from 'events';
 import { promisify } from 'util';
 
@@ -93,7 +92,8 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
 
     try {
       if (!this.recordingProcess) {
-        this.recordingProcess = spawn(this.#recorderBinPath);
+        const appEnv = process.env.APP_ENV || 'dev';
+        this.recordingProcess = spawn(this.#recorderBinPath, [], { env: { ...process.env, APP_ENV: appEnv } });
         this.recordingProcess.on('error', (error: any) => {
           this.getLogger().error(`TriciRecorder process error: ${error}`);
         });

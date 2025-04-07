@@ -59,7 +59,8 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
               : path.join(this.appRoot, 'bin', 'triciobserver');
           this.getLogger().info(`pathToExecutable:${pathToExecutable}`);
         }
-        this.child = child_process.spawn(pathToExecutable, [this.appObserverLogsDirectory]);
+        const appEnv = process.env.APP_ENV || 'dev';
+        this.child = child_process.spawn(pathToExecutable, [this.appObserverLogsDirectory, appEnv]);
         this.getLogger().info(`AppObserverService started:${this.child.pid}`);
         this.child.stdout.on('data', function (data: Buffer) {
           const rawData = data.toString('utf8');
