@@ -205,7 +205,7 @@ export class UserActivityStateMachine extends EventEmitter implements IUserActiv
     if (this.currentState !== newState) {
       // If required, can add stateExitActions
       // this.handleStateExitActions(prevState)
-      this.getLogger().info(`UserActivityStateMachine transitioning from ${this.currentState} to ${newState}`);
+      // this.getLogger().info(`UserActivityStateMachine transitioning from ${this.currentState} to ${newState}`);
       this.currentState = newState;
       this.stateHistory.push({ state: this.currentState, timestamp: Date.now() });
 
