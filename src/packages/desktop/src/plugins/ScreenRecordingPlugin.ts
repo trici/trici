@@ -1,6 +1,8 @@
-import { FocusSession, TriciAppEvent } from '@trici/models';
-import { ITriciPlugin } from '../typedefs/ITriciPlugin';
+import { TriciAppEvent, SessionTrigger } from '@trici/models';
 import { TriciRecorder } from '@trici/recorder';
+import { ITriciPlugin } from '../typedefs/ITriciPlugin';
+import { dispatch } from '../desktopServices/ActionDispatcher';
+import type { FocusSession } from '@trici/models';
 import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
@@ -13,6 +15,25 @@ export class ScreenRecordingPlugin implements ITriciPlugin {
 
   constructor(recorder: TriciRecorder) {
     this.recorder = recorder;
+
+    // Listen for recording process crash events
+    this.recorder.on('recordingProcessCrashed', ({ code, signal }) => {
+      // End the focus session with a special trigger
+      dispatch({
+        type: 'END_FOCUS_SESSION',
+        endTrigger: SessionTrigger.RECORDING_CRASH,
+      });
+
+      // Show notification to user
+      dispatch({
+        type: 'SHOW_ALERT_WINDOW',
+        args: {
+          alertType: 'ALERT_ERROR_MESSAGE',
+          quitAppOnClose: false,
+          message: `Recording process crashed unexpectedly (code: ${code}, signal: ${signal}). The focus session has been ended.`,
+        },
+      });
+    });
   }
 
   public handleEvent(event: TriciAppEvent, ...data: any[]): void {
@@ -52,7 +73,7 @@ export class ScreenRecordingPlugin implements ITriciPlugin {
     );
 
     this.recorder.on('recordingProcessExited', code => {
-      logger.debug('Recording process exited with code: ' + code);
+      logger.info('Recording process exited with code: ' + code);
     });
   }
 
