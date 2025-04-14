@@ -39,6 +39,7 @@ class ScreenRecorder: NSObject {
       }
 
     var isRunning = false
+    var stopCaptureCalled = false
 
   private var scaleFactor: Int { Int(NSScreen.main?.backingScaleFactor ?? 2) }
 
@@ -55,10 +56,10 @@ class ScreenRecorder: NSObject {
     private var streamConfiguration: SCStreamConfiguration {
         let streamConfig = SCStreamConfiguration()
 
-        let largestResolution = getHighestScreenResolution()
-
-      streamConfig.width = Int(largestResolution.width)
-      streamConfig.height = Int(largestResolution.height)
+//        let largestResolution = getHighestScreenResolution()
+//
+//      streamConfig.width = Int(largestResolution.width)
+//      streamConfig.height = Int(largestResolution.height)
 
       streamConfig.width = 1920
       streamConfig.height = 1080
@@ -345,6 +346,7 @@ class ScreenRecorder: NSObject {
 
       do {
           isRunning = true
+        stopCaptureCalled = false
           let config = streamConfiguration
           let filter = contentFilter
 
@@ -404,6 +406,7 @@ class ScreenRecorder: NSObject {
           var frameCount = 0
           var firstFrameTime: CMTime?
 
+
           logger.info("Starting fragmented MP4 video capture to \(outputPath)")
           startTime = Date()
 
@@ -438,6 +441,11 @@ class ScreenRecorder: NSObject {
                           }
                       }
                   }
+                if (!stopCaptureCalled) {
+                  logger.info("Capture continuation finished due to null pointer error")
+                } else {
+                  logger.info("Capture continuation finished due to stop")
+                }
               } catch {
                   logger.error("Error during video capture: \(error.localizedDescription)")
                   await stopRecording()
@@ -491,6 +499,7 @@ class ScreenRecorder: NSObject {
   }
 
   func stop() async {
+    stopCaptureCalled = true
       guard isRunning else { return }
 
       // Call the asynchronous stopCapture method
