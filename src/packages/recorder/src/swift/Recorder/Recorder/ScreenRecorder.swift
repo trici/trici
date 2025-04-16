@@ -442,15 +442,19 @@ class ScreenRecorder: NSObject {
                       }
                   }
                 if (!stopCaptureCalled) {
-                  logger.info("Capture continuation finished due to null pointer error")
+                  logger.info("Capture continuation finished due to null pointer error. stopCurrentRecording")
+                  await stopRecording()
+                  LoggingService.writeToStandardOutput(message: ["message": "screenRecorderStoppedByOS"])
                 } else {
                   logger.info("Capture continuation finished due to stop")
                 }
               } catch {
                   logger.error("Error during video capture: \(error.localizedDescription)")
                   await stopRecording()
+                  LoggingService.writeToStandardOutput(message: ["message": "screenRecorderStoppedByError"])
               }
           }
+        
 
       } catch {
           logger.error("\(error.localizedDescription)")

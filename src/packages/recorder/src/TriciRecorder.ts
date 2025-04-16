@@ -121,6 +121,13 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
           if (response.message === 'screenRecorderStopped') {
             this.#isRecording = false;
             this.recordingProcess.kill('SIGTERM');
+          } else if (
+            response.message === 'screenRecorderStoppedByOS' ||
+            response.message === 'screenRecorderStoppedByError'
+          ) {
+            this.getLogger().error(`Screen recorder stopped by ${response.message}`);
+            this.#isRecording = false;
+            this.recordingProcess.kill('SIGTERM');
           }
           if (response.message === 'screenRecorderStarted') {
             this.getLogger().info('Screen recorder started');
