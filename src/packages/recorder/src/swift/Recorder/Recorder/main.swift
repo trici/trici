@@ -3,9 +3,48 @@
 //  Recorder
 //
 //  Created by Shashi Singh on 23/05/24.
-//
+//  start /Users/shashi/projects/trici/src/packages/recorder/recordings/testing_0.mp4
 
 import Foundation
+
+// Set up signal handling
+func handleSignal(_ signal: Int32) {
+    let signalName: String
+    switch signal {
+    case SIGTERM: signalName = "SIGTERM"
+    case SIGINT: signalName = "SIGINT"
+    case SIGQUIT: signalName = "SIGQUIT"
+    case SIGABRT: signalName = "SIGABRT"
+    default: signalName = "Signal \(signal)"
+    }
+
+    LoggingService.logToStandardError(message: [
+        "msg": "Received termination signal",
+        "signal": signalName
+    ], isError: true)
+    exit(signal)
+}
+
+// Register signal handlers
+signal(SIGTERM, handleSignal)
+signal(SIGINT, handleSignal)
+signal(SIGQUIT, handleSignal)
+signal(SIGABRT, handleSignal)
+
+// Set up uncaught exception handler
+NSSetUncaughtExceptionHandler { exception in
+    LoggingService.logToStandardError(message: [
+        "msg": "Uncaught exception",
+        "name": exception.name.rawValue,
+        "reason": exception.reason ?? "No reason provided",
+        "callStackSymbols": exception.callStackSymbols
+    ], isError: true)
+}
+
+// Register an atexit handler
+atexit {
+    LoggingService.logToStandardError(message: ["msg": "Process is exiting"], isError: false)
+}
 
 let logger: Logger
 
@@ -65,7 +104,7 @@ Task {
     await screenRecorder.refreshAvailableContent()
     let canRecord = await screenRecorder.canRecord
     logger.info("Can record: \(canRecord)")
-    print("TriciRecorder v1.0 Current Time: \(dateString)")
+  logger.info("TriciRecorder v1.0 Current Time: \(dateString)")
 }
 
 
@@ -90,7 +129,7 @@ inputSource.setEventHandler {
         let commandLine = strData.trimmingCharacters(in: .whitespacesAndNewlines)
         let components = commandLine.split(separator: " ", maxSplits: 1)
         let command = String(components[0])
-      
+
         logger.info("parsedCommand:\(command)")
 
         switch command {
@@ -106,7 +145,7 @@ inputSource.setEventHandler {
             logger.error("No outputPath passed")
             LoggingService.logToStandardError(message: ["error": "No outputPath passed"], isError: true)
           }
-        
+
         case "startraw":
 
           if components.count > 1 {
@@ -135,7 +174,7 @@ inputSource.setEventHandler {
             logger.info("screenRecorderStopped")
             LoggingService.writeToStandardOutput(message: ["message": "screenRecorderStopped"])
           }
-        case "screenshot":	
+        case "screenshot":
           if components.count > 1 {
               let screenshotPath = String(components[1])
               Task {
