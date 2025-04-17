@@ -160,7 +160,7 @@ export function FocusSessionsView() {
         {/* Side sessions list - 15% of width */}
         <div className="relative w-[8%] overflow-y-auto border-r border-gray-200 bg-gray-100 p-2">
           <div className="flex h-full flex-col gap-4 pb-1" ref={scrollContainerRef} onScroll={checkScrollability}>
-            {[...(focusSessionsQuery.data || [])].reverse().map(session => (
+            {(focusSessionsQuery.data || []).map(session => (
               <div
                 key={session.id}
                 className={`flex-shrink-0 cursor-pointer transition-transform hover:scale-105 ${
