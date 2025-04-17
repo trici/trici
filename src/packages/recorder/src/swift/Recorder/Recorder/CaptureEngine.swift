@@ -17,222 +17,263 @@ enum CaptureOutput {
 
 class CaptureEngine: NSObject, @unchecked Sendable {
 
-  private var logger: Logger;
+    private var logger: Logger
     private(set) var stream: SCStream?
     private var streamOutput: CaptureEngineStreamOutput?
     private let videoSampleBufferQueue = DispatchQueue(label: "com.gettrici.Recorder.VideoSampleBufferQueue")
-
     private var continuation: AsyncThrowingStream<CaptureOutput, Error>.Continuation?
+    private let cleanupQueue = DispatchQueue(label: "com.gettrici.Recorder.CleanupQueue")
+    private var isShuttingDown = false
 
-  var lastFrameTime: Date?
+    var lastFrameTime: Date?
 
-  init(logger:Logger) {
-    self.logger = logger
+    init(logger: Logger) {
+        self.logger = logger
+        super.init()
+    }
+  
+  deinit {
+    logger.warn(" CaptureEngine DEINIT")
   }
 
-  func startCapture(configuration: SCStreamConfiguration, filter: SCContentFilter, outputMode: Bool = false) -> AsyncThrowingStream<CaptureOutput, Error> {
-      AsyncThrowingStream<CaptureOutput, Error> { continuation in
-          self.continuation = continuation
+    func startCapture(configuration: SCStreamConfiguration, filter: SCContentFilter, outputMode: Bool = false) -> AsyncThrowingStream<CaptureOutput, Error> {
+        AsyncThrowingStream<CaptureOutput, Error> { continuation in
+            self.continuation = continuation
 
-          // The stream output object.
-          let streamOutput = CaptureEngineStreamOutput(continuation: continuation)
-          self.streamOutput = streamOutput
+            weak var weakSelf = self
 
-          // Initialize lastFramePTS
-          var lastFramePTS: CMTime?
+            // Inject the logger into the stream output instance.
+            let streamOutput = CaptureEngineStreamOutput(continuation: continuation, logger: self.logger)
+            self.streamOutput = streamOutput
 
-          streamOutput.sampleBufferHandler = { sampleBuffer in
-              if outputMode {
-                  // For video recording, pass the CVPixelBuffer directly
-                  if let pixelBuffer = sampleBuffer.imageBuffer {
-                      continuation.yield(.pixelBuffer(pixelBuffer))
-                  }
-              } else {
-                  // For raw data output (pipe writing), convert to raw NV12 data
-                  if let data = self.processSampleBuffer(sampleBuffer) {
-                      continuation.yield(.rawData(data))
-                  }
-              }
-          }
+            streamOutput.sampleBufferHandler = { [weak self] sampleBuffer in
+                guard let self = self, !self.isShuttingDown else { return }
 
-          do {
-              self.stream = SCStream(filter: filter, configuration: configuration, delegate: streamOutput)
+                autoreleasepool {
+                    if outputMode {
+                        if let pixelBuffer = sampleBuffer.imageBuffer {
+                            continuation.yield(.pixelBuffer(pixelBuffer))
+                        }
+                    } else {
+                        if let data = self.processSampleBuffer(sampleBuffer) {
+                            continuation.yield(.rawData(data))
+                        }
+                    }
+                }
+            }
 
-              // Add a stream output to capture screen content.
-              try self.stream?.addStreamOutput(streamOutput, type: .screen, sampleHandlerQueue: self.videoSampleBufferQueue)
-              self.stream?.startCapture()
-          } catch {
-              continuation.finish(throwing: error)
-          }
-      }
-  }
+            do {
+                let stream = SCStream(filter: filter, configuration: configuration, delegate: streamOutput)
+                self.stream = stream
 
-  private func processSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> Data? {
-      guard let pixelBuffer = sampleBuffer.imageBuffer else { return nil }
+                try stream.addStreamOutput(streamOutput, type: .screen, sampleHandlerQueue: self.videoSampleBufferQueue)
 
-      CVPixelBufferLockBaseAddress(pixelBuffer, [])
-      defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
+                stream.startCapture { error in
+                    if let error = error {
+                        weakSelf?.logger.error("Failed to start capture: \(String(describing: error))")
+                        continuation.finish(throwing: error)
+                    }
+                }
+            } catch {
+                self.logger.error("Failed to create stream: \(String(describing: error))")
+                continuation.finish(throwing: error)
+            }
+        }
+    }
 
-      let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
+    private func processSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> Data? {
+        guard let pixelBuffer = sampleBuffer.imageBuffer else { return nil }
 
-      switch pixelFormat {
-      case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange:
-          return processNv12PixelData(pixelBuffer)
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
 
-      case kCVPixelFormatType_32BGRA:
-          return processBgraPixelData(pixelBuffer)
+        let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
+        switch pixelFormat {
+        case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange:
+            return processNv12PixelData(pixelBuffer)
+        case kCVPixelFormatType_32BGRA:
+            return processBgraPixelData(pixelBuffer)
+        case kCVPixelFormatType_422YpCbCr8:
+            return processYuv422PixelData(pixelBuffer)
+        default:
+            logger.error("Unsupported pixel format: \(pixelFormat)")
+            return nil
+        }
+    }
 
-      case kCVPixelFormatType_422YpCbCr8:
-           return processYuv422PixelData(pixelBuffer)
+    private func processYuv422PixelData(_ pixelBuffer: CVPixelBuffer) -> Data? {
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
 
-      default:
-          logger.error("Unsupported pixel format: \(pixelFormat)")
-          return nil
-      }
-  }
+        guard let baseAddressY = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) else { return nil }
+        let yPlaneBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
+        let yPlaneSize = yPlaneBytesPerRow * height
+        let yPlaneData = Data(bytes: baseAddressY, count: yPlaneSize)
 
-  private func processYuv422PixelData(_ pixelBuffer: CVPixelBuffer) -> Data? {
-      let width = CVPixelBufferGetWidth(pixelBuffer)
-      let height = CVPixelBufferGetHeight(pixelBuffer)
+        guard let baseAddressCbCr = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 1) else { return nil }
+        let cbCrPlaneBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 1)
+        let cbCrPlaneSize = cbCrPlaneBytesPerRow * height
+        let cbCrPlaneData = Data(bytes: baseAddressCbCr, count: cbCrPlaneSize)
 
-      // Y Plane
-      guard let baseAddressY = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) else { return nil }
-      let yPlaneBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
-      let yPlaneSize = yPlaneBytesPerRow * height
-      let yPlaneData = Data(bytes: baseAddressY, count: yPlaneSize)
+        var pixelData = Data()
+        pixelData.append(yPlaneData)
+        pixelData.append(cbCrPlaneData)
 
-      // CbCr Plane
-      guard let baseAddressCbCr = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 1) else { return nil }
-      let cbCrPlaneBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 1)
-      let cbCrPlaneSize = cbCrPlaneBytesPerRow * height // YUV 4:2:2 has the same height for Y and CbCr planes
-      let cbCrPlaneData = Data(bytes: baseAddressCbCr, count: cbCrPlaneSize)
+        let expectedSize = yPlaneSize + cbCrPlaneSize
+        if pixelData.count != expectedSize {
+            logger.warn("Warning: YUV 4:2:2 pixel data size mismatch!")
+        }
+        return pixelData
+    }
 
-      // Combine Y and CbCr planes
-      var pixelData = Data()
-      pixelData.append(yPlaneData)
-      pixelData.append(cbCrPlaneData)
+    private func processNv12PixelData(_ pixelBuffer: CVPixelBuffer) -> Data? {
+        let height = CVPixelBufferGetHeight(pixelBuffer)
 
-      // Print the size of the pixel data to debug
-      let expectedSize = yPlaneSize + cbCrPlaneSize
-      let actualSize = pixelData.count
+        guard let baseAddressY = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) else { return nil }
+        let yPlaneBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
+        let yPlaneSize = yPlaneBytesPerRow * height
+        let yPlaneData = Data(bytes: baseAddressY, count: yPlaneSize)
 
-      if actualSize != expectedSize {
-        logger.warn("Warning: YUV 4:2:2 pixel data size mismatch!")
-      }
+        guard let baseAddressUV = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 1) else { return nil }
+        let uvPlaneBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 1)
+        let uvPlaneHeight = height / 2
+        let uvPlaneSize = uvPlaneBytesPerRow * uvPlaneHeight
+        let uvPlaneData = Data(bytes: baseAddressUV, count: uvPlaneSize)
 
-      return pixelData
-  }
+        var pixelData = Data()
+        pixelData.append(yPlaneData)
+        pixelData.append(uvPlaneData)
 
-  private func processNv12PixelData(_ pixelBuffer: CVPixelBuffer) -> Data? {
-      let height = CVPixelBufferGetHeight(pixelBuffer)
+        let expectedSize = yPlaneSize + uvPlaneSize
+        if pixelData.count != expectedSize {
+            logger.warn("Warning: NV12 pixel data size mismatch!")
+        }
+        return pixelData
+    }
 
-      // Y Plane
-      guard let baseAddressY = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) else { return nil }
-      let yPlaneBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
-      let yPlaneSize = yPlaneBytesPerRow * height
-      let yPlaneData = Data(bytes: baseAddressY, count: yPlaneSize)
+    private func processBgraPixelData(_ pixelBuffer: CVPixelBuffer) -> Data? {
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
 
-      // UV Plane
-      guard let baseAddressUV = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 1) else { return nil }
-      let uvPlaneBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 1)
-      let uvPlaneHeight = height / 2
-      let uvPlaneSize = uvPlaneBytesPerRow * uvPlaneHeight
-      let uvPlaneData = Data(bytes: baseAddressUV, count: uvPlaneSize)
+        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return nil }
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let dataSize = bytesPerRow * height
+        let bgraData = Data(bytes: baseAddress, count: dataSize)
 
-      // Combine Y and UV planes
-      var pixelData = Data()
-      pixelData.append(yPlaneData)
-      pixelData.append(uvPlaneData)
+        if bgraData.count != dataSize {
+            logger.warn("Warning: BGRA pixel data size mismatch!")
+        }
+        return bgraData
+    }
 
-      // Print the size of the pixel data to debug
-      let expectedSize = yPlaneSize + uvPlaneSize
-      let actualSize = pixelData.count
+    func update(configuration: SCStreamConfiguration, filter: SCContentFilter) async {
+        do {
+            let startTime = Date()
+            logger.debug("Starting configuration update at \(startTime)")
+            try await stream?.updateConfiguration(configuration)
+            let afterConfigUpdateTime = Date()
+            let configUpdateDuration = afterConfigUpdateTime.timeIntervalSince(startTime)
+            logger.debug("Configuration update completed at \(afterConfigUpdateTime), duration: \(configUpdateDuration) seconds")
+            try await stream?.updateContentFilter(filter)
+        } catch {
+          logger.error("Error updating the strea configuration")
+            logger.error("Failed to update the stream session: \(String(describing: error))")
+        }
+    }
 
-      if actualSize != expectedSize {
-          logger.warn("Warning: NV12 pixel data size mismatch!")
-      }
+    func stopCapture() async {
+        isShuttingDown = true
 
-      return pixelData
-  }
+        let currentStream = self.stream
+        let currentOutput = self.streamOutput
+        let currentContinuation = self.continuation
 
-  private func processBgraPixelData(_ pixelBuffer: CVPixelBuffer) -> Data? {
-      let width = CVPixelBufferGetWidth(pixelBuffer)
-      let height = CVPixelBufferGetHeight(pixelBuffer)
-
-      // BGRA Plane
-      guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return nil }
-      let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-      let dataSize = bytesPerRow * height
-      let bgraData = Data(bytes: baseAddress, count: dataSize)
-
-      // Print the size of the pixel data to debug
-      let expectedSize = dataSize
-      let actualSize = bgraData.count
-
-      if actualSize != expectedSize {
-          logger.warn("Warning: BGRA pixel data size mismatch!")
-      }
-
-      return bgraData
-  }
-
-
-  func update(configuration: SCStreamConfiguration, filter: SCContentFilter) async {
-      do {
-        let startTime = Date()
-                logger.debug("Starting configuration update at \(startTime)")
-
-                // Update the stream configuration
-                try await stream?.updateConfiguration(configuration)
-                let afterConfigUpdateTime = Date()
-                let configUpdateDuration = afterConfigUpdateTime.timeIntervalSince(startTime)
-                logger.debug("Configuration update completed at \(afterConfigUpdateTime), duration: \(configUpdateDuration) seconds")
-
-//          try await stream?.updateConfiguration(configuration)
-          try await stream?.updateContentFilter(filter)
-      } catch {
-          logger.error("Failed to update the stream session: \(String(describing: error))")
-      }
-  }
-
-  func stopCapture() async {
-      do {
-          try await stream?.stopCapture()
-          logger.info("Capture Engine stream stopCapture successful")
-          continuation?.finish()  // Signal the stream has ended
-      } catch {
-          logger.error("Error stopping capture: \(error.localizedDescription)")
-          continuation?.finish(throwing: error)  // Signal an error occurred
-      }
-  }
+        do {
+            if let stream = currentStream {
+                try await stream.stopCapture()
+                logger.info("Stream stopped successfully")
+            }
+            self.stream = nil
+            self.streamOutput = nil
+            if let continuation = currentContinuation {
+                continuation.finish()
+                self.continuation = nil
+            }
+            logger.info("Capture Engine cleanup completed")
+        } catch {
+            logger.error("Error during stream cleanup: \(error.localizedDescription)")
+            currentContinuation?.finish(throwing: error)
+        }
+        isShuttingDown = false
+    }
 }
 
 private class CaptureEngineStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate {
-
+    private let logger: Logger
     var sampleBufferHandler: ((CMSampleBuffer) -> Void)?
     private var continuation: AsyncThrowingStream<CaptureOutput, Error>.Continuation?
+    private var isStopped = false
 
-    init(continuation: AsyncThrowingStream<CaptureOutput, Error>.Continuation?) {
+    init(continuation: AsyncThrowingStream<CaptureOutput, Error>.Continuation?, logger: Logger) {
         self.continuation = continuation
+        self.logger = logger
+        super.init()
     }
+  
+  deinit {
+    logger.warn("StreamOutput DEINIT")
+  }
 
     func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of outputType: SCStreamOutputType) {
-      switch outputType {
-      case .screen:
-        guard sampleBuffer.isValid else { return }
-        sampleBufferHandler?(sampleBuffer)
-      @unknown default:
-        logger.error("Encountered unknown stream output type \(outputType)")
-      }
-
+        guard !isStopped, sampleBuffer.isValid else { return }
+        switch outputType {
+        case .screen:
+            autoreleasepool {
+                sampleBufferHandler?(sampleBuffer)
+            }
+        @unknown default:
+            break
+        }
     }
 
-  func stream(_ stream: SCStream, didStopWithError error: Error) {
-          if let error = error as NSError?, error.code != 0 {
-              continuation?.finish(throwing: error)
-          } else {
-              continuation?.finish()
-          }
-      }
+    func stream(_ stream: SCStream, didStopWithError error: Error) {
+      
+      logger.error("Stream didStopWithError")
+      // Attempt to treat the error as an AnyObject.
+         let errorObject: AnyObject? = unsafeBitCast(error, to: AnyObject?.self)
+         if errorObject == nil {
+             logger.error("Stream stopped with a null error pointer; skipping processing.")
+             // Finish the continuation safely.
+             objc_sync_enter(self)
+             defer { objc_sync_exit(self) }
+             if let cont = continuation {
+                 cont.finish()
+                 continuation = nil
+             }
+             sampleBufferHandler = nil
+             return
+         }
+         
+         // Otherwise, log a generic message.
+         logger.error("Stream stopped with an error.")
+
+         objc_sync_enter(self)
+         defer { objc_sync_exit(self) }
+
+         guard !isStopped else { return }
+         isStopped = true
+
+         if let cont = continuation {
+             let nsError = error as NSError
+             if nsError.domain != NSCocoaErrorDomain || nsError.code != 0 {
+                 cont.finish(throwing: error)
+             } else {
+                 cont.finish()
+             }
+             continuation = nil
+         }
+         sampleBufferHandler = nil
+    
+    }
 }
 

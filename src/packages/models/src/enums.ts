@@ -10,6 +10,7 @@ export enum SessionTrigger {
   CLI = 'CLI',
   SHORTCUT = 'SHORTCUT',
   APP_EVENT = 'APP_EVENT',
+  RECORDING_CRASH = 'RECORDING_CRASH',
 }
 
 export enum CLIMessageType {

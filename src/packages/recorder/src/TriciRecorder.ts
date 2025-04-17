@@ -28,6 +28,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   getLogger: () => Logger | IConsoleLogger;
   ffmpegProcess: any;
   #isRecording: boolean = false;
+  #stopRecordingRequested: boolean = false;
 
   constructor(ffmpgBinPath: string, getLogger: () => Logger | IConsoleLogger, recorderBinPath: string) {
     super();
@@ -89,7 +90,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     waterMarkImagePath: string,
   ): Promise<void> {
     let recordingProcessStarted = false;
-
+    this.#stopRecordingRequested = false;
     try {
       if (!this.recordingProcess) {
         const appEnv = process.env.APP_ENV || 'dev';
@@ -120,6 +121,13 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
           if (response.message === 'screenRecorderStopped') {
             this.#isRecording = false;
             this.recordingProcess.kill('SIGTERM');
+          } else if (
+            response.message === 'screenRecorderStoppedByOS' ||
+            response.message === 'screenRecorderStoppedByError'
+          ) {
+            this.getLogger().error(`Screen recorder stopped by ${response.message}`);
+            this.#isRecording = false;
+            this.recordingProcess.kill('SIGTERM');
           }
           if (response.message === 'screenRecorderStarted') {
             this.getLogger().info('Screen recorder started');
@@ -128,13 +136,18 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
 
         // Add an exit handler to log when the process terminates
         this.recordingProcess.on('exit', (code: number | null, signal: string | null) => {
-          this.getLogger().warn(`TriciRecorder process exited with code: ${code}, signal: ${signal}`);
-          if (this.#isRecording) {
-            this.getLogger().warn(`Recording process exited unexpectedly with code: ${code}, signal: ${signal}`);
-            this.emit('recordingProcessExitedUnexpectedly', { code, signal });
-            this.stopLiveRecording().catch(err =>
-              this.getLogger().error(`Error stopping recording after unexpected exit: ${err}`),
-            );
+          if (!this.#stopRecordingRequested) {
+            this.getLogger().error(`TriciRecorder process exited unexpectedly with code: ${code}, signal: ${signal}`);
+            this.emit('recordingProcessCrashed', { code, signal });
+          } else {
+            this.getLogger().warn(`TriciRecorder process exited with code: ${code}, signal: ${signal}`);
+            if (this.#isRecording) {
+              this.getLogger().warn(`Recording process exited unexpectedly with code: ${code}, signal: ${signal}`);
+              this.emit('recordingProcessExitedUnexpectedly', { code, signal });
+              this.stopLiveRecording().catch(err =>
+                this.getLogger().error(`Error stopping recording after unexpected exit: ${err}`),
+              );
+            }
           }
         });
 
@@ -169,6 +182,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   async stopLiveRecording(): Promise<void> {
     const sessionEndTimestamp = Date.now();
     if (this.#isRecording) {
+      this.#stopRecordingRequested = true;
       return new Promise((resolve, reject) => {
         console.log('Stopping live recording');
         if (this.recordingProcess && this.recordingProcess.stdin.writable) {
