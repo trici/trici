@@ -14,6 +14,13 @@ interface IdleTimePoint {
   timestamp: number;
 }
 
+// Interface for app usage region
+interface AppRegion {
+  appName: string;
+  startTime: number;
+  endTime: number;
+}
+
 export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineClick }: SessionTimelineProps) {
   const timelineRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -22,6 +29,12 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
   const [pinnedEvent, setPinnedEvent] = useState<AppEvent | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [showEventMarkers, setShowEventMarkers] = useState(false);
+  const [appRegions, setAppRegions] = useState<AppRegion[]>([]);
+  const [showAppRegions, setShowAppRegions] = useState(true);
+  const [hoveredAppRegion, setHoveredAppRegion] = useState<AppRegion | null>(null);
+  const [eventFilters, setEventFilters] = useState<Record<string, boolean>>({});
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
   const renderRepository = RendererRepository.getInstance();
 
   // Fetch events for the selected session
@@ -29,7 +42,7 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
     queryKey: ['sessionEvents', selectedSession?.id],
     queryFn: () =>
       selectedSession
-        ? renderRepository.getEvents(selectedSession.startTime, selectedSession.endTime, null)
+        ? renderRepository.getEventsForSession(selectedSession.startTime, selectedSession.endTime)
         : Promise.resolve([]),
     enabled: !!selectedSession,
   });
@@ -41,6 +54,110 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
       selectedSession ? renderRepository.getIdleTimeProfile(selectedSession.startTime) : Promise.resolve([]),
     enabled: !!selectedSession,
   });
+
+  // Process app change events into regions
+  useEffect(() => {
+    if (sessionEventsQuery.data && selectedSession) {
+      console.log('sessionEventsQuery.data', sessionEventsQuery.data);
+      // Filter out frontmost app changed events
+      const appChangeEvents = sessionEventsQuery.data.filter(
+        event => event.type === TriciAppEvent.FRONTMOST_APP_CHANGED,
+      );
+
+      console.log('appChangeEvents', appChangeEvents);
+
+      // Create regions from the events
+      const regions: AppRegion[] = [];
+
+      // First, try to get the initial frontmost app from session metadata
+      let initialAppName: string | undefined;
+
+      // Check if sessionStartMetadata exists and contains frontmost app info
+      if (selectedSession.sessionStartMetadata && typeof selectedSession.sessionStartMetadata === 'object') {
+        const metadata = selectedSession.sessionStartMetadata;
+
+        // If no frontmostApp, check the appData field
+        if ('appData' in metadata && metadata.appData && typeof metadata.appData === 'object') {
+          const appData = metadata.appData as Record<string, unknown>;
+          if ('appName' in appData && typeof appData.appName === 'string') {
+            initialAppName = appData.appName;
+          }
+        }
+      }
+
+      let lastAppChange = initialAppName
+        ? {
+            appName: initialAppName,
+            timestamp: selectedSession.startTime,
+          }
+        : null;
+
+      if (appChangeEvents.length > 0) {
+        // Process each app change event
+        for (let i = 0; i < appChangeEvents.length; i++) {
+          const currentEvent = appChangeEvents[i];
+          const eventData = currentEvent.data[0];
+          console.log('currentEvent', currentEvent);
+          // Make sure we have valid data
+          if (!eventData || typeof eventData !== 'object') continue;
+
+          // Try to extract frontmost app data with proper type checking
+          let appName: string | undefined;
+
+          if (typeof eventData === 'object') {
+            console.log('eventData', eventData);
+            // Check if data has frontmostApp property
+            if ('frontmostApp' in eventData && eventData.frontmostApp && typeof eventData.frontmostApp === 'object') {
+              const frontmostApp = eventData.frontmostApp as Record<string, unknown>;
+              if ('appName' in frontmostApp && typeof frontmostApp.appName === 'string') {
+                appName = frontmostApp.appName;
+              }
+            }
+          }
+
+          console.log('appName', appName);
+
+          if (!appName) continue;
+
+          // Create region from last change to current change
+          if (lastAppChange) {
+            regions.push({
+              appName: lastAppChange.appName,
+              startTime: lastAppChange.timestamp,
+              endTime: currentEvent.timestamp,
+            });
+          }
+
+          // Update last app change
+          lastAppChange = {
+            appName,
+            timestamp: currentEvent.timestamp,
+          };
+        }
+
+        // Add the final region from the last app change to the end of the session
+        if (lastAppChange) {
+          regions.push({
+            appName: lastAppChange.appName,
+            startTime: lastAppChange.timestamp,
+            endTime: selectedSession.endTime,
+          });
+        }
+      }
+      // If there are no app change events but we have initial app info,
+      // create a single region for the entire session
+      else if (initialAppName) {
+        regions.push({
+          appName: initialAppName,
+          startTime: selectedSession.startTime,
+          endTime: selectedSession.endTime,
+        });
+      }
+
+      console.log('appRegions', regions);
+      setAppRegions(regions);
+    }
+  }, [sessionEventsQuery.data, selectedSession]);
 
   // Update timeline width on resize
   useEffect(() => {
@@ -128,6 +245,45 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
   // Close pinned tooltip
   const handleCloseTooltip = () => {
     setPinnedEvent(null);
+  };
+
+  // Generate a consistent color for an app based on its identifier
+  const getAppColor = (appName: string) => {
+    // List of pleasant colors for the app regions
+    const colors = [
+      'bg-blue-400',
+      'bg-green-400',
+      'bg-purple-400',
+      'bg-yellow-400',
+      'bg-red-400',
+      'bg-indigo-400',
+      'bg-pink-400',
+      'bg-teal-400',
+      'bg-orange-400',
+      'bg-cyan-400',
+      'bg-lime-400',
+      'bg-emerald-400',
+    ];
+
+    // Generate a simple hash from the app identifier
+    let hash = 0;
+    for (let i = 0; i < appName.length; i++) {
+      hash = appName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // Get a color from the array based on the hash
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
+  // Handle mouse enter on app region
+  const handleAppRegionMouseEnter = (region: AppRegion) => {
+    setHoveredAppRegion(region);
+  };
+
+  // Handle mouse leave on app region
+  const handleAppRegionMouseLeave = () => {
+    setHoveredAppRegion(null);
   };
 
   // Group events by type for color coding
@@ -254,6 +410,70 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
     }
   };
 
+  // Initialize event filters when event data is loaded
+  useEffect(() => {
+    if (sessionEventsQuery.data) {
+      // Get unique event types
+      const eventTypes = Array.from(new Set(sessionEventsQuery.data.map(event => event.type)));
+
+      // Set initial filters - all enabled by default
+      const initialFilters: Record<string, boolean> = {};
+      eventTypes.forEach(type => {
+        // By default only show FRONTMOST_APP_CHANGED
+        initialFilters[type] = type === TriciAppEvent.FRONTMOST_APP_CHANGED;
+      });
+
+      setEventFilters(initialFilters);
+    }
+  }, [sessionEventsQuery.data]);
+
+  // Add click outside handler to close filter dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(event.target as Node) &&
+        showFilterDropdown
+      ) {
+        setShowFilterDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilterDropdown]);
+
+  // Toggle specific event filter
+  const toggleEventFilter = (eventType: string) => {
+    setEventFilters(prev => ({
+      ...prev,
+      [eventType]: !prev[eventType],
+    }));
+  };
+
+  // Toggle all event filters on or off
+  const toggleAllEventFilters = (value: boolean) => {
+    const updatedFilters: Record<string, boolean> = {};
+    Object.keys(eventFilters).forEach(key => {
+      updatedFilters[key] = value;
+    });
+    setEventFilters(updatedFilters);
+  };
+
+  // Get filtered events
+  const getFilteredEvents = () => {
+    if (!sessionEventsQuery.data) return [];
+
+    return sessionEventsQuery.data.filter(event => eventFilters[event.type]);
+  };
+
+  // Get count of active filters
+  const getActiveFilterCount = () => {
+    return Object.values(eventFilters).filter(value => value).length;
+  };
+
   if (sessionEventsQuery.isLoading || idleTimeProfileQuery.isLoading) {
     return <div className="flex h-full w-full items-center justify-center">Loading...</div>;
   }
@@ -268,19 +488,107 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
 
   // Determine which event to show in tooltip
   const displayEvent = pinnedEvent || hoveredEvent;
+  const filteredEvents = getFilteredEvents();
 
   return (
     <div className="flex h-full w-full flex-col">
       <div className="mb-2 flex items-center justify-between rounded-md bg-gray-100 p-2 shadow-sm">
         <h3 className="text-sm font-medium text-gray-700">Session Timeline</h3>
-        <button
-          onClick={() => setShowEventMarkers(!showEventMarkers)}
-          className="ml-2 flex items-center rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
-          title={showEventMarkers ? 'Hide event markers' : 'Show event markers'}
-        >
-          <span className="mr-1">{showEventMarkers ? 'Hide' : 'Show'} events</span>
-          <div className={`h-2 w-2 rounded-full ${showEventMarkers ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowAppRegions(!showAppRegions)}
+            className="flex items-center rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+            title={showAppRegions ? 'Hide app regions' : 'Show app regions'}
+          >
+            <span className="mr-1">{showAppRegions ? 'Hide' : 'Show'} apps</span>
+            <div className={`h-2 w-2 rounded-full ${showAppRegions ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+          </button>
+
+          <div className="relative">
+            <button
+              onClick={() => setShowEventMarkers(!showEventMarkers)}
+              className="flex items-center rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+              title={showEventMarkers ? 'Hide event markers' : 'Show event markers'}
+            >
+              <span className="mr-1">
+                {showEventMarkers ? 'Hide' : 'Show'} events
+                {showEventMarkers && getActiveFilterCount() > 0 && (
+                  <span className="ml-1 rounded-full bg-blue-100 px-1 text-xs text-blue-800">
+                    {getActiveFilterCount()}
+                  </span>
+                )}
+              </span>
+              <div className={`h-2 w-2 rounded-full ${showEventMarkers ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+            </button>
+
+            {/* Filter button only visible when events are shown */}
+            {showEventMarkers && (
+              <button
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className="ml-1 flex items-center rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                title="Filter events"
+              >
+                <span className="mr-1">Filter</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            )}
+
+            {/* Event filter dropdown */}
+            {showFilterDropdown && showEventMarkers && (
+              <div
+                ref={filterDropdownRef}
+                className="absolute bottom-full right-0 z-50 mb-1 w-56 divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-lg"
+              >
+                <div className="p-2">
+                  <div className="mb-2 flex items-center justify-between border-b border-gray-100 pb-1">
+                    <h4 className="text-xs font-medium text-gray-700">Filter Events</h4>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => toggleAllEventFilters(true)}
+                        className="rounded text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        All
+                      </button>
+                      <span className="text-gray-300">|</span>
+                      <button
+                        onClick={() => toggleAllEventFilters(false)}
+                        className="rounded text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        None
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="max-h-60 overflow-y-auto">
+                    {Object.keys(eventFilters).map(eventType => (
+                      <div key={eventType} className="flex items-center py-1">
+                        <input
+                          type="checkbox"
+                          id={`filter-${eventType}`}
+                          checked={eventFilters[eventType]}
+                          onChange={() => toggleEventFilter(eventType)}
+                          className="h-3 w-3 rounded border-gray-300 text-blue-600"
+                        />
+                        <label htmlFor={`filter-${eventType}`} className="ml-2 flex items-center text-xs text-gray-700">
+                          <div className={`mr-1 h-2 w-2 rounded-full ${getEventColor(eventType)}`} />
+                          {formatEventType(eventType)}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Timeline */}
@@ -289,6 +597,38 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
         className="relative h-10 cursor-pointer overflow-hidden rounded-lg bg-gray-200 shadow-inner"
         onClick={handleTimelineClick}
       >
+        {/* App regions visualization */}
+        {showAppRegions && appRegions.length > 0 && (
+          <div className="absolute left-0 top-0 z-10 h-full w-full">
+            {appRegions.map((region, index) => {
+              const startPosition = getPositionFromTimestamp(region.startTime);
+              const endPosition = getPositionFromTimestamp(region.endTime);
+              const width = endPosition - startPosition;
+
+              return (
+                <div
+                  key={`app-region-${index}`}
+                  className={`absolute top-0 h-full ${getAppColor(region.appName)} opacity-60 transition-opacity hover:opacity-80`}
+                  style={{
+                    left: `${startPosition}%`,
+                    width: `${Math.max(0.5, width)}%`,
+                    borderLeft: index > 0 ? '1px solid rgba(255,255,255,0.7)' : 'none',
+                  }}
+                  title={`${region.appName} (${formatTime(region.startTime)} - ${formatTime(region.endTime)})`}
+                  onMouseEnter={() => handleAppRegionMouseEnter(region)}
+                  onMouseLeave={handleAppRegionMouseLeave}
+                >
+                  {width > 5 && (
+                    <div className="absolute left-1 top-1 max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-gray-800">
+                      {region.appName}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Idle time profile visualization */}
         <div className="absolute bottom-0 left-0 h-5 w-full">
           {idleTimeProfileQuery.data && idleTimeProfileQuery.data.length > 0 && (
@@ -341,12 +681,12 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
           />
         )}
 
-        {/* Event markers */}
+        {/* Event markers - now using filtered events */}
         {showEventMarkers &&
-          sessionEventsQuery.data?.map((event, index) => (
+          filteredEvents.map((event, index) => (
             <div
               key={`${event.id || index}`}
-              className={`absolute top-0 h-full w-1 ${getEventColor(event.type)} z-10 opacity-70 transition-all hover:w-1.5 hover:opacity-100 ${
+              className={`absolute top-0 h-full w-1 ${getEventColor(event.type)} z-20 opacity-70 transition-all hover:w-1.5 hover:opacity-100 ${
                 pinnedEvent && pinnedEvent.id === event.id ? 'w-2 opacity-100 ring-2 ring-white' : ''
               }`}
               style={{ left: `${getPositionFromTimestamp(event.timestamp)}%` }}
@@ -364,6 +704,21 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
           {formatTime(selectedSession.endTime)}
         </div>
       </div>
+
+      {/* Hovered app region tooltip */}
+      {hoveredAppRegion && !displayEvent && (
+        <div className="mt-1 text-xs text-gray-600">
+          <span className="font-medium">{hoveredAppRegion.appName}</span>
+          <span className="mx-1">•</span>
+          <span>
+            {formatTime(hoveredAppRegion.startTime)} - {formatTime(hoveredAppRegion.endTime)}
+          </span>
+          <span className="mx-1">•</span>
+          <span>
+            Duration: {Math.round((hoveredAppRegion.endTime - hoveredAppRegion.startTime) / 1000 / 60)} minutes
+          </span>
+        </div>
+      )}
 
       {/* Event tooltip */}
       {showEventMarkers && displayEvent && (
@@ -407,10 +762,29 @@ export function SessionTimeline({ selectedSession, currentTime = 0, onTimelineCl
 
       {/* Activity legend with event legend if events are shown */}
       <div className="mt-2 flex flex-wrap gap-3">
-        {/* Event legend - only show if event markers are visible */}
-        {showEventMarkers && sessionEventsQuery.data && sessionEventsQuery.data.length > 0 && (
+        {/* App regions legend - only show if app regions are visible */}
+        {showAppRegions && appRegions.length > 0 && (
           <div className="flex flex-wrap gap-2 rounded-md border border-gray-200 bg-white px-3 py-1 shadow-sm">
-            {Array.from(new Set(sessionEventsQuery.data?.map(event => event.type) || [])).map(eventType => (
+            <span className="mr-1 text-xs font-medium text-gray-700">Apps:</span>
+            {appRegions
+              .filter(
+                (region, index, self) =>
+                  // Unique apps only
+                  index === self.findIndex(r => r.appName === region.appName),
+              )
+              .map(region => (
+                <div key={region.appName} className="flex items-center">
+                  <div className={`h-3 w-3 rounded-full ${getAppColor(region.appName)} mr-1`} />
+                  <span className="text-xs">{region.appName}</span>
+                </div>
+              ))}
+          </div>
+        )}
+
+        {/* Event legend - now showing only filtered event types */}
+        {showEventMarkers && filteredEvents.length > 0 && (
+          <div className="flex flex-wrap gap-2 rounded-md border border-gray-200 bg-white px-3 py-1 shadow-sm">
+            {Array.from(new Set(filteredEvents.map(event => event.type))).map(eventType => (
               <div key={eventType} className="flex items-center">
                 <div className={`h-3 w-3 rounded-full ${getEventColor(eventType)} mr-1`} />
                 <span className="text-xs">{formatEventType(eventType)}</span>

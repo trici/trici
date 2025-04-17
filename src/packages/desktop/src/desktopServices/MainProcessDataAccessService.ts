@@ -21,7 +21,6 @@ import { generateUninitializedTriciId, isWebBrowser } from '@trici/utils';
 import { app } from 'electron/main';
 import fs from 'fs/promises';
 import { IUsedApplicationsService } from './UsedApplicationsService';
-import { DataWriter } from '@trici/datawriter';
 /**
  * IMainProcessDataAccessService
  * @description Interface for MainProcessDataAccessService
@@ -34,6 +33,7 @@ export interface IMainProcessDataAccessService {
   >;
   getUsedApplications(): Promise<UsedApplication[]>;
   getTriciAppEvents(fromTime: number, toTime: number, type: TriciAppEvent | null, count: number): Promise<any>;
+  getTriciAppEventsForSession(sessionStartTime: number, sessionEndTime: number): Promise<any>;
   getFocusSessionsForDuration(fromTime: number, toTime: number): Promise<Array<FocusSession>>;
   getFocusSessionsPaginated(pageIndex: number, pageSize: number): Promise<Array<FocusSession>>;
   getIdleTimeProfile(sessionStartTime: number): Promise<Buffer>;
@@ -221,6 +221,16 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
       return events;
     } catch (error) {
       this._getLogger().error('Error in getTriciAppEvents', error);
+      throw error;
+    }
+  }
+
+  public async getTriciAppEventsForSession(sessionStartTime: number, sessionEndTime: number): Promise<any> {
+    try {
+      const events = await this._appEventRepository.getAllAppEvents(sessionStartTime, sessionEndTime);
+      return events;
+    } catch (error) {
+      this._getLogger().error('Error in getTriciAppEventsForSession', error);
       throw error;
     }
   }

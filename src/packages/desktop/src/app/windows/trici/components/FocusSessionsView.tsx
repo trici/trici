@@ -9,6 +9,31 @@ import { SessionTimeline } from './SessionTimeline';
 const renderRepository = RendererRepository.getInstance();
 const PAGE_SIZE = 10;
 
+// Debug modal component
+function SessionDebugModal({ session, onClose }: { session: IFocusSession; onClose: () => void }) {
+  // Format JSON with indentation
+  const formattedSession = JSON.stringify(session, null, 2);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="max-h-[80vh] w-[80vw] overflow-auto rounded-lg bg-white p-4 shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+          <h2 className="text-lg font-semibold">Focus Session Debug Info</h2>
+          <button
+            onClick={onClose}
+            className="rounded-full bg-gray-200 p-1.5 text-gray-700 hover:bg-gray-300 hover:text-black"
+          >
+            ✕
+          </button>
+        </div>
+        <pre className="mt-4 max-h-[60vh] overflow-auto rounded border border-gray-200 bg-white p-4 text-xs text-black">
+          {formattedSession}
+        </pre>
+      </div>
+    </div>
+  );
+}
+
 export function FocusSessionsView() {
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedSession, setSelectedSession] = useState<IFocusSession | null>(null);
@@ -17,6 +42,10 @@ export function FocusSessionsView() {
   const playerRef = useRef<TriciPlayerHandle>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [showDebugModal, setShowDebugModal] = useState(false);
+
+  // Check if this is a dev build
+  const isDevBuild = window.bridgeApi?.triciConfig?.builtFor === 'dev';
 
   const focusSessionsQuery = useQuery({
     queryKey: ['focusSessions', pageIndex, PAGE_SIZE],
@@ -179,13 +208,26 @@ export function FocusSessionsView() {
               {/* Container for video and timeline with consistent width */}
               <div className="flex h-full w-full flex-col items-center">
                 <div className="flex w-full max-w-[85%] flex-col">
+                  {/* Debug button - only in dev builds */}
+                  {isDevBuild && (
+                    <div className="mb-2 flex justify-end">
+                      <button
+                        onClick={() => setShowDebugModal(true)}
+                        className="rounded border border-gray-300 bg-gray-100 px-2 py-1 text-xs text-gray-700 hover:bg-gray-200"
+                        title="View session debug information"
+                      >
+                        Debug Session
+                      </button>
+                    </div>
+                  )}
+
                   {/* Video player */}
-                  <div className="">
+                  <div className="mb-4">
                     <TriciPlayer ref={playerRef} selectedSession={selectedSession} onTimeUpdate={handleTimeUpdate} />
                   </div>
 
                   {/* Timeline */}
-                  <div className="">
+                  <div className="mt-2">
                     <SessionTimeline
                       selectedSession={selectedSession}
                       currentTime={currentPlaybackTime}
@@ -202,6 +244,11 @@ export function FocusSessionsView() {
           )}
         </div>
       </div>
+
+      {/* Debug modal */}
+      {showDebugModal && selectedSession && (
+        <SessionDebugModal session={selectedSession} onClose={() => setShowDebugModal(false)} />
+      )}
     </Surface>
   );
 }
