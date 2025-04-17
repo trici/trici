@@ -43,6 +43,34 @@ export class AppEventRepository implements IAppEventRepository {
     });
   }
 
+  public async getAppEventsForSession(sessionId: string): Promise<Array<IAppEvent>> {
+    if (!this.db) {
+      this.getLogger().error('Database not initialized');
+      throw new Error('Database not initialized');
+    }
+
+    const selectQuery = `SELECT * FROM app_event WHERE session_id = ?`;
+    const params: any[] = [sessionId];
+
+    return new Promise((resolve, reject) => {
+      this.db!.all(selectQuery, params, (err, rows: any[]) => {
+        if (err) {
+          this.getLogger().error('Error retrieving app events from the database', err);
+          reject(err);
+        } else {
+          resolve(
+            rows.map(row => ({
+              id: row.id,
+              type: row.type,
+              timestamp: row.timestamp,
+              data: JSON.parse(row.data) as Array<any>,
+            })),
+          );
+        }
+      });
+    });
+  }
+
   public async save(tapEvent: IAppEvent): Promise<void> {
     if (!this.db) {
       this.getLogger().error('Database not initialized');
