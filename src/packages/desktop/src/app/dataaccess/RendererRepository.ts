@@ -127,6 +127,21 @@ export class RendererRepository implements IRendererRepository {
     });
   }
 
+  public getFocusSessionsForDuration(from: number, to: number): Promise<Array<IFocusSession>> {
+    return new Promise((fulfill, reject) => {
+      const args = { from: from, to: to };
+      window.bridgeApi.query({ handler: 'getFocusSessionsForDuration', args });
+      window.bridgeApi.registerQueryResultHandler((result: { data: any[] }) => {
+        console.log('getFocusSessionsForDuration-Success:%O', result.data);
+        const focusSessions = result.data.map((focusSession: any) => new FocusSession(focusSession));
+        fulfill(focusSessions);
+      }, 'getFocusSessionsForDuration-Success');
+      window.bridgeApi.registerQueryResultHandler((result: { data: any }) => {
+        reject(result.data);
+      }, 'getFocusSessionsForDuration-Error');
+    });
+  }
+
   public getEventsForSession(sessionStartTime: number, sessionEndTime: number): Promise<AppEvent[]> {
     return new Promise((fulfill, reject) => {
       const args = { sessionStartTime: sessionStartTime, sessionEndTime: sessionEndTime };
