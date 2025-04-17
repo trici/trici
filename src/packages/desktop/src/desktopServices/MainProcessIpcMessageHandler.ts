@@ -84,6 +84,15 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
             result = { success: false, handler: 'getEvents-Error', data: error };
           }
           break;
+        case 'getEventsForSession':
+          try {
+            const { sessionStartTime, sessionEndTime } = params.args;
+            const events = await this.dataAccessService.getTriciAppEventsForSession(sessionStartTime, sessionEndTime);
+            result = { success: true, handler: 'getEventsForSession-Success', data: events };
+          } catch (error) {
+            result = { success: false, handler: 'getEventsForSession-Error', data: error };
+          }
+          break;
         case 'getFocusSessionsForDuration':
           try {
             const { from, to } = params.args;
