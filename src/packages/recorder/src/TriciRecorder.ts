@@ -168,7 +168,8 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     try {
       this.getLogger().info(`TriciRecorder startLiveRecording: ${recordingFileName}`);
 
-      this.recordingProcess.stdin.write(`start ${recordingFileNameWithPath}.mp4 120\n`);
+      const segmentDuration = 30;
+      this.recordingProcess.stdin.write(`start ${recordingFileNameWithPath}.mp4 ${segmentDuration}\n`);
 
       this.#isRecording = true;
       // resolve();

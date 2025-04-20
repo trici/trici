@@ -135,24 +135,31 @@ inputSource.setEventHandler {
         switch command {
         case "start":
           if components.count > 1 {
-            let args = String(components[1]).split(separator: " ")
-            if args.count > 0 {
-              let outputPath = String(args[0])
-              logger.info("outputPath:\(outputPath)")
+            let argsString = String(components[1])
 
-              // Parse segment duration if provided
-              var segmentDuration: TimeInterval? = nil
-              if args.count > 1, let duration = TimeInterval(args[1]) {
-                logger.info("segmentDuration:\(duration)")
-                segmentDuration = duration
-              }
+            // Check if the last word is a number (segment duration)
+            let words = argsString.split(separator: " ", omittingEmptySubsequences: true)
+            var segmentDuration: TimeInterval? = nil
+            var outputPath = argsString
 
-              Task {
-                await screenRecorder.start(outputPath: outputPath, segmentDuration: segmentDuration)
+            if let lastWord = words.last,
+               let duration = TimeInterval(String(lastWord)) {
+              // If last word is a number, it's the duration
+              segmentDuration = duration
+              // Remove the duration from the path by trimming the last word and any trailing spaces
+              outputPath = argsString.trimmingCharacters(in: .whitespaces)
+              if let lastSpaceIndex = outputPath.lastIndex(of: " ") {
+                outputPath = String(outputPath[..<lastSpaceIndex])
               }
-            } else {
-              logger.error("No outputPath passed")
-              LoggingService.logToStandardError(message: ["error": "No outputPath passed"], isError: true)
+            }
+
+            logger.info("outputPath:\(outputPath)")
+            if let duration = segmentDuration {
+              logger.info("segmentDuration:\(duration)")
+            }
+
+            Task {
+              await screenRecorder.start(outputPath: outputPath, segmentDuration: segmentDuration)
             }
           }
           else {
