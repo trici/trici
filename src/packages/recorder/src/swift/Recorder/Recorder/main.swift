@@ -135,10 +135,24 @@ inputSource.setEventHandler {
         switch command {
         case "start":
           if components.count > 1 {
-            let outputPath = String(components[1])
-            logger.info("outputPath:\(outputPath)")
-            Task {
-              await screenRecorder.start(outputPath: outputPath)
+            let args = String(components[1]).split(separator: " ")
+            if args.count > 0 {
+              let outputPath = String(args[0])
+              logger.info("outputPath:\(outputPath)")
+
+              // Parse segment duration if provided
+              var segmentDuration: TimeInterval? = nil
+              if args.count > 1, let duration = TimeInterval(args[1]) {
+                logger.info("segmentDuration:\(duration)")
+                segmentDuration = duration
+              }
+
+              Task {
+                await screenRecorder.start(outputPath: outputPath, segmentDuration: segmentDuration)
+              }
+            } else {
+              logger.error("No outputPath passed")
+              LoggingService.logToStandardError(message: ["error": "No outputPath passed"], isError: true)
             }
           }
           else {

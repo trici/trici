@@ -27,7 +27,8 @@ class ScreenRecorder: NSObject {
   init(logger:Logger) {
     self.logger = logger
     self.captureEngine = CaptureEngine(logger:logger)
-        super.init()
+    self.segmentDuration = defaultSegmentDuration
+    super.init()
           NotificationCenter.default.addObserver(
               self,
               selector: #selector(handleActiveScreenChange(notification:)),
@@ -38,19 +39,80 @@ class ScreenRecorder: NSObject {
       //          setupStreamConfiguration()
       }
 
-    var isRunning = false
+
+
+
+  var isRunning = false
     var stopCaptureCalled = false
 
   private var scaleFactor: Int { Int(NSScreen.main?.backingScaleFactor ?? 2) }
 
 
+  private let defaultSegmentDuration: TimeInterval = 15 //seconds
+  private var segmentDuration: TimeInterval
+  private var segmentIndex: Int = 1
+  private var segmentStartTime: CMTime?
+  private var baseUrl: URL? //stripped of mp4
+
   // Properties for managing the asset writer
-  private var assetWriter: AVAssetWriter?
-  private var assetWriterInput: AVAssetWriterInput?
-  private var pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor?
-  private var outputURL: URL?
+  private var currentWriter: AVAssetWriter?
+  private var currentInput: AVAssetWriterInput?
+  private var currentAdaptor: AVAssetWriterInputPixelBufferAdaptor?
+  private var firstFrameTime: CMTime?
   private var videoWriteQueue: DispatchQueue?
   private var startTime: Date?
+
+  private var lastBuffer: CVPixelBuffer? //store last received frame
+
+  private func createSegmentWriter(index: Int, config: SCStreamConfiguration) throws {
+    guard let baseUrl = baseUrl else { return }
+    let dir = baseUrl.deletingLastPathComponent()
+    let name = baseUrl.lastPathComponent
+    let segmentName = String(format:"%@_%04d.mp4", name, index)
+    let outURL = dir.appendingPathComponent(segmentName)
+
+    try? FileManager.default.removeItem(at: outURL)
+
+    let writer = try AVAssetWriter(outputURL: outURL, fileType: .mp4)
+    writer.shouldOptimizeForNetworkUse = true
+    writer.movieFragmentInterval = CMTime(seconds: 1, preferredTimescale: 1)
+
+    let videoSettings: [String:Any] = [
+      AVVideoCodecKey: AVVideoCodecType.h264,
+      AVVideoWidthKey: config.width,
+      AVVideoHeightKey: config.height,
+      AVVideoCompressionPropertiesKey: [
+          AVVideoAverageBitRateKey: 2000000, // 2 Mbps
+          AVVideoMaxKeyFrameIntervalKey: 50,
+          AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
+          AVVideoAllowFrameReorderingKey: false, // Disable frame reordering for real-time
+          AVVideoExpectedSourceFrameRateKey: 7, // Tell encoder our expected frame rate
+          kVTCompressionPropertyKey_RealTime as String: true
+      ]
+    ]
+
+    let input = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
+    input.expectsMediaDataInRealTime = true
+
+    let adaptorAttrs: [String: Any] = [
+      kCVPixelBufferPixelFormatTypeKey as String: config.pixelFormat,
+      kCVPixelBufferWidthKey as String: config.width,
+      kCVPixelBufferHeightKey as String: config.height,
+      kCVPixelBufferIOSurfacePropertiesKey as String: [:]
+    ]
+
+    let adaptor = AVAssetWriterInputPixelBufferAdaptor(
+      assetWriterInput: input,
+      sourcePixelBufferAttributes: adaptorAttrs
+    )
+
+    writer.add(input)
+
+    self.currentWriter = writer
+    self.currentInput = input
+    self.currentAdaptor = adaptor
+
+  }
 
 
     private var streamConfiguration: SCStreamConfiguration {
@@ -340,95 +402,113 @@ class ScreenRecorder: NSObject {
       }
   }
 
-  func start(outputPath: String) async {
+  func start(outputPath: String, segmentDuration: TimeInterval? = nil) async {
       // Exit if already running
       guard !isRunning else { return }
 
-      do {
-          isRunning = true
-        stopCaptureCalled = false
-          let config = streamConfiguration
-          let filter = contentFilter
-
-          // Setup Asset Writer
-          outputURL = URL(fileURLWithPath: outputPath)
-          // Remove existing file if it exists
-          try? FileManager.default.removeItem(at: outputURL!)
-
-          guard let writer = try? AVAssetWriter(outputURL: outputURL!, fileType: .mp4) else {
-              logger.error("Failed to create asset writer.")
-              isRunning = false
-              return
+      // Validate and set segment duration if provided
+      if let duration = segmentDuration {
+          if duration >= 15 && duration <= 180 {
+              self.segmentDuration = duration
+          } else {
+              logger.warn("Invalid segment duration (\(duration)s). Using default value (\(defaultSegmentDuration)s). Valid range is 15-180 seconds.")
+              self.segmentDuration = defaultSegmentDuration
           }
-          assetWriter = writer
+      } else {
+          self.segmentDuration = defaultSegmentDuration
+      }
 
-          // Configure video settings for fragmented MP4
-          let videoSettings: [String: Any] = [
-              AVVideoCodecKey: AVVideoCodecType.h264,
-              AVVideoWidthKey: config.width,
-              AVVideoHeightKey: config.height,
-              AVVideoCompressionPropertiesKey: [
-                  AVVideoAverageBitRateKey: 2000000, // 2 Mbps
-                  AVVideoMaxKeyFrameIntervalKey: 50,
-                  AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
-                  AVVideoAllowFrameReorderingKey: false, // Disable frame reordering for real-time
-                  AVVideoExpectedSourceFrameRateKey: 7, // Tell encoder our expected frame rate
-                  kVTCompressionPropertyKey_RealTime as String: true
-              ]
-          ]
+      isRunning = true
+      stopCaptureCalled = false
 
-          // Enable fragmented MP4 writing
-          writer.movieFragmentInterval = CMTime(seconds: 1, preferredTimescale: 1) // Create fragments every second
-          writer.shouldOptimizeForNetworkUse = true // This enables fragmented MP4
+      let config = streamConfiguration
+      let filter = contentFilter
 
-          let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
-          writerInput.expectsMediaDataInRealTime = true
-          assetWriterInput = writerInput
+      // Prepare baseURL (no segment suffix)
+      let fileURL = URL(fileURLWithPath: outputPath)
+      baseUrl = fileURL.deletingPathExtension()
+      segmentIndex = 1
+      segmentStartTime = nil
+      firstFrameTime = nil
+      lastBuffer = nil
+      startTime = Date()
+      videoWriteQueue = DispatchQueue(label: "com.gettrici.Recorder.VideoWriteQueue", qos: .userInteractive)
 
-          // Create pixel buffer adaptor
-          let sourcePixelBufferAttributes: [String: Any] = [
-              kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
-              kCVPixelBufferWidthKey as String: config.width,
-              kCVPixelBufferHeightKey as String: config.height,
-              kCVPixelBufferIOSurfacePropertiesKey as String: [:]
-          ]
+      do {
 
-          let adaptor = AVAssetWriterInputPixelBufferAdaptor(
-              assetWriterInput: writerInput,
-              sourcePixelBufferAttributes: sourcePixelBufferAttributes
-          )
-          pixelBufferAdaptor = adaptor
-
-          writer.add(writerInput)
-          writer.startWriting()
-
-          videoWriteQueue = DispatchQueue(label: "com.gettrici.Recorder.VideoWriteQueue", qos: .userInteractive)
-          var frameCount = 0
-          var firstFrameTime: CMTime?
+        // Create the first segment writer
+        try createSegmentWriter(index: segmentIndex, config: config)
+        guard let writer = currentWriter else { throw NSError(domain: "TriciRecorder", code: -1, userInfo: nil)}
 
 
-          logger.info("Starting fragmented MP4 video capture to \(outputPath)")
-          startTime = Date()
+        writer.startWriting()
+        writer.startSession(atSourceTime: .zero)
+
+        var frameCount = 0
+        var firstFrameTime: CMTime?
+
+
+          logger.info("Starting segmented MP4 video capture to \(outputPath)")
 
           Task {
               do {
                   for try await output in captureEngine.startCapture(configuration: config, filter: filter, outputMode: true) {
+                      guard let input = currentInput,
+                            let adaptor = currentAdaptor,
+                            input.isReadyForMoreMediaData else { continue }
+
                       if case .pixelBuffer(let pixelBuffer) = output {
-                          if writerInput.isReadyForMoreMediaData {
+
+                          lastBuffer = pixelBuffer
                               // Get the actual timestamp for this frame
                               let timestamp = CMClockGetTime(CMClockGetHostTimeClock())
 
                               if firstFrameTime == nil {
                                   firstFrameTime = timestamp
-                                  writer.startSession(atSourceTime: .zero)
+                                  segmentStartTime = .zero
                               }
 
                               // Calculate the presentation time relative to the first frame
-                              let presentationTime = CMTimeSubtract(timestamp, firstFrameTime ?? timestamp)
+                              let presentationTime = CMTimeSubtract(timestamp, firstFrameTime!)
 
-                              videoWriteQueue?.async {
-                                  adaptor.append(pixelBuffer, withPresentationTime: presentationTime)
+                        videoWriteQueue?.async {
+
+                          // Check if we need to roll to next segment
+                          if let segStart = self.segmentStartTime,
+                             CMTimeGetSeconds(CMTimeSubtract(presentationTime, segStart)) >= self.segmentDuration {
+                             // finish current
+                            input.markAsFinished()
+                            writer.finishWriting {
+                              self.logger.info("Finished segment\(self.segmentIndex)")
+                            }
+                            //increment
+                            self.segmentIndex += 1
+                            self.segmentStartTime = presentationTime
+                            do {
+                              //new writer
+                              try self.createSegmentWriter(index: self.segmentIndex, config: config)
+                              if let newWriter = self.currentWriter,
+                                 let newInput = self.currentInput,
+                                 let newAdaptor = self.currentAdaptor
+                              {
+                                newWriter.startWriting()
+                                newWriter.startSession(atSourceTime: .zero)
+                                if let warm = self.lastBuffer {
+                                  newAdaptor.append(warm, withPresentationTime: .zero)
+                                }
                               }
+                            } catch {
+                              self.logger.error("Failed to create new segment writer: \(error.localizedDescription)")
+                            }
+                          }
+
+                          if let segStart = self.segmentStartTime {
+                            // append to current segment
+                            let relativeTime = CMTimeSubtract(presentationTime, self.segmentStartTime!)
+                            adaptor.append(pixelBuffer, withPresentationTime: relativeTime)
+                          }
+                        }
+
                               frameCount += 1
 
                               if frameCount % 70 == 0 {
@@ -436,9 +516,6 @@ class ScreenRecorder: NSObject {
                                   let currentFPS = Double(frameCount) / currentTime
                                   self.logger.info("Processed \(frameCount) frames. Current FPS: \(String(format: "%.2f", currentFPS))")
                               }
-                          } else {
-                              self.logger.warn("Dropped frame - writer not ready")
-                          }
                       }
                   }
                 if (!stopCaptureCalled) {
@@ -454,7 +531,7 @@ class ScreenRecorder: NSObject {
                   LoggingService.writeToStandardOutput(message: ["message": "screenRecorderStoppedByError"])
               }
           }
-        
+
 
       } catch {
           logger.error("\(error.localizedDescription)")
@@ -463,8 +540,8 @@ class ScreenRecorder: NSObject {
   }
 
   private func stopRecording() async {
-      guard let writer = assetWriter,
-            let writerInput = assetWriterInput,
+    guard let writer = self.currentWriter,
+          let writerInput = self.currentInput,
             let writeQueue = videoWriteQueue,
             let startTime = startTime else {
           return
@@ -489,12 +566,12 @@ class ScreenRecorder: NSObject {
                   }
 
                   // Clean up resources
-                  self.assetWriter = nil
-                  self.assetWriterInput = nil
-                  self.pixelBufferAdaptor = nil
+                self.currentWriter = nil
+                self.currentInput = nil
+                self.currentAdaptor = nil
                   self.videoWriteQueue = nil
                   self.startTime = nil
-                  self.outputURL = nil
+                self.baseUrl = nil
 
                   continuation.resume()
               }
@@ -511,7 +588,7 @@ class ScreenRecorder: NSObject {
       await captureEngine.stopCapture()
 
       // If we were recording video, finalize it
-      if assetWriter != nil {
+    if self.currentWriter != nil {
           await stopRecording()
       }
 
