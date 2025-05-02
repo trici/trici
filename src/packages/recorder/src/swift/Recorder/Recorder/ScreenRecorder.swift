@@ -335,6 +335,7 @@ final class ScreenRecorder: NSObject {
                     input.markAsFinished()
                     writer.finishWriting {
                       self.logger.info("Finished segment \(self.segmentIndex - 1)")
+                      LoggingService.writeToStandardOutput(message: ["message": "finishedWritingSegment"])
                     }
                   }
                 }
