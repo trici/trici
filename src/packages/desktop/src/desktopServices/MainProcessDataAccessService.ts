@@ -21,6 +21,8 @@ import { generateUninitializedTriciId, isWebBrowser } from '@trici/utils';
 import { app } from 'electron/main';
 import fs from 'fs/promises';
 import { IUsedApplicationsService } from './UsedApplicationsService';
+import path from 'path';
+import { DataWriter } from '@trici/datawriter';
 /**
  * IMainProcessDataAccessService
  * @description Interface for MainProcessDataAccessService
@@ -257,15 +259,39 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
 
   public async getIdleTimeProfile(sessionStartTime: number): Promise<Buffer> {
     try {
-      // Read the dat file:
-      const filePath =
-        global.userDataDirectoryCheckResult.recordingsDir.path +
-        '/' +
-        sessionStartTime +
-        '/' +
-        `${sessionStartTime}-itp.dat`;
-      const idleTimeProfileBuffer = await fs.readFile(filePath);
-      return idleTimeProfileBuffer;
+      const dirPath = global.userDataDirectoryCheckResult.recordingsDir.path + '/' + sessionStartTime;
+      // Find all chunk files
+      let chunkFiles: string[] = [];
+      try {
+        const files = await fs.readdir(dirPath);
+        chunkFiles = files
+          .filter(f => f.startsWith(`${sessionStartTime}-itp-chunk-`) && f.endsWith('.dat'))
+          .sort((a, b) => {
+            // Extract chunk number and sort numerically
+            const getNum = (fname: string) => parseInt(fname.split('-chunk-')[1]?.split('.dat')[0] || '0', 10);
+            return getNum(a) - getNum(b);
+          });
+      } catch (e) {
+        // Directory may not exist, fallback to old method
+      }
+      if (chunkFiles.length > 0) {
+        // Read and decode all chunk files, then merge and re-encode as a single IdleTimeProfile
+        const chunkProfiles = await Promise.all(
+          chunkFiles.map(async f => {
+            const buf = await fs.readFile(path.join(dirPath, f));
+            // Each chunk file is a single-chunk IdleTimeProfile
+            const arr = DataWriter.readIdleTimeProfileFromBuffer(buf);
+            return arr;
+          }),
+        );
+        // Merge all chunks into a single IdleTimeProfile buffer
+        return DataWriter.convertIdleTimeProfileChunks(chunkProfiles);
+      } else {
+        // Fallback to old single file
+        const filePath = dirPath + '/' + `${sessionStartTime}-itp.dat`;
+        const idleTimeProfileBuffer = await fs.readFile(filePath);
+        return idleTimeProfileBuffer;
+      }
     } catch (error) {
       this._getLogger().error('Error in getIdleTimeProfile', error);
       throw error;

@@ -22,8 +22,12 @@ appObserver.on('frontmostAppChanged', data => {
   console.log(data);
 });
 
+appObserver.on('idleTime', data => {
+  console.log(data);
+});
+
 console.log('Calling getActiveBrowserOpenedURL in 3 seconds...');
-setTimeout(() => {
+setInterval(() => {
   appObserver
     .getActiveBrowserOpenedURL()
     .then(url => {
