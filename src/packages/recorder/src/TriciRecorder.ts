@@ -2,7 +2,7 @@ import type { Logger, IConsoleLogger } from '@trici/logger';
 import { spawn, exec } from 'child_process';
 import EventEmitter from 'events';
 import { promisify } from 'util';
-
+import { execShellCommandAsync } from '@trici/utils';
 const execAsync = promisify(exec);
 
 export interface ITriciRecorder {
@@ -29,6 +29,8 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   ffmpegProcess: any;
   #isRecording: boolean = false;
   #stopRecordingRequested: boolean = false;
+  #currentRecordingFileName: string | null = null;
+  #lastSegmentProcessed: string | null = null;
 
   constructor(ffmpgBinPath: string, getLogger: () => Logger | IConsoleLogger, recorderBinPath: string) {
     super();
@@ -37,6 +39,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     this.getLogger = getLogger;
     this.recordingProcess = null;
     this.ffmpegProcess = null;
+    this.#currentRecordingFileName = null;
   }
 
   // private (screenToRecord: number): number {
@@ -83,6 +86,26 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     });
   }
 
+  private async processSegmentWithFFmpeg(
+    segmentNumber: string,
+    recordingStorageLocation: string,
+    currentRecordingFileName: string,
+  ): Promise<void> {
+    const segmentFileName = `${currentRecordingFileName}_${segmentNumber}.mp4`;
+    const segmentFileNameWithPath = `"${recordingStorageLocation}/${segmentFileName}"`;
+    const playlistFileName = `"${recordingStorageLocation}/${currentRecordingFileName}.m3u8"`;
+    const playlistSegmentFileName = `"${recordingStorageLocation}/${currentRecordingFileName}_%04d.ts"`;
+    const ffmpegCommand = `${this.#ffmpegBinPath} -i ${segmentFileNameWithPath} -c:v copy -an -f hls  -hls_time 10  -hls_flags append_list  -hls_segment_filename ${playlistSegmentFileName}  ${playlistFileName}`;
+
+    this.getLogger().info(`Running ffmpeg command: ${ffmpegCommand}`);
+    try {
+      await execShellCommandAsync(ffmpegCommand);
+      this.#lastSegmentProcessed = segmentNumber;
+    } catch (error) {
+      this.getLogger().error(`Error running ffmpeg command: ${JSON.stringify(error)}`);
+    }
+  }
+
   async startLiveRecording(
     recordingFileName: string,
     recordingStorageLocation: string,
@@ -91,6 +114,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   ): Promise<void> {
     let recordingProcessStarted = false;
     this.#stopRecordingRequested = false;
+    this.#currentRecordingFileName = recordingFileName;
     try {
       if (!this.recordingProcess) {
         const appEnv = process.env.APP_ENV || 'dev';
@@ -115,12 +139,24 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
           }
         });
 
-        this.recordingProcess.stdout.on('data', (data: any) => {
+        this.recordingProcess.stdout.on('data', async (data: any) => {
           this.getLogger().info(`TriciRecorder process stdout: ${data}`);
           const response = JSON.parse(data.toString('utf8')).response;
           if (response.message === 'screenRecorderStopped') {
             this.#isRecording = false;
             this.recordingProcess.kill('SIGTERM');
+            // Process the segment that was being recorded when the process was stopped
+            if (this.#lastSegmentProcessed && this.#currentRecordingFileName && recordingStorageLocation) {
+              // Increment the segment number by 1. The result should be in the format of 0001, 0002, etc.
+              const segmentNumber = (parseInt(this.#lastSegmentProcessed) + 1).toString().padStart(4, '0');
+              await this.processSegmentWithFFmpeg(
+                segmentNumber,
+                recordingStorageLocation,
+                this.#currentRecordingFileName,
+              );
+            } else {
+              this.getLogger().error('Recording storage location or currentRecordingFileName is not set');
+            }
           } else if (
             response.message === 'screenRecorderStoppedByOS' ||
             response.message === 'screenRecorderStoppedByError'
@@ -128,8 +164,21 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
             this.getLogger().error(`Screen recorder stopped by ${response.message}`);
             this.#isRecording = false;
             this.recordingProcess.kill('SIGTERM');
-          }
-          if (response.message === 'screenRecorderStarted') {
+          } else if (response.message === 'finishedWritingSegment') {
+            this.getLogger().info(`Finished writing segment: ${response.data}`);
+            this.emit('finishedWritingSegment', response.data);
+            // Run ffmpeg command to create hls playlist
+            const segmentNumber = response.data;
+            if (recordingStorageLocation && this.#currentRecordingFileName) {
+              await this.processSegmentWithFFmpeg(
+                segmentNumber,
+                recordingStorageLocation,
+                this.#currentRecordingFileName,
+              );
+            } else {
+              this.getLogger().error('Recording storage location or currentRecordingFileName is not set');
+            }
+          } else if (response.message === 'screenRecorderStarted') {
             this.getLogger().info('Screen recorder started');
           }
         });
@@ -168,7 +217,8 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     try {
       this.getLogger().info(`TriciRecorder startLiveRecording: ${recordingFileName}`);
 
-      this.recordingProcess.stdin.write(`start ${recordingFileNameWithPath}.mp4\n`);
+      const segmentDuration = 15;
+      this.recordingProcess.stdin.write(`start ${recordingFileNameWithPath}.mp4 ${segmentDuration}\n`);
 
       this.#isRecording = true;
       // resolve();

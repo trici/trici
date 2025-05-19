@@ -24,6 +24,9 @@ export type TriciAction =
       endTrigger: SessionTrigger;
     }
   | {
+      type: 'FINISH_WRITING_SEGMENT';
+    }
+  | {
       type: 'UPDATE_USED_APPLICATIONS';
       args: { usedApplications: Array<UsedApplicationRecord> };
     }

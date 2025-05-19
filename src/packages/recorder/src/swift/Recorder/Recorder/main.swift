@@ -135,10 +135,31 @@ inputSource.setEventHandler {
         switch command {
         case "start":
           if components.count > 1 {
-            let outputPath = String(components[1])
+            let argsString = String(components[1])
+
+            // Check if the last word is a number (segment duration)
+            let words = argsString.split(separator: " ", omittingEmptySubsequences: true)
+            var segmentDuration: TimeInterval? = nil
+            var outputPath = argsString
+
+            if let lastWord = words.last,
+               let duration = TimeInterval(String(lastWord)) {
+              // If last word is a number, it's the duration
+              segmentDuration = duration
+              // Remove the duration from the path by trimming the last word and any trailing spaces
+              outputPath = argsString.trimmingCharacters(in: .whitespaces)
+              if let lastSpaceIndex = outputPath.lastIndex(of: " ") {
+                outputPath = String(outputPath[..<lastSpaceIndex])
+              }
+            }
+
             logger.info("outputPath:\(outputPath)")
+            if let duration = segmentDuration {
+              logger.info("segmentDuration:\(duration)")
+            }
+
             Task {
-              await screenRecorder.start(outputPath: outputPath)
+              await screenRecorder.start(outputPath: outputPath, segmentDuration: segmentDuration)
             }
           }
           else {

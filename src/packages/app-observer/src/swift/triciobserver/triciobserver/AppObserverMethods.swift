@@ -274,6 +274,8 @@ public struct AppObserverMethods {
             return nil
         }
     }
+  
+  
 
     private func getFocusedWindow(for appRef: AXUIElement) -> AXUIElement? {
         var focusedWindowRef: CFTypeRef?
@@ -552,26 +554,50 @@ public struct AppObserverMethods {
         return true
     }
 
-    // Add this new function
-    private func getChromeURLViaAppleScript() -> String? {
-        let script = """
-        tell application "Google Chrome"
-            if windows is not {} then
-                get URL of active tab of first window
-            end if
-        end tell
-        """
+//    // Add this new function
+//    private func getChromeURLViaAppleScript() -> String? {
+//        let script = """
+//        tell application "Google Chrome"
+//            if windows is not {} then
+//                get URL of active tab of first window
+//            end if
+//        end tell
+//        """
+//
+//        let appleScript = NSAppleScript(source: script)
+//        var error: NSDictionary?
+//
+//        if let result = appleScript?.executeAndReturnError(&error).stringValue {
+//            return result
+//        } else if let error = error {
+//            logger.error("AppleScript error: \(error)")
+//        }
+//
+//        return nil
+//    }
 
-        let appleScript = NSAppleScript(source: script)
-        var error: NSDictionary?
+  private func getChromeURLViaAppleScript() -> String? {
+      let source = """
+      tell application "Google Chrome"
+        if (count of windows) > 0 then
+          return URL of active tab of front window
+        end if
+      end tell
+      """
+      let task = Process()
+      task.launchPath = "/usr/bin/osascript"
+      task.arguments = ["-e", source]
+      let pipe = Pipe()
+      task.standardOutput = pipe
+      task.launch()
+      task.waitUntilExit()
 
-        if let result = appleScript?.executeAndReturnError(&error).stringValue {
-            return result
-        } else if let error = error {
-            logger.error("AppleScript error: \(error)")
-        }
-
+      let data = pipe.fileHandleForReading.readDataToEndOfFile()
+      guard !data.isEmpty, let str = String(data: data, encoding: .utf8) else {
         return nil
-    }
+      }
+      return str.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
 
 }
