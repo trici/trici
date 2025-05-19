@@ -75,6 +75,12 @@ export class ScreenRecordingPlugin implements ITriciPlugin {
     this.recorder.on('recordingProcessExited', code => {
       logger.info('Recording process exited with code: ' + code);
     });
+
+    this.recorder.on('finishedWritingSegment', () => {
+      dispatch({
+        type: 'FINISH_WRITING_SEGMENT',
+      });
+    });
   }
 
   private handleFocusSessionEnded(data: FocusSession): void {
