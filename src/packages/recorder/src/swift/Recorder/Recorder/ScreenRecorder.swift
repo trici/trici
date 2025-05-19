@@ -252,7 +252,7 @@ final class ScreenRecorder: NSObject {
     // Prepare baseURL (no segment suffix)
     let fileURL = URL(fileURLWithPath: outputPath)
     baseUrl = fileURL.deletingPathExtension()
-    segmentIndex = 1
+    segmentIndex = 0
     segmentStartTime = nil
     firstFrameTime = nil
     lastBuffer = nil
@@ -334,8 +334,33 @@ final class ScreenRecorder: NSObject {
                   if writer.status == .writing {
                     input.markAsFinished()
                     writer.finishWriting {
-                      self.logger.info("Finished segment \(self.segmentIndex - 1)")
-                      LoggingService.writeToStandardOutput(message: ["message": "finishedWritingSegment"])
+                      let finishedSegment = String(format:"%04d", self.segmentIndex - 1)
+                      
+                      switch writer.status {
+                              case .completed:
+                                  // ✔️ Everything was flushed, trailer written, FD closed.
+                                  self.logger.info("✅ Successfully finished segment \(finishedSegment)")
+                                  LoggingService.writeToStandardOutput(message: [
+                                    "message": "finishedWritingSegment",
+                                    "data": finishedSegment
+                                  ])
+
+
+                              case .failed:
+                                  // ❌ Something went wrong
+                                  let err = writer.error?.localizedDescription ?? "Unknown"
+                                  self.logger.error("❌ Failed to finish segment \(finishedSegment): \(err)")
+                                  LoggingService.writeToStandardOutput(message: [
+                                    "message": "failedWritingSegment",
+                                    "data": finishedSegment,
+                                    "error": err
+                                  ])
+
+                              default:
+                                  // Shouldn’t happen, but good to know if you see `.cancelled` or `.unknown`
+                                  self.logger.error("⚠️ Unexpected writer status \(writer.status) for segment \(finishedSegment)")
+                              }
+                      self.logger.info("Finished segment \(finishedSegment)")
                     }
                   }
                 }
