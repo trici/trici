@@ -416,6 +416,13 @@ final class ScreenRecorder: NSObject {
       writeQueue.async {
         writerInput.markAsFinished()
         writer.finishWriting {
+         //  ┌── emit our “last segment done” event
+         let lastSegIndex = String(format: "%04d", self.segmentIndex)
+         LoggingService.writeToStandardOutput(message: [
+         "message": "finishedWritingSegment",
+         "data": lastSegIndex
+         ])
+          
           let endTime = Date()
           let duration = endTime.timeIntervalSince(startTime)
           let status = writer.status

@@ -30,7 +30,6 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   #isRecording: boolean = false;
   #stopRecordingRequested: boolean = false;
   #currentRecordingFileName: string | null = null;
-  #lastSegmentProcessed: string | null = null;
 
   constructor(ffmpgBinPath: string, getLogger: () => Logger | IConsoleLogger, recorderBinPath: string) {
     super();
@@ -95,12 +94,11 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     const segmentFileNameWithPath = `"${recordingStorageLocation}/${segmentFileName}"`;
     const playlistFileName = `"${recordingStorageLocation}/${currentRecordingFileName}.m3u8"`;
     const playlistSegmentFileName = `"${recordingStorageLocation}/${currentRecordingFileName}_%04d.ts"`;
-    const ffmpegCommand = `${this.#ffmpegBinPath} -i ${segmentFileNameWithPath} -c:v copy -an -f hls  -hls_time 10  -hls_flags append_list  -hls_segment_filename ${playlistSegmentFileName}  ${playlistFileName}`;
+    const ffmpegCommand = `${this.#ffmpegBinPath} -i ${segmentFileNameWithPath} -c:v copy -an -f hls -hls_time 10 -hls_flags append_list -hls_list_size 0 -hls_segment_filename ${playlistSegmentFileName} ${playlistFileName}`;
 
     this.getLogger().info(`Running ffmpeg command: ${ffmpegCommand}`);
     try {
       await execShellCommandAsync(ffmpegCommand);
-      this.#lastSegmentProcessed = segmentNumber;
     } catch (error) {
       this.getLogger().error(`Error running ffmpeg command: ${JSON.stringify(error)}`);
     }
@@ -145,18 +143,6 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
           if (response.message === 'screenRecorderStopped') {
             this.#isRecording = false;
             this.recordingProcess.kill('SIGTERM');
-            // Process the segment that was being recorded when the process was stopped
-            if (this.#lastSegmentProcessed && this.#currentRecordingFileName && recordingStorageLocation) {
-              // Increment the segment number by 1. The result should be in the format of 0001, 0002, etc.
-              const segmentNumber = (parseInt(this.#lastSegmentProcessed) + 1).toString().padStart(4, '0');
-              await this.processSegmentWithFFmpeg(
-                segmentNumber,
-                recordingStorageLocation,
-                this.#currentRecordingFileName,
-              );
-            } else {
-              this.getLogger().error('Recording storage location or currentRecordingFileName is not set');
-            }
           } else if (
             response.message === 'screenRecorderStoppedByOS' ||
             response.message === 'screenRecorderStoppedByError'
