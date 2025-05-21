@@ -94,7 +94,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     const segmentFileNameWithPath = `"${recordingStorageLocation}/${segmentFileName}"`;
     const playlistFileName = `"${recordingStorageLocation}/${currentRecordingFileName}.m3u8"`;
     const playlistSegmentFileName = `"${recordingStorageLocation}/${currentRecordingFileName}_%04d.ts"`;
-    const ffmpegCommand = `${this.#ffmpegBinPath} -i ${segmentFileNameWithPath} -c:v copy -an -f hls -hls_time 10 -hls_flags append_list -hls_list_size 0 -hls_segment_filename ${playlistSegmentFileName} ${playlistFileName}`;
+    const ffmpegCommand = `${this.#ffmpegBinPath} -i ${segmentFileNameWithPath} -c:v copy -an -f hls -hls_time 15 -hls_flags append_list -hls_list_size 0 -hls_segment_filename ${playlistSegmentFileName} ${playlistFileName}`;
 
     this.getLogger().info(`Running ffmpeg command: ${ffmpegCommand}`);
     try {
@@ -138,34 +138,45 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
         });
 
         this.recordingProcess.stdout.on('data', async (data: any) => {
-          this.getLogger().info(`TriciRecorder process stdout: ${data}`);
-          const response = JSON.parse(data.toString('utf8')).response;
-          if (response.message === 'screenRecorderStopped') {
-            this.#isRecording = false;
-            this.recordingProcess.kill('SIGTERM');
-          } else if (
-            response.message === 'screenRecorderStoppedByOS' ||
-            response.message === 'screenRecorderStoppedByError'
-          ) {
-            this.getLogger().error(`Screen recorder stopped by ${response.message}`);
-            this.#isRecording = false;
-            this.recordingProcess.kill('SIGTERM');
-          } else if (response.message === 'finishedWritingSegment') {
-            this.getLogger().info(`Finished writing segment: ${response.data}`);
-            this.emit('finishedWritingSegment', response.data);
-            // Run ffmpeg command to create hls playlist
-            const segmentNumber = response.data;
-            if (recordingStorageLocation && this.#currentRecordingFileName) {
-              await this.processSegmentWithFFmpeg(
-                segmentNumber,
-                recordingStorageLocation,
-                this.#currentRecordingFileName,
-              );
-            } else {
-              this.getLogger().error('Recording storage location or currentRecordingFileName is not set');
+          const rawData = data.toString('utf8');
+          try {
+            const lines = rawData.split('\n');
+            for (const line of lines) {
+              if (line.trim() === '') {
+                continue;
+              }
+              const response = JSON.parse(line).response;
+              if (response.message === 'screenRecorderStopped') {
+                this.#isRecording = false;
+                this.recordingProcess.kill('SIGTERM');
+              } else if (
+                response.message === 'screenRecorderStoppedByOS' ||
+                response.message === 'screenRecorderStoppedByError'
+              ) {
+                this.getLogger().error(`Screen recorder stopped by ${response.message}`);
+                this.#isRecording = false;
+                this.recordingProcess.kill('SIGTERM');
+              } else if (response.message === 'finishedWritingSegment') {
+                this.getLogger().info(`Finished writing segment: ${response.data}`);
+                this.emit('finishedWritingSegment', response.data);
+                // Run ffmpeg command to create hls playlist
+                const segmentNumber = response.data;
+                if (recordingStorageLocation && this.#currentRecordingFileName) {
+                  await this.processSegmentWithFFmpeg(
+                    segmentNumber,
+                    recordingStorageLocation,
+                    this.#currentRecordingFileName,
+                  );
+                } else {
+                  this.getLogger().error('Recording storage location or currentRecordingFileName is not set');
+                }
+              } else if (response.message === 'screenRecorderStarted') {
+                this.getLogger().info('Screen recorder started');
+              }
             }
-          } else if (response.message === 'screenRecorderStarted') {
-            this.getLogger().info('Screen recorder started');
+          } catch (error) {
+            this.getLogger().error(`Failed to parse recording process response: ${rawData}`);
+            this.getLogger().error(`Error parsing recording process response: ${error}`);
           }
         });
 
