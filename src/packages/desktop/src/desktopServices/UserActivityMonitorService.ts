@@ -33,9 +33,11 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   actionDispatcher: IActionDispatcher<TriciAction>;
   usedApplicationsService: UsedApplicationsService;
   captureIdleTimeProfile: boolean = false;
-  idleTimeProfile: { idleTime: number; timestamp: number }[] = [];
   private _isAppSleeping: boolean = false;
   private _sleepTimer: NodeJS.Timeout | null = null;
+  private idleTimeChunkNumber: number = 0;
+  private idleTimeChunkProfile: { idleTime: number; timestamp: number }[] = [];
+  private idleTimeChunkSessionStart: number | null = null;
 
   constructor(
     getLogger: () => Logger | IConsoleLogger,
@@ -57,7 +59,6 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.actionDispatcher = actionDispatcher;
     this.usedApplicationsService = usedApplicationsService;
     this.captureIdleTimeProfile = false;
-    this.idleTimeProfile = [];
   }
 
   updateLastSavedTodayUserActivityId = async (udpatedId: string) => {
@@ -72,7 +73,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     });
 
     if (this.captureIdleTimeProfile) {
-      this.idleTimeProfile.push({ idleTime, timestamp: Date.now() });
+      this.idleTimeChunkProfile.push({ idleTime, timestamp: Date.now() });
     }
 
     this.lastIdleTime = idleTime;
@@ -100,6 +101,9 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
         case 'APP_WAKE_UP_REQUESTED':
           this.wakeUp();
           break;
+        case 'FINISH_WRITING_SEGMENT':
+          this.writeIdleTimeChunk();
+          break;
         default:
           break;
       }
@@ -107,8 +111,11 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   }
 
   registerAppEventHandlers(): void {
-    this.appEventEmitter.on(TriciAppEvent.FOCUS_SESSION_STARTED, () => {
+    this.appEventEmitter.on(TriciAppEvent.FOCUS_SESSION_STARTED, (focusSession: FocusSession) => {
       this.captureIdleTimeProfile = true;
+      this.idleTimeChunkNumber = 0;
+      this.idleTimeChunkProfile = [];
+      this.idleTimeChunkSessionStart = focusSession.get('startTime');
       if (this._isAppSleeping) {
         this.wakeUp();
       }
@@ -116,21 +123,12 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
     this.appEventEmitter.on(TriciAppEvent.FOCUS_SESSION_ENDED, async (focusSession: FocusSession) => {
       this.captureIdleTimeProfile = false;
-      const prefix = focusSession.get('startTime');
-      const fileName = `${prefix}-itp.dat`;
-
-      if (this.idleTimeProfile.length === 0) {
-        return;
-      }
-
-      try {
-        const protoBuffer = DataWriter.convertIdleTimeProfile(this.idleTimeProfile);
-        const filePath = global.userDataDirectoryCheckResult.recordingsDir.path + '/' + prefix + '/' + fileName;
-        await fs.promises.writeFile(filePath, protoBuffer);
-        this.idleTimeProfile = [];
-      } catch (error) {
-        this.getLogger().error(`UserActivityMonitorService: Error while writing idle time profile to file: ${error}`);
-      }
+      // Write any remaining chunk as when the session ends, the finishedWritingSegment event is not fired.
+      await this.writeIdleTimeChunk();
+      // Reset the idle time chunk number and profile for the next session.
+      this.idleTimeChunkNumber = 0;
+      this.idleTimeChunkProfile = [];
+      this.idleTimeChunkSessionStart = null;
     });
 
     this.appEventEmitter.on(
@@ -421,5 +419,31 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.appEventEmitter.emit(TriciAppEvent.APP_SLEEP_ENDED, {
       isAppSleeping: false,
     });
+  }
+
+  private async writeIdleTimeChunk() {
+    if (this.idleTimeChunkProfile.length === 0) {
+      this.getLogger().info('UserActivityMonitorService: No idle time chunk to write');
+      return;
+    }
+    // Copy the chunk data and clear the array immediately
+    const chunkData = this.idleTimeChunkProfile.slice();
+    const idleTimeChunkNumber = this.idleTimeChunkNumber;
+    this.getLogger().info(`UserActivityMonitorService: Resetting idle time chunk profile and number`);
+    this.idleTimeChunkProfile = [];
+    this.idleTimeChunkNumber++;
+    // Write asynchronously so triciping is never blocked
+    (async () => {
+      try {
+        const protoBuffer = DataWriter.convertIdleTimeProfile(chunkData);
+        const prefix = this.idleTimeChunkSessionStart;
+        const paddedChunkNumber = idleTimeChunkNumber.toString().padStart(4, '0');
+        const chunkFileName = `${prefix}-itp-chunk-${paddedChunkNumber}.dat`;
+        const filePath = global.userDataDirectoryCheckResult.recordingsDir.path + '/' + prefix + '/' + chunkFileName;
+        await fs.promises.writeFile(filePath, protoBuffer);
+      } catch (error) {
+        this.getLogger().error(`UserActivityMonitorService: Error while writing idle time chunk: ${error}`);
+      }
+    })();
   }
 }

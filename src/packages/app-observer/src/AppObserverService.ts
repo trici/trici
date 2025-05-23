@@ -29,6 +29,7 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
   appObserverLogsDirectory: string;
   idleTimeIntervalId: NodeJS.Timeout | null;
   appChangeHistory: AppChangeHistory;
+  private pendingRequests: { [type: string]: { resolve: (value: any) => void; reject: (reason?: any) => void } } = {};
 
   constructor(getLogger: () => Logger | IConsoleLogger, appRoot: string, appObserverLogsDirectory: string) {
     super();
@@ -62,9 +63,8 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
         const appEnv = process.env.APP_ENV || 'dev';
         this.child = child_process.spawn(pathToExecutable, [this.appObserverLogsDirectory, appEnv]);
         this.getLogger().info(`AppObserverService started:${this.child.pid}`);
-        this.child.stdout.on('data', function (data: Buffer) {
+        this.child.stdout.on('data', (data: Buffer) => {
           const rawData = data.toString('utf8');
-          // self.logger.info(` Parsing AppObserverService stdout data:${rawData}`);
           try {
             const lines = rawData.split('\n');
             for (const line of lines) {
@@ -78,6 +78,13 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
                 appIdentifier: '',
                 timestamp: 0,
               };
+
+              // Handle pending requests first
+              if (appObserverResponse.type in this.pendingRequests) {
+                this.pendingRequests[appObserverResponse.type].resolve(appObserverResponse.response);
+                delete this.pendingRequests[appObserverResponse.type];
+                continue;
+              }
 
               if (appObserverResponse.type === 'frontmostApp') {
                 frontmostAppChangedData.timestamp = appObserverResponse.timestamp;
@@ -157,36 +164,8 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
       throw new Error('Child process not initialized.');
     }
 
-    return new Promise<[{ name: string; iconPath: string; bundleIdentifier: string }]>((resolve, reject) => {
-      // Create a listener for stdout to handle the installed apps response.
-      const responseHandler = (data: Buffer) => {
-        try {
-          const appObserverResponse: AppObserverResponse = JSON.parse(data.toString('utf8'));
-          console.log('getInstalledApps response:', JSON.stringify(appObserverResponse));
-          if (appObserverResponse.type === 'installedApps') {
-            // Remove the listener once we've received the response.
-            this.child.stdout.off('data', responseHandler);
-
-            if (appObserverResponse.response.length > 0) {
-              // iterate through the response and pick name and iconPath properties.
-              const appsList = appObserverResponse.response.map(
-                (app: { name: string; iconPath: string; bundleIdentifier: string }) => {
-                  return { name: app.name, iconPath: app.iconPath, bundleIdentifier: app.bundleIdentifier };
-                },
-              );
-              resolve(appsList);
-            } else {
-              reject(new Error('No apps found.'));
-            }
-          }
-        } catch (error) {
-          reject(error);
-        }
-      };
-
-      this.child.stdout.on('data', responseHandler);
-
-      // Send the command to the Swift app to get installed apps.
+    return new Promise<{ name: string; iconPath: string; bundleIdentifier: string }[]>((resolve, reject) => {
+      this.pendingRequests['installedApps'] = { resolve, reject };
       this.child.stdin.write('getInstalledApps\n');
     });
   }
@@ -197,24 +176,11 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
     }
 
     return new Promise<string>((resolve, reject) => {
-      const responseHandler = (data: Buffer) => {
-        try {
-          const appObserverResponse: AppObserverResponse = JSON.parse(data.toString('utf8'));
-          if (appObserverResponse.type === 'activeBrowserOpenedUrlSuccess') {
-            this.child.stdout.off('data', responseHandler);
-            resolve(appObserverResponse.response);
-          } else if (appObserverResponse.type === 'activeBrowserOpenedUrlError') {
-            this.child.stdout.off('data', responseHandler);
-            reject(new Error(appObserverResponse.response));
-          }
-        } catch (error) {
-          reject(error);
-        }
+      this.pendingRequests['activeBrowserOpenedUrlSuccess'] = { resolve, reject };
+      this.pendingRequests['activeBrowserOpenedUrlError'] = {
+        resolve: value => reject(new Error(value)),
+        reject,
       };
-
-      this.child.stdout.on('data', responseHandler);
-
-      // Send the command to the Swift app to get the active browser's opened URL.
       this.child.stdin.write('getActiveBrowserOpenedUrl\n');
     });
   }

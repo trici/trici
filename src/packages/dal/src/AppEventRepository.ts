@@ -96,14 +96,14 @@ export class AppEventRepository implements IAppEventRepository {
     from: number,
     to: number,
     type: TriciAppEvent | null,
-    count: number = 20,
+    count: number = 200,
   ): Promise<Array<IAppEvent>> {
     if (!this.db) {
       this.getLogger().error('Database not initialized');
       throw new Error('Database not initialized');
     }
 
-    let selectQuery = `SELECT * FROM app_event WHERE timestamp BETWEEN ? AND ?`;
+    let selectQuery = `SELECT * FROM app_event WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp DESC`;
     const params: any[] = [from, to];
 
     if (type !== null) {

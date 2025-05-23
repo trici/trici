@@ -74,28 +74,31 @@ inputSource.setEventHandler {
       for line in lines {
           let command = line.trimmingCharacters(in: .whitespacesAndNewlines)
           if command.isEmpty { continue }   // skip empty lines if needed
-          
-          switch command {
-              case "getInstalledApps":
-                  Task {
-                      appObserverMethods.outputInstalledApps()
-                  }
-              case "getActiveBrowserOpenedUrl":
-                  Task {
-                      appObserverMethods.getActiveBrowserOpenedURL()
-                  }
-              case "getSystemIdleTime":
-                  Task {
-                      appObserverMethods.getSystemIdleTime()
-                  }
-              case "exit":
-                  exit(0)
-              default:
-                  logger.error("{\"error\": \"Unknown command: \(command)\"}")
-                  LoggingService.logToStandardError(
-                    message: ["errorMsg": "Unknown command: \(command)"]
-                  )
-          }
+
+
+        switch command {
+            case "getInstalledApps":
+                DispatchQueue.global().async {
+                    appObserverMethods.outputInstalledApps()
+                }
+            case "getActiveBrowserOpenedUrl":
+                DispatchQueue.global().async {
+                    appObserverMethods.getActiveBrowserOpenedURL()
+                }
+            case "getSystemIdleTime":
+                DispatchQueue.global().async {
+                    appObserverMethods.getSystemIdleTime()
+                }
+            case "exit":
+                exit(0)
+            default:
+                DispatchQueue.global().async {
+                    logger.error("{\"error\": \"Unknown command: \(command)\"}")
+                    LoggingService.logToStandardError(
+                      message: ["errorMsg": "Unknown command: \(command)"]
+                    )
+                }
+        }
       }
   }
 

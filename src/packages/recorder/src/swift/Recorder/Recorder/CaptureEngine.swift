@@ -32,9 +32,6 @@ class CaptureEngine: NSObject, @unchecked Sendable {
         super.init()
     }
   
-  deinit {
-    logger.warn(" CaptureEngine DEINIT")
-  }
 
     func startCapture(configuration: SCStreamConfiguration, filter: SCContentFilter, outputMode: Bool = false) -> AsyncThrowingStream<CaptureOutput, Error> {
         AsyncThrowingStream<CaptureOutput, Error> { continuation in

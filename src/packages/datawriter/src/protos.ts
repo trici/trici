@@ -8,8 +8,12 @@ message IdleTimeEntry {
   int32 timestampDelta = 2;
 }
 
-message IdleTimeProfile {
+message IdleTimeChunk {
   int64 startTimestamp = 1;
   repeated IdleTimeEntry entries = 2;
+}
+
+message IdleTimeProfile {
+  repeated IdleTimeChunk chunks = 1;
 }
 `;
