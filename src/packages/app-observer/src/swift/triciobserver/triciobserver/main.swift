@@ -75,7 +75,6 @@ inputSource.setEventHandler {
           let command = line.trimmingCharacters(in: .whitespacesAndNewlines)
           if command.isEmpty { continue }   // skip empty lines if needed
 
-        logger.info("command:\(command)")
 
         switch command {
             case "getInstalledApps":
