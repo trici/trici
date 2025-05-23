@@ -1,7 +1,7 @@
 import { DataGrid } from '@singhshashi/proactive';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppEvent, TriciAppEvent } from '@trici/models';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { RendererRepository } from 'src/app/dataaccess/RendererRepository';
 import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 
@@ -55,6 +55,31 @@ const getAppColor = (appName: string) => {
   return `hsla(${hue}, 70%, 50%, 0.2)`;
 };
 
+const abbreviateEventName = (eventName: string): string => {
+  // Normalize to lower case and replace underscores with dashes
+  const normalized = eventName.replace(/_/g, '-').toLowerCase();
+  // Split on dashes, take first letter of each word, join with dashes
+  return normalized
+    .split('-')
+    .filter(Boolean)
+    .map(word => word[0])
+    .join('-');
+};
+
+// Helper to generate X axis ticks including start and end
+const getXAxisTicks = (from: number, to: number, count: number = 6) => {
+  if (to <= from) return [from, to];
+  const step = (to - from) / (count - 1);
+  const ticks = [];
+  for (let i = 0; i < count; i++) {
+    ticks.push(Math.round(from + i * step));
+  }
+  // Ensure exact start and end
+  ticks[0] = from;
+  ticks[ticks.length - 1] = to;
+  return ticks;
+};
+
 export function EventViewerContainer() {
   const [state, setState] = useState<EventViewerContainerState>({
     events: [],
@@ -64,6 +89,16 @@ export function EventViewerContainer() {
     to: new Date().getTime(), // current time
     type: null,
   });
+
+  // For region hover tooltip
+  const [hoveredRegion, setHoveredRegion] = useState<null | {
+    appName: string;
+    startTime: number;
+    endTime: number;
+    mouseX: number;
+    mouseY: number;
+  }>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     console.log('EventViewer state changed:', state);
@@ -161,6 +196,47 @@ export function EventViewerContainer() {
     }));
   };
 
+  // Build a legend for app regions
+  const appRegionLegend = useMemo(() => {
+    // Unique app names in regions
+    const uniqueApps = Array.from(new Set(appRegions.map(r => r.appName)));
+    return uniqueApps.map(appName => (
+      <div key={appName} className="mr-4 flex items-center gap-2">
+        <span
+          style={{
+            background: getAppColor(appName),
+            width: 16,
+            height: 16,
+            display: 'inline-block',
+            borderRadius: 3,
+            border: '1px solid #ccc',
+          }}
+        />
+        <span className="text-xs text-gray-700">{appName}</span>
+      </div>
+    ));
+  }, [appRegions]);
+
+  // Build a legend for event types
+  const eventTypeLegend = useMemo(() => {
+    return eventTypes.map(eventType => (
+      <div key={eventType} className="mr-4 flex items-center gap-2">
+        <span
+          style={{
+            background: eventColors[eventType],
+            width: 16,
+            height: 16,
+            display: 'inline-block',
+            borderRadius: 3,
+            border: '1px solid #ccc',
+          }}
+        />
+        <span className="text-xs text-gray-700">{eventType}</span>
+        <span className="text-xs text-gray-400">({abbreviateEventName(eventType)})</span>
+      </div>
+    ));
+  }, [eventTypes, eventColors]);
+
   if (eventViewerQuery.isLoading) {
     return <div>Loading...</div>;
   }
@@ -171,6 +247,9 @@ export function EventViewerContainer() {
 
   const allEventTypes = Object.values(TriciAppEvent);
   console.log('eventViewerQuery', eventViewerQuery);
+
+  // Check if there is any data in the selected range
+  const hasAnyData = (eventViewerQuery.data ?? []).length > 0;
 
   return (
     <div className="flex h-full flex-col justify-start gap-2">
@@ -256,81 +335,135 @@ export function EventViewerContainer() {
         </div>
       </div>
 
+      {/* App Region Legend */}
+      {appRegions.length > 0 && (
+        <div className="flex flex-row items-center gap-4 border-b border-gray-100 bg-white px-4 py-1">
+          <span className="text-xs font-medium text-gray-500">App Regions:</span>
+          {appRegionLegend}
+        </div>
+      )}
+
+      {/* Event Type Legend */}
+      {eventTypes.length > 0 && (
+        <div className="flex flex-row items-center gap-4 border-b border-gray-100 bg-white px-4 py-1">
+          <span className="text-xs font-medium text-gray-500">Event Types:</span>
+          {eventTypeLegend}
+        </div>
+      )}
+
       {/* Chart Section */}
-      <div className="h-[300px] w-full bg-white p-4">
-        <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart
-            margin={{
-              top: 30, // Increased top margin for app names
-              right: 30,
-              left: 100,
-              bottom: 0,
-            }}
-          >
-            <XAxis
-              dataKey="timestamp"
-              type="number"
-              domain={['dataMin', 'dataMax']}
-              tickFormatter={unixTime => new Date(unixTime).toLocaleTimeString()}
-              name="Time"
-            />
-            <YAxis
-              type="number"
-              dataKey="y"
-              name="Event Type"
-              domain={[0, Math.max(...Object.values(typeToYPosition)) + 1]} // Ensure proper Y-axis range
-              ticks={Object.values(typeToYPosition)}
-              tickFormatter={value => {
-                const type = Object.entries(typeToYPosition).find(([_, y]) => y === value)?.[0] || '';
-                return type;
+      <div className="relative h-[300px] w-full bg-white p-4" ref={chartRef}>
+        {hasAnyData ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <ScatterChart
+              margin={{
+                top: 30,
+                right: 30,
+                left: 100,
+                bottom: 20,
               }}
-            />
-            <Tooltip
-              cursor={{ strokeDasharray: '3 3' }}
-              content={({ payload }) => {
-                if (payload && payload.length > 0) {
-                  const data = payload[0].payload;
-                  if (data.type) {
-                    return (
-                      <div className="rounded border bg-white p-2 shadow">
-                        <p className="text-sm">Type: {data.type}</p>
-                        <p className="text-sm">Time: {new Date(data.timestamp).toLocaleString()}</p>
-                      </div>
-                    );
+              onMouseMove={e => {
+                if (!e) return;
+                const activeLabel = typeof e.activeLabel === 'number' ? e.activeLabel : undefined;
+                const mouseX = typeof e.chartX === 'number' ? e.chartX : 0;
+                const mouseY = typeof e.chartY === 'number' ? e.chartY : 0;
+                if (activeLabel !== undefined && appRegions.length > 0) {
+                  // Find region under mouse
+                  const region = appRegions.find(r => activeLabel >= r.startTime && activeLabel <= r.endTime);
+                  if (region) {
+                    setHoveredRegion({ ...region, mouseX, mouseY });
+                  } else {
+                    setHoveredRegion(null);
                   }
+                } else {
+                  setHoveredRegion(null);
                 }
-                return null;
               }}
-            />
-            {/* Render app regions */}
-            {appRegions.map((region, index) => (
-              <ReferenceArea
-                key={`${region.appName}-${index}`}
-                x1={region.startTime}
-                x2={region.endTime}
-                y1={0}
-                y2={Math.max(...Object.values(typeToYPosition)) + 1}
-                fill={getAppColor(region.appName)}
-                fillOpacity={0.3}
-                label={{
-                  value: region.appName,
-                  position: 'insideTopRight',
-                  fill: '#000',
-                  fontSize: 12,
+              onMouseLeave={() => setHoveredRegion(null)}
+            >
+              <XAxis
+                dataKey="timestamp"
+                type="number"
+                domain={[state.from, state.to]}
+                tickFormatter={unixTime => new Date(unixTime).toLocaleTimeString()}
+                name="Time"
+                scale="time"
+                ticks={getXAxisTicks(state.from, state.to, 6)}
+              />
+              <YAxis
+                type="number"
+                dataKey="y"
+                name="Event Type"
+                domain={[0, Math.max(...Object.values(typeToYPosition)) + 1]}
+                ticks={Object.values(typeToYPosition)}
+                tickFormatter={value => {
+                  const type = Object.entries(typeToYPosition).find(([_, y]) => y === value)?.[0] || '';
+                  return abbreviateEventName(type);
+                }}
+                width={80}
+              />
+              <Tooltip
+                cursor={{ strokeDasharray: '3 3' }}
+                content={({ payload }) => {
+                  if (payload && payload.length > 0) {
+                    const data = payload[0].payload;
+                    if (data.type) {
+                      return (
+                        <div className="rounded border bg-white p-2 shadow">
+                          <p className="text-sm">Type: {data.type}</p>
+                          <p className="text-sm">Time: {new Date(data.timestamp).toLocaleString()}</p>
+                        </div>
+                      );
+                    }
+                  }
+                  return null;
                 }}
               />
-            ))}
-            {/* Render other events as scatter points */}
-            {eventTypes.map(eventType => (
-              <Scatter
-                key={eventType}
-                name={eventType}
-                data={prepareChartData(nonFrontmostAppEvents).filter(event => event.type === eventType)}
-                fill={eventColors[eventType]}
-              />
-            ))}
-          </ScatterChart>
-        </ResponsiveContainer>
+              {/* Render app regions */}
+              {appRegions.map((region, index) => (
+                <ReferenceArea
+                  key={`${region.appName}-${index}`}
+                  x1={region.startTime}
+                  x2={region.endTime}
+                  y1={0}
+                  y2={Math.max(...Object.values(typeToYPosition)) + 1}
+                  fill={getAppColor(region.appName)}
+                  fillOpacity={0.3}
+                />
+              ))}
+              {/* Render other events as scatter points */}
+              {eventTypes.map(eventType => (
+                <Scatter
+                  key={eventType}
+                  name={eventType}
+                  data={prepareChartData(nonFrontmostAppEvents).filter(event => event.type === eventType)}
+                  fill={eventColors[eventType]}
+                />
+              ))}
+            </ScatterChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-lg text-gray-400">
+            No data for this period
+          </div>
+        )}
+        {/* Custom region tooltip */}
+        {hoveredRegion && (
+          <div
+            className="pointer-events-none absolute z-50 rounded border border-gray-300 bg-white px-3 py-2 text-xs text-gray-800 shadow"
+            style={{
+              left: hoveredRegion.mouseX + 10,
+              top: hoveredRegion.mouseY - 10,
+              minWidth: 120,
+            }}
+          >
+            <div className="font-semibold">{hoveredRegion.appName}</div>
+            <div>
+              {new Date(hoveredRegion.startTime).toLocaleTimeString()} -{' '}
+              {new Date(hoveredRegion.endTime).toLocaleTimeString()}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-hidden">

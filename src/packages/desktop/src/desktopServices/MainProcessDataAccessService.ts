@@ -216,7 +216,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     fromTime: number,
     toTime: number,
     type: TriciAppEvent | null,
-    count: number = 20,
+    count: number = 200,
   ): Promise<any> {
     try {
       const events = await this._appEventRepository.getAppEvents(fromTime, toTime, type, count);

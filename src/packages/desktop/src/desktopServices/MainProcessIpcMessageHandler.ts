@@ -78,7 +78,7 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
         case 'getEvents':
           try {
             const { from, to, type } = params.args;
-            const events = await this.dataAccessService.getTriciAppEvents(from, to, type, 20);
+            const events = await this.dataAccessService.getTriciAppEvents(from, to, type, 200);
             result = { success: true, handler: 'getEvents-Success', data: events };
           } catch (error) {
             result = { success: false, handler: 'getEvents-Error', data: error };
