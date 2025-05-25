@@ -244,6 +244,7 @@ export const InitializationService: IInitializationService = {
         actionDispatcher,
         usedApplicationsService,
         userActivityStateMachine,
+        eventRepo,
       );
       userActivityMonitorService.initService();
       userActivityMonitorService.start();
