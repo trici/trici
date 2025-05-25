@@ -18,43 +18,43 @@ final class ScreenRecorder: NSObject {
   private var logger: Logger
   private var namedPipeFileHandle: FileHandle?
   private var captureEngine: CaptureEngine
-  
+
   //MARK: - Capture Targets
   private(set) var availableDisplays = [SCDisplay]()
   var activeDisplay: SCDisplay? {
     didSet { updateEngine() }
   }
-  
+
   //MARK: - Running State
   private var isRunning = false
   private var stopCaptureCalled = false
-  
-  
+
+
   //MARK: Segment duration
   private let defaultSegmentDuration: TimeInterval = 15 //seconds
   private var segmentDuration: TimeInterval
-  
+
   //MARK: - Segment State
   private var segmentIndex: Int = 1
   private var segmentStartTime: CMTime?
   private var baseUrl: URL? //stripped of mp4
-  
+
   private var scaleFactor: Int { Int(NSScreen.main?.backingScaleFactor ?? 2) }
-  
-  
+
+
   //MARK: - AVAssetWriter State
   private var currentWriter: AVAssetWriter?
   private var currentInput: AVAssetWriterInput?
   private var currentAdaptor: AVAssetWriterInputPixelBufferAdaptor?
   private var firstFrameTime: CMTime?
   private var lastBuffer: CVPixelBuffer? //store last received frame
-  
+
   //MARK: -
   private var videoWriteQueue: DispatchQueue?
   private var startTime: Date?
-  
-  
-  
+
+
+
   init(logger:Logger) {
     self.logger = logger
     self.captureEngine = CaptureEngine(logger:logger)
@@ -67,20 +67,20 @@ final class ScreenRecorder: NSObject {
       object: nil
     )
   }
-  
+
   private func createSegmentWriter(index: Int, config: SCStreamConfiguration) throws {
     guard let baseUrl = baseUrl else { return }
     let dir = baseUrl.deletingLastPathComponent()
     let name = baseUrl.lastPathComponent
     let segmentName = String(format:"%@_%04d.mp4", name, index)
     let outURL = dir.appendingPathComponent(segmentName)
-    
+
     try? FileManager.default.removeItem(at: outURL)
-    
+
     let writer = try AVAssetWriter(outputURL: outURL, fileType: .mp4)
     writer.shouldOptimizeForNetworkUse = true
     writer.movieFragmentInterval = CMTime(seconds: 1, preferredTimescale: 1)
-    
+
     let videoSettings: [String:Any] = [
       AVVideoCodecKey: AVVideoCodecType.h264,
       AVVideoWidthKey: config.width,
@@ -94,52 +94,52 @@ final class ScreenRecorder: NSObject {
         kVTCompressionPropertyKey_RealTime as String: true
       ]
     ]
-    
+
     let input = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
     input.expectsMediaDataInRealTime = true
-    
+
     let adaptorAttrs: [String: Any] = [
       kCVPixelBufferPixelFormatTypeKey as String: config.pixelFormat,
       kCVPixelBufferWidthKey as String: config.width,
       kCVPixelBufferHeightKey as String: config.height,
       kCVPixelBufferIOSurfacePropertiesKey as String: [:]
     ]
-    
+
     let adaptor = AVAssetWriterInputPixelBufferAdaptor(
       assetWriterInput: input,
       sourcePixelBufferAttributes: adaptorAttrs
     )
-    
+
     writer.add(input)
-    
+
     self.currentWriter = writer
     self.currentInput = input
     self.currentAdaptor = adaptor
-    
+
   }
-  
-  
+
+
   private var streamConfiguration: SCStreamConfiguration {
     let streamConfig = SCStreamConfiguration()
-    
+
     streamConfig.width = 1920
     streamConfig.height = 1080
-    
+
     streamConfig.showsCursor = true
     streamConfig.pixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
     streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: 7)
     streamConfig.scalesToFit = true
-    
+
     streamConfig.queueDepth = 5
-    
+
     return streamConfig
-    
+
   }
-  
+
   private var contentFilter : SCContentFilter {
     var filter: SCContentFilter
     guard let display = activeDisplay else { fatalError("No active display found")}
-    
+
     let excludedApps = [SCRunningApplication]()
     //        // If a user chooses to exclude the app from the stream,
     //        // exclude it by matching its bundle identifier.
@@ -151,9 +151,9 @@ final class ScreenRecorder: NSObject {
     filter = SCContentFilter(display: display, excludingApplications: excludedApps, exceptingWindows: [])
     return filter
   }
-  
-  
-  
+
+
+
   var canRecord: Bool {
     get async {
       do {
@@ -165,7 +165,7 @@ final class ScreenRecorder: NSObject {
       }
     }
   }
-  
+
   func refreshAvailableContent() async {
     do {
       // Retrieve the available screen content to capture.
@@ -179,7 +179,7 @@ final class ScreenRecorder: NSObject {
       logger.error("Failed to get the shareable content: \(error.localizedDescription)")
     }
   }
-  
+
   func setActiveDisplay(activeDisplayId: NSNumber) {
     if let display = availableDisplays.first(where: { $0.displayID == activeDisplayId.uint32Value }) {
       activeDisplay = display
@@ -197,7 +197,7 @@ final class ScreenRecorder: NSObject {
       await captureEngine.update(configuration: streamConfiguration, filter: filter)
     }
   }
-  
+
   @objc private func handleActiveScreenChange(notification: Notification) {
     logger.info("Inside handleActiveScreenChange")
     if let screen = notification.object as? NSScreen {
@@ -212,9 +212,9 @@ final class ScreenRecorder: NSObject {
       }
     }
   }
-  
-  
-  
+
+
+
   func getHighestScreenResolution() -> CGSize {
     let screenSizes = NSScreen.screens.map { $0.frame.size }
     if let largestResolution = screenSizes.max(by: { $0.width * $0.height < $1.width * $1.height }) {
@@ -224,13 +224,13 @@ final class ScreenRecorder: NSObject {
       return NSScreen.main?.frame.size ?? CGSize.zero
     }
   }
-  
-  
-  
+
+
+
   func start(outputPath: String, segmentDuration: TimeInterval? = nil) async {
     // Exit if already running
     guard !isRunning else { return }
-    
+
     // Validate and set segment duration if provided
     if let duration = segmentDuration {
       if duration >= 15 && duration <= 180 {
@@ -242,13 +242,13 @@ final class ScreenRecorder: NSObject {
     } else {
       self.segmentDuration = defaultSegmentDuration
     }
-    
+
     isRunning = true
     stopCaptureCalled = false
-    
+
     let config = streamConfiguration
     let filter = contentFilter
-    
+
     // Prepare baseURL (no segment suffix)
     let fileURL = URL(fileURLWithPath: outputPath)
     baseUrl = fileURL.deletingPathExtension()
@@ -258,60 +258,60 @@ final class ScreenRecorder: NSObject {
     lastBuffer = nil
     startTime = Date()
     videoWriteQueue = DispatchQueue(label: "com.gettrici.Recorder.VideoWriteQueue", qos: .userInteractive)
-    
+
     do {
-      
+
       // Create the first segment writer
       try createSegmentWriter(index: segmentIndex, config: config)
       guard let writer = currentWriter else { throw NSError(domain: "TriciRecorder", code: -1, userInfo: nil)}
-      
-      
+
+
       writer.startWriting()
       writer.startSession(atSourceTime: .zero)
-      
+
       var frameCount = 0
       var firstFrameTime: CMTime?
-      
-      
+
+
       logger.info("Starting segmented MP4 video capture to \(outputPath)")
-      
+
       Task {
         do {
           for try await output in captureEngine.startCapture(configuration: config, filter: filter, outputMode: true) {
             guard let input = currentInput,
                   let adaptor = currentAdaptor,
                   input.isReadyForMoreMediaData else { continue }
-            
+
             if case .pixelBuffer(let pixelBuffer) = output {
-              
+
               //Keep a warmup frame
               self.lastBuffer = pixelBuffer
-              
+
               // Get the actual timestamp for this frame
               let timestamp = CMClockGetTime(CMClockGetHostTimeClock())
               if firstFrameTime == nil {
                 firstFrameTime = timestamp
                 segmentStartTime = .zero
               }
-              
+
               // Calculate the presentation time relative to the first frame
               let presentationTime = CMTimeSubtract(timestamp, firstFrameTime!)
-              
+
               videoWriteQueue?.async {
-                
+
                 // Re-fetch writer/input/adaptor each time
                 guard let writer = self.currentWriter,
                       let input = self.currentInput,
                       let adaptor = self.currentAdaptor
                 else { return }
-                
+
                 let elapsed = CMTimeGetSeconds(CMTimeSubtract(presentationTime, self.segmentStartTime!))
-                
+
                 if elapsed >= self.segmentDuration {
                   // 1️⃣ Move boundary *before* we call finishWriting
                   self.segmentStartTime = presentationTime
                   self.segmentIndex += 1
-                  
+
                   // 2️⃣ Create & start the new writer
                   do {
                     try self.createSegmentWriter(index: self.segmentIndex, config: config)
@@ -320,22 +320,23 @@ final class ScreenRecorder: NSObject {
                        let newAdaptor = self.currentAdaptor
                     {
                       newWriter.startWriting()
-                      newWriter.startSession(atSourceTime: .zero)
-                      // warm‑up
+                      // Start new session with the current global presentation time
+                      newWriter.startSession(atSourceTime: presentationTime)
+                      // warm‑up frame with the same global presentation time
                       if let warm = self.lastBuffer {
-                        newAdaptor.append(warm, withPresentationTime: .zero)
+                        newAdaptor.append(warm, withPresentationTime: presentationTime)
                       }
                     }
                   } catch {
                     self.logger.error("Failed to create new segment writer: \(error.localizedDescription)")
                   }
-                  
+
                   // 3️⃣ Now finish the *old* writer
                   if writer.status == .writing {
                     input.markAsFinished()
                     writer.finishWriting {
                       let finishedSegment = String(format:"%04d", self.segmentIndex - 1)
-                      
+
                       switch writer.status {
                               case .completed:
                                   // ✔️ Everything was flushed, trailer written, FD closed.
@@ -357,21 +358,20 @@ final class ScreenRecorder: NSObject {
                                   ])
 
                               default:
-                                  // Shouldn’t happen, but good to know if you see `.cancelled` or `.unknown`
+                                  // Shouldn't happen, but good to know if you see `.cancelled` or `.unknown`
                                   self.logger.error("⚠️ Unexpected writer status \(writer.status) for segment \(finishedSegment)")
                               }
                       self.logger.info("Finished segment \(finishedSegment)")
                     }
                   }
                 }
-                
-                // 4️⃣ Append this frame (to whichever writer is now current)
-                let relTime = CMTimeSubtract(presentationTime, self.segmentStartTime!)
-                adaptor.append(pixelBuffer, withPresentationTime: relTime)
+
+                // 4️⃣ Append this frame with global presentation time
+                adaptor.append(pixelBuffer, withPresentationTime: presentationTime)
               }
-              
+
               frameCount += 1
-              
+
               if frameCount % 70 == 0 {
                 let currentTime = CMTimeGetSeconds(presentationTime)
                 let currentFPS = Double(frameCount) / currentTime
@@ -392,17 +392,17 @@ final class ScreenRecorder: NSObject {
           LoggingService.writeToStandardOutput(message: ["message": "screenRecorderStoppedByError"])
         }
       }
-      
-      
+
+
     } catch {
       logger.error("\(error.localizedDescription)")
       isRunning = false
     }
   }
-  
-  
-  
-  
+
+
+
+
   private func stopRecording() async {
     guard let writer = self.currentWriter,
           let writerInput = self.currentInput,
@@ -410,24 +410,24 @@ final class ScreenRecorder: NSObject {
           let startTime = startTime else {
       return
     }
-    
+
     // Wait for all pending write operations to complete
     await withCheckedContinuation { continuation in
       writeQueue.async {
         writerInput.markAsFinished()
         writer.finishWriting {
-         //  ┌── emit our “last segment done” event
+         //  ┌── emit our "last segment done" event
          let lastSegIndex = String(format: "%04d", self.segmentIndex)
          LoggingService.writeToStandardOutput(message: [
          "message": "finishedWritingSegment",
          "data": lastSegIndex
          ])
-          
+
           let endTime = Date()
           let duration = endTime.timeIntervalSince(startTime)
           let status = writer.status
           let error = writer.error
-          
+
           self.logger.info("Finished recording. Duration: \(duration) seconds")
           if let error = error {
             self.logger.error("AssetWriter finished with error: \(error.localizedDescription)")
@@ -435,7 +435,7 @@ final class ScreenRecorder: NSObject {
           if status == .failed {
             self.logger.error("AssetWriter failed")
           }
-          
+
           // Clean up resources
           self.currentWriter = nil
           self.currentInput = nil
@@ -443,61 +443,61 @@ final class ScreenRecorder: NSObject {
           self.videoWriteQueue = nil
           self.startTime = nil
           self.baseUrl = nil
-          
+
           continuation.resume()
         }
       }
     }
   }
-  
+
   func stop() async {
     stopCaptureCalled = true
     guard isRunning else { return }
-    
+
     // Call the asynchronous stopCapture method
     logger.debug("Stopping Capture")
     await captureEngine.stopCapture()
-    
+
     // If we were recording video, finalize it
     if self.currentWriter != nil {
       await stopRecording()
     }
-    
+
     isRunning = false
     logger.info("Stopped Recording")
-    
+
     // Close named pipe if it was being used
     if let handle = self.namedPipeFileHandle {
       handle.closeFile()
       self.namedPipeFileHandle = nil
     }
   }
-  
-  
-  
-  
+
+
+
+
   func startraw() async {
     // Exit if already running
     guard !isRunning else { return }
-    
+
     do {
       isRunning = true
       let config = streamConfiguration
       let filter = contentFilter
       logger.info("streamConfig: \(config)")
       logger.info("Opening named pipe")
-      
+
       logger.debug("Checking namedPipeFileHandle: \(namedPipeFileHandle == nil ? "nil" : "not nil")")
-      
+
       if namedPipeFileHandle == nil {
         let path = "/tmp/tricistream"
-        
+
         if !FileManager.default.fileExists(atPath: path) {
           logger.error("Named pipe does not exist at \(path)")
         } else {
           logger.debug("Named pipe exists at \(path), but FileHandle initialization still failed.")
         }
-        
+
         if let handle = FileHandle(forWritingAtPath: path) {
           namedPipeFileHandle = handle
         } else {
@@ -506,11 +506,11 @@ final class ScreenRecorder: NSObject {
           return
         }
       }
-      
+
       let writeQueue = DispatchQueue(label: "com.gettrici.Recorder.WriteQueue")
-      
+
       logger.info("Starting capture")
-      
+
       Task {
         var frameCounter = 0
         let startTime = Date()
@@ -518,11 +518,11 @@ final class ScreenRecorder: NSObject {
           for try await output in captureEngine.startCapture(configuration: config, filter: filter, outputMode: false) {
             if case .rawData(let rawData) = output {
               let frameReceivedTime = Date()
-              
+
               // create a copy of the data so that the object is discarded and the surface is returned to the pool
               // this prevents frame loss
               let copiedData = Data(rawData)
-              
+
               // Dispatch the write operation to the writeQueue
               writeQueue.async {
                 self.namedPipeFileHandle?.write(copiedData)
@@ -535,7 +535,7 @@ final class ScreenRecorder: NSObject {
               frameCounter += 1
             }
           }
-          
+
           // Wait for all pending write operations to complete
           writeQueue.sync {
             // All write operations have completed
@@ -559,20 +559,20 @@ final class ScreenRecorder: NSObject {
       isRunning = false
     }
   }
-  
-  
+
+
   func startDebug() async {
     // Exit if already running
     guard !isRunning else { return }
-    
+
     do {
       isRunning = true
       let config = streamConfiguration
       let filter = contentFilter
-      
+
       let rawFilePath = "/Users/shashi/projects/trici/src/packages/recorder/recordings/testRecording.raw"
       let rawFileURL = URL(fileURLWithPath: rawFilePath)
-      
+
       if !FileManager.default.fileExists(atPath: rawFilePath) {
         FileManager.default.createFile(atPath: rawFilePath, contents: nil, attributes: nil)
       }
@@ -580,7 +580,7 @@ final class ScreenRecorder: NSObject {
         logger.error("Failed to open raw data file for writing.")
         return
       }
-      
+
       let writeQueue = DispatchQueue(label: "com.gettrici.Recorder.WriteQueue")
       logger.info("Starting Debug capture")
       Task {
@@ -588,52 +588,52 @@ final class ScreenRecorder: NSObject {
         let expectedFrameSize = config.width * config.height * 3 / 2
         logger.info("Expected frame size: \(expectedFrameSize) bytes")
         logger.info("Configured resolution: \(config.width)x\(config.height)")
-        
+
         // Log the start time
         let startTime = Date()
         logger.info("Capture started at: \(startTime)")
-        
+
         for try await output in captureEngine.startCapture(configuration: config, filter: filter, outputMode: false) {
           if case .rawData(let rawData) = output {
             writeQueue.async {
               fileHandle.write(rawData)
             }
             frameCount += 1
-            
+
             if frameCount == 1 || frameCount == 40 {
               let actualSize = rawData.count
               logger.info("Actual data size: \(actualSize) bytes")
             }
-            
+
             if frameCount % 30 == 0 {  // Log every 30 frames
               logger.info("Processed \(frameCount) frames. Last frame size: \(rawData.count) bytes")
             }
           }
         }
-        
+
         writeQueue.sync {
           logger.info("Finished writing queue contents")
         }
-        
+
         // Log the end time
         let endTime = Date()
         logger.info("Capture ended at: \(endTime)")
-        
+
         // Calculate total duration
         let totalDuration = endTime.timeIntervalSince(startTime)  // Duration in seconds
         logger.info("Total duration: \(totalDuration) seconds")
-        
+
         // Calculate expected frames
         let frameRate: Double = 7.0
         let expectedFrames = totalDuration * frameRate
         logger.info("Expected frames (Total Duration x Frame Rate): \(expectedFrames)")
-        
+
         logger.info("Total frames written: \(frameCount)")
         logger.info("Capture Engine stopped frames")
         fileHandle.closeFile()
         logger.info("Finished writing raw data to \(rawFilePath)")
       }
-      
+
     } catch {
       logger.error("\(error.localizedDescription)")
       isRunning = false
@@ -649,13 +649,13 @@ final class ScreenRecorder: NSObject {
       sendResponse(errorResponse)
       return
     }
-    
+
     if let image = CGDisplayCreateImage(display.displayID) {
       let url = URL(fileURLWithPath: path)
-      
+
       if let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil) {
         CGImageDestinationAddImage(destination, image, nil)
-        
+
         if CGImageDestinationFinalize(destination) {
           let successResponse: [String: Any] = [
             "type": "screenshot",
@@ -688,7 +688,7 @@ final class ScreenRecorder: NSObject {
       sendResponse(errorResponse)
     }
   }
-  
+
   // Helper function to send JSON response
   private func sendResponse(_ response: [String: Any]) {
     if let data = try? JSONSerialization.data(withJSONObject: response),
@@ -696,5 +696,5 @@ final class ScreenRecorder: NSObject {
       FileHandle.standardOutput.write("\(jsonString)\n".data(using: .utf8)!)
     }
   }
-  
+
 }

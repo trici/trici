@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { AppObserverService } from '@trici/app-observer';
 import type { IConsoleLogger, Logger } from '@trici/logger';
-import { Constants, DailyUserActivity, FocusSession, TriciAppEvent, UsedAppCategory } from '@trici/models';
+import { Constants, DailyUserActivity, FocusSession, TriciAppEvent, UsedAppCategory, IAppEvent } from '@trici/models';
 import { generateNewTriciId, generateUpdatedTriciId, isTriciIdValidForToday, isWebBrowser } from '@trici/utils';
 import { IAppJsonStorageService } from './AppJsonStorageService';
 import { AppEventEmitter } from './AppEventEmitter';
@@ -13,6 +13,7 @@ import { UserActivityStateMachine } from '@trici/activmon';
 import { UserActivityState } from '@trici/models';
 import { isUserWorking } from '@trici/utils';
 import { DataWriter } from '@trici/datawriter';
+import { IAppEventRepository } from '@trici/dal';
 
 export interface IUserActivityMonitorService {
   start(): Promise<void>;
@@ -38,6 +39,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   private idleTimeChunkNumber: number = 0;
   private idleTimeChunkProfile: { idleTime: number; timestamp: number }[] = [];
   private idleTimeChunkSessionStart: number | null = null;
+  private appEventRepository: IAppEventRepository;
 
   constructor(
     getLogger: () => Logger | IConsoleLogger,
@@ -47,6 +49,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     actionDispatcher: IActionDispatcher<TriciAction>,
     usedApplicationsService: UsedApplicationsService,
     userActivityStateMachine: UserActivityStateMachine,
+    appEventRepository: IAppEventRepository,
   ) {
     this.getLogger = getLogger;
     this.appObserverServiceInstance = appObserverServiceInstance;
@@ -59,6 +62,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.actionDispatcher = actionDispatcher;
     this.usedApplicationsService = usedApplicationsService;
     this.captureIdleTimeProfile = false;
+    this.appEventRepository = appEventRepository;
   }
 
   updateLastSavedTodayUserActivityId = async (udpatedId: string) => {
@@ -102,12 +106,52 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
           this.wakeUp();
           break;
         case 'FINISH_WRITING_SEGMENT':
+          this.writeEventsChunk(this.idleTimeChunkNumber);
           this.writeIdleTimeChunk();
           break;
         default:
           break;
       }
     });
+  }
+  writeEventsChunk(chunkNumber: number) {
+    // Write asynchronously so triciping is never blocked
+    (async () => {
+      try {
+        if (!this.idleTimeChunkSessionStart) {
+          this.getLogger().info('UserActivityMonitorService: No active session to write events for');
+          return;
+        }
+
+        const prefix = this.idleTimeChunkSessionStart;
+        const paddedChunkNumber = chunkNumber.toString().padStart(4, '0');
+        const chunkFileName = `${prefix}-events-chunk-${paddedChunkNumber}.csv`;
+        const filePath = global.userDataDirectoryCheckResult.recordingsDir.path + '/' + prefix + '/' + chunkFileName;
+
+        // Calculate the time range for this chunk
+        // For chunk 0, use the session start time directly
+        // For subsequent chunks, add the appropriate offset
+        const chunkStartTime = chunkNumber === 0 ? prefix : prefix + chunkNumber * 15 * 1000;
+        const chunkEndTime = chunkStartTime + 15 * 1000; // Add 15 seconds
+
+        this.getLogger().info(
+          `UserActivityMonitorService: Fetching events for chunk ${chunkNumber} from ${chunkStartTime} to ${chunkEndTime} (in milliseconds)`,
+        );
+
+        // Fetch events from the database for this time range
+        const events = await this.appEventRepository.getAllAppEvents(chunkStartTime, chunkEndTime);
+
+        // Write events to CSV file
+        const fileContent = events
+          .map((event: IAppEvent) => `${event.id},${event.type},${event.timestamp},${JSON.stringify(event.data)}`)
+          .join('\n');
+
+        await fs.promises.writeFile(filePath, fileContent);
+        this.getLogger().info(`UserActivityMonitorService: Wrote ${events.length} events to ${chunkFileName}`);
+      } catch (error) {
+        this.getLogger().error(`UserActivityMonitorService: Error while writing events chunk: ${error}`);
+      }
+    })();
   }
 
   registerAppEventHandlers(): void {
@@ -124,6 +168,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     this.appEventEmitter.on(TriciAppEvent.FOCUS_SESSION_ENDED, async (focusSession: FocusSession) => {
       this.captureIdleTimeProfile = false;
       // Write any remaining chunk as when the session ends, the finishedWritingSegment event is not fired.
+      await this.writeEventsChunk(this.idleTimeChunkNumber);
       await this.writeIdleTimeChunk();
       // Reset the idle time chunk number and profile for the next session.
       this.idleTimeChunkNumber = 0;
