@@ -19,7 +19,10 @@ export class CompareFramesStep extends BasePipelineStep {
         // TODO: Implement actual frame comparison
         // For now, just return some dummy data
         return {
-          similarFrames: ['frame1.jpg', 'frame2.jpg'],
+          success: true,
+          data: {
+            similarFrames: ['frame1.jpg', 'frame2.jpg'],
+          },
         };
       },
       job,

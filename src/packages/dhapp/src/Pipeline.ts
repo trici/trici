@@ -4,6 +4,8 @@ import { IFocusSessionDataProcessingJob } from './DhappService';
 import { DhappJobType } from '@trici/models';
 import { IPipelineStep, PipelineStepErrorType, PipelineStepError } from './pipeline/IPipelineStep';
 import { ExtractPointsOfInterestStep, ExtractFramesStep, CompareFramesStep, ExtractOCRStep } from './pipeline/steps';
+import path from 'path';
+import fs from 'fs/promises';
 
 export interface IPipeline {
   start: () => void;
@@ -20,7 +22,6 @@ export class Pipeline implements IPipeline {
   private getLogger: () => Logger | IConsoleLogger;
   private ffmpegPath: string;
   private pipelineSteps: Map<DhappJobType, IPipelineStep[]>;
-  private stepResults: Record<string, any>; // Store results for current job
 
   constructor(jobRepository: IDhappJobRepository, ffmpegPath: string, getLogger: () => Logger | IConsoleLogger) {
     this.jobBeingHandled = null;
@@ -31,7 +32,6 @@ export class Pipeline implements IPipeline {
     this.getLogger = getLogger;
     this.ffmpegPath = ffmpegPath;
     this.pipelineSteps = new Map();
-    this.stepResults = {};
     this.initializePipelineSteps();
   }
 
@@ -92,14 +92,12 @@ export class Pipeline implements IPipeline {
     if (!jobToHandle) {
       this.jobHandlingInProcess = false;
       this.jobBeingHandled = null;
-      this.stepResults = {}; // Reset step results
       this.getLogger().info('No pending job to handle. Returning');
       return;
     }
 
     this.jobBeingHandled = jobToHandle;
     this.jobHandlingInProcess = true;
-    this.stepResults = {}; // Reset step results for new job
 
     try {
       // Update job status to processing
@@ -120,12 +118,9 @@ export class Pipeline implements IPipeline {
         }
 
         try {
-          const result = await step.execute(jobToHandle, this.stepResults);
+          const result = await step.execute(jobToHandle, {});
 
           if (result.success) {
-            // Store step results in pipeline state
-            this.stepResults[stepName] = result.data;
-
             // Mark step as completed
             jobToHandle.steps_completed[stepName] = true;
             await this.jobRepository.save(jobToHandle);
@@ -191,7 +186,6 @@ export class Pipeline implements IPipeline {
     } finally {
       this.jobHandlingInProcess = false;
       this.jobBeingHandled = null;
-      this.stepResults = {}; // Reset step results
     }
   }
 
@@ -243,21 +237,9 @@ export class Pipeline implements IPipeline {
 
       this.getLogger().info(`Retrying job ${failedJob.id} from step ${lastFailedStep.getStepName()}`);
 
-      // Get results from completed steps
-      const stepResults: Record<string, any> = {};
-      for (const step of steps) {
-        const stepName = step.getStepName();
-        if (failedJob.steps_completed[stepName] && stepName !== lastFailedStep.getStepName()) {
-          stepResults[stepName] = this.stepResults[stepName];
-        }
-      }
-
       // Execute the failed step
-      const result = await lastFailedStep.execute(failedJob, stepResults);
+      const result = await lastFailedStep.execute(failedJob, {});
       if (result.success) {
-        // Store step results
-        this.stepResults[lastFailedStep.getStepName()] = result.data;
-
         // Mark step as completed
         failedJob.steps_completed[lastFailedStep.getStepName()] = true;
         await this.jobRepository.save(failedJob);
@@ -266,9 +248,8 @@ export class Pipeline implements IPipeline {
         const remainingSteps = steps.slice(steps.indexOf(lastFailedStep) + 1);
         for (const step of remainingSteps) {
           try {
-            const stepResult = await step.execute(failedJob, this.stepResults);
+            const stepResult = await step.execute(failedJob, {});
             if (stepResult.success) {
-              this.stepResults[step.getStepName()] = stepResult.data;
               failedJob.steps_completed[step.getStepName()] = true;
               await this.jobRepository.save(failedJob);
             } else {

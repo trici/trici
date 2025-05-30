@@ -19,7 +19,10 @@ export class ExtractOCRStep extends BasePipelineStep {
         // TODO: Implement actual OCR extraction
         // For now, just return some dummy data
         return {
-          ocr: 'Extracted OCR text',
+          success: true,
+          data: {
+            ocr: 'Extracted OCR text',
+          },
         };
       },
       job,

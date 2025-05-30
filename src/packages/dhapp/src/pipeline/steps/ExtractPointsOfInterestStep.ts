@@ -118,7 +118,7 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
     return points;
   }
 
-  async execute(job: IDhappJob): Promise<IPipelineStepResult> {
+  async execute(job: IDhappJob, stepResults: Record<string, any>): Promise<IPipelineStepResult> {
     this.getLogger().info('Extracting points of interest from idle time profile and events');
 
     return this.retryWithBackoff(
