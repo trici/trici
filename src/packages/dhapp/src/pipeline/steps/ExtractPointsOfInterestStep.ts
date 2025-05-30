@@ -136,8 +136,23 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
 
         this.getLogger().info(`Extracted ${allPoints.length} points of interest`);
 
+        // Store points of interest in a file
+        const sessionName = job.job_name.split('_')[0];
+        const chunkNumber = job.job_name.split('_')[1];
+        const pointsPath = path.join(job.job_session_directory, `${sessionName}-poi-chunk-${chunkNumber}.json`);
+        try {
+          await fs.writeFile(pointsPath, JSON.stringify(allPoints, null, 2));
+        } catch (error) {
+          this.getLogger().error(`Error writing points of interest to file: ${error}`);
+          return {
+            success: false,
+            error: 'Failed to write points of interest to file',
+          };
+        }
+
         return {
-          points: allPoints,
+          success: true,
+          data: allPoints,
         };
       },
       job,
