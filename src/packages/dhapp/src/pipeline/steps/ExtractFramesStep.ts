@@ -29,7 +29,7 @@ export class ExtractFramesStep extends BasePipelineStep {
     return this.retryWithBackoff(
       async () => {
         // Get points of interest from the extract_points_of_interest step
-        const pointsOfInterest = stepResults['extract_points_of_interest']?.points as PointOfInterest[];
+        const pointsOfInterest = stepResults['extract_points_of_interest'] as PointOfInterest[];
         if (!pointsOfInterest) {
           throw new Error('No points of interest found from extract_points_of_interest step');
         }
