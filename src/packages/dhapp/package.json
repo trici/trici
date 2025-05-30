@@ -20,13 +20,17 @@
     "build-dev": "pnpm run build-types && npm run build-esbuild-dev",
     "build-prod": "pnpm run build-esbuild-prod",
     "build-types": "tsc && node ../../scripts/flatten-types.js .",
-    "test": "cross-env NODE_ENV=test jest --detectOpenHandles"
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles",
+    "start": "node start.js"
   },
   "bugs": {
     "url": "https://github.com/trici/trici/issues"
   },
   "dependencies": {
-    "@trici/dal": "workspace:^"
+    "@trici/dal": "workspace:^",
+    "@trici/datawriter": "workspace:*",
+    "@trici/logger": "workspace:*",
+    "@trici/models": "workspace:^"
   },
   "devDependencies": {
     "@types/jest": "^29.5.3",
