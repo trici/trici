@@ -40,6 +40,8 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
   private idleTimeChunkProfile: { idleTime: number; timestamp: number }[] = [];
   private idleTimeChunkSessionStart: number | null = null;
   private appEventRepository: IAppEventRepository;
+  private currentFrontmostApp: { appName: string; appIdentifier: string; timestamp: number } | null = null;
+  private frontmostAppAtChunkStart: { appName: string; appIdentifier: string; timestamp: number } | null = null;
 
   constructor(
     getLogger: () => Logger | IConsoleLogger,
@@ -114,6 +116,32 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       }
     });
   }
+
+  private async writeChunkInfo(chunkNumber: number, chunkStartTime: number, chunkEndTime: number) {
+    try {
+      const prefix = this.idleTimeChunkSessionStart;
+      const paddedChunkNumber = chunkNumber.toString().padStart(4, '0');
+      const chunkInfoFileName = `${prefix}-chunkinfo-${paddedChunkNumber}.json`;
+      const filePath = global.userDataDirectoryCheckResult.recordingsDir.path + '/' + prefix + '/' + chunkInfoFileName;
+
+      const chunkInfo = {
+        frontmostApp: this.frontmostAppAtChunkStart,
+        timeRange: {
+          start: chunkStartTime,
+          end: chunkEndTime,
+        },
+      };
+
+      await fs.promises.writeFile(filePath, JSON.stringify(chunkInfo, null, 2));
+      this.getLogger().info(`UserActivityMonitorService: Wrote chunk info to ${chunkInfoFileName}`);
+
+      // Update the frontmost app at chunk start for the next chunk
+      this.frontmostAppAtChunkStart = this.currentFrontmostApp;
+    } catch (error) {
+      this.getLogger().error(`UserActivityMonitorService: Error while writing chunk info: ${error}`);
+    }
+  }
+
   writeEventsChunk(chunkNumber: number) {
     // Write asynchronously so triciping is never blocked
     (async () => {
@@ -138,6 +166,9 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
           `UserActivityMonitorService: Fetching events for chunk ${chunkNumber} from ${chunkStartTime} to ${chunkEndTime} (in milliseconds)`,
         );
 
+        // Write chunk info first
+        await this.writeChunkInfo(chunkNumber, chunkStartTime, chunkEndTime);
+
         // Fetch events from the database for this time range
         const events = await this.appEventRepository.getAllAppEvents(chunkStartTime, chunkEndTime);
 
@@ -160,6 +191,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       this.idleTimeChunkNumber = 0;
       this.idleTimeChunkProfile = [];
       this.idleTimeChunkSessionStart = focusSession.get('startTime');
+      this.frontmostAppAtChunkStart = this.currentFrontmostApp;
       if (this._isAppSleeping) {
         this.wakeUp();
       }
@@ -174,6 +206,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
       this.idleTimeChunkNumber = 0;
       this.idleTimeChunkProfile = [];
       this.idleTimeChunkSessionStart = null;
+      this.frontmostAppAtChunkStart = null;
     });
 
     this.appEventEmitter.on(
@@ -387,6 +420,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
     this.appObserverServiceInstance.on('frontmostAppChanged', (frontmostAppChangeData: any) => {
       this.getLogger().info(`UserActivityMonitorService frontmostAppChanged:${JSON.stringify(frontmostAppChangeData)}`);
+      this.currentFrontmostApp = this.appObserverServiceInstance.getCurrentApp();
       this.appEventEmitter.emit(TriciAppEvent.FRONTMOST_APP_CHANGED, frontmostAppChangeData);
     });
 
@@ -417,6 +451,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
     //   this.getLogger().error(`UserActivityMonitorService: Error while fetching today's user activity: ${err}`);
     // }
     this.appObserverServiceInstance.start(isRunningInAsar);
+    this.currentFrontmostApp = this.appObserverServiceInstance.getCurrentApp();
   }
 
   async stop(): Promise<void> {
