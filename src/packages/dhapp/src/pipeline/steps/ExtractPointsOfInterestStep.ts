@@ -17,11 +17,28 @@ interface Event {
   data?: any;
 }
 
+interface FrontmostApp {
+  appName: string;
+  appIdentifier: string;
+  timestamp: number;
+}
+
+interface TimeRange {
+  start: number;
+  end: number;
+}
+
+interface ChunkInfo {
+  frontmostApp: FrontmostApp;
+  timeRange: TimeRange;
+}
+
 interface PointOfInterest {
   timestamp: number;
   type: 'app_change' | 'activity';
-  metadata?: {
-    appName?: string;
+  metadata: {
+    appName: string;
+    appIdentifier: string;
     idleTime?: number;
   };
 }
@@ -64,17 +81,36 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
     return events;
   }
 
-  private extractPointsFromAppChanges(events: Event[]): PointOfInterest[] {
+  private async loadChunkInfo(job: IDhappJob): Promise<ChunkInfo> {
+    const jobSessionDir = job.job_session_directory;
+    const sessionName = job.job_name.split('_')[0];
+    const chunkNumber = job.job_name.split('_')[1];
+
+    const chunkInfoPath = path.join(jobSessionDir, `${sessionName}-chunkinfo-${chunkNumber}.json`);
+    const data = await fs.readFile(chunkInfoPath, 'utf-8');
+    return JSON.parse(data);
+  }
+
+  private extractPointsFromAppChanges(events: Event[], initialApp: FrontmostApp): PointOfInterest[] {
     const points: PointOfInterest[] = [];
+    let currentApp = initialApp;
 
     for (const event of events) {
       if (event.type === 'frontmost-app-changed') {
+        // Update current app
+        currentApp = {
+          appName: event.data?.appName,
+          appIdentifier: event.data?.appIdentifier,
+          timestamp: event.timestamp,
+        };
+
         // Add point 500ms before the event
         points.push({
           timestamp: event.timestamp - 500,
           type: 'app_change',
           metadata: {
-            appName: event.data?.appName,
+            appName: currentApp.appName,
+            appIdentifier: currentApp.appIdentifier,
           },
         });
 
@@ -83,7 +119,8 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
           timestamp: event.timestamp + 500,
           type: 'app_change',
           metadata: {
-            appName: event.data?.appName,
+            appName: currentApp.appName,
+            appIdentifier: currentApp.appIdentifier,
           },
         });
       }
@@ -92,7 +129,7 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
     return points;
   }
 
-  private extractPointsFromActivity(itp: IdleTimeProfile[]): PointOfInterest[] {
+  private extractPointsFromActivity(itp: IdleTimeProfile[], initialApp: FrontmostApp): PointOfInterest[] {
     const points: PointOfInterest[] = [];
     const ACTIVE_THRESHOLD = 500; // ms
     const MIN_ACTIVITY_GAP = 1500; // ms
@@ -107,6 +144,8 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
             timestamp: profile.timestamp,
             type: 'activity',
             metadata: {
+              appName: initialApp.appName,
+              appIdentifier: initialApp.appIdentifier,
               idleTime: profile.idleTime,
             },
           });
@@ -124,12 +163,13 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
     return this.retryWithBackoff(
       async () => {
         // Load data
+        const chunkInfo = await this.loadChunkInfo(job);
         const itp = await this.loadIdleTimeProfile(job);
         const events = await this.loadEvents(job);
 
-        // Extract points from both sources
-        const appChangePoints = this.extractPointsFromAppChanges(events);
-        const activityPoints = this.extractPointsFromActivity(itp);
+        // Extract points from both sources using the initial app from chunkInfo
+        const appChangePoints = this.extractPointsFromAppChanges(events, chunkInfo.frontmostApp);
+        const activityPoints = this.extractPointsFromActivity(itp, chunkInfo.frontmostApp);
 
         // Combine and sort all points by timestamp
         const allPoints = [...appChangePoints, ...activityPoints].sort((a, b) => a.timestamp - b.timestamp);
