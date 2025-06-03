@@ -71,12 +71,16 @@ export class DhappService implements IDhappService {
         const sessionName = job_name.split('_')[0];
 
         // Check for the required data files
-        const csvFile = path.join(job.job_session_directory, `${sessionName}-events-chunk-${chunkNumber}.csv`);
+        const eventsJsonFile = path.join(job.job_session_directory, `${sessionName}-events-chunk-${chunkNumber}.json`);
+        const chunkInfoJsonFile = path.join(job.job_session_directory, `${sessionName}-chunkinfo-${chunkNumber}.json`);
         const tsVideoFile = path.join(job.job_session_directory, `${sessionName}_${chunkNumber}.ts`);
         const datFile = path.join(job.job_session_directory, `${sessionName}-itp-chunk-${chunkNumber}.dat`);
 
-        if (!fs.existsSync(csvFile)) {
-          throw new Error(`Required CSV file ${csvFile} does not exist`);
+        if (!fs.existsSync(eventsJsonFile)) {
+          throw new Error(`Required JSON file ${eventsJsonFile} does not exist`);
+        }
+        if (!fs.existsSync(chunkInfoJsonFile)) {
+          throw new Error(`Required JSON file ${chunkInfoJsonFile} does not exist`);
         }
         if (!fs.existsSync(tsVideoFile)) {
           throw new Error(`Required TS video file ${tsVideoFile} does not exist`);
