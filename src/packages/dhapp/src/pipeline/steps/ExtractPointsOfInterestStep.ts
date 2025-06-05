@@ -1,6 +1,6 @@
 import { IDhappJob } from '@trici/dal';
 import { IConsoleLogger, Logger } from '@trici/logger';
-import { IPipelineStep, IPipelineStepResult } from '../IPipelineStep';
+import { IPipelineStepResult } from '../IPipelineStep';
 import { BasePipelineStep } from './BasePipelineStep';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -35,7 +35,7 @@ interface ChunkInfo {
 
 interface PointOfInterest {
   timestamp: number;
-  type: 'app_change' | 'activity';
+  type: 'before_app_change' | 'after_app_change' | 'activity';
   metadata: {
     appName: string;
     appIdentifier: string;
@@ -68,17 +68,21 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
     const sessionName = job.job_name.split('_')[0];
     const chunkNumber = job.job_name.split('_')[1];
 
-    const eventsPath = path.join(jobSessionDir, `${sessionName}-events-chunk-${chunkNumber}.csv`);
+    const eventsPath = path.join(jobSessionDir, `${sessionName}-events-chunk-${chunkNumber}.json`);
     const data = await fs.readFile(eventsPath, 'utf-8');
-    const events = data.split('\n').map(line => {
-      const [timestamp, type, data] = line.split(',');
-      return {
-        timestamp: parseInt(timestamp),
-        type,
-        data,
-      };
-    });
-    return events;
+
+    try {
+      const events = JSON.parse(data);
+      return events.map((event: any) => ({
+        timestamp: event.timestamp,
+        type: event.type,
+        data: event.data,
+      }));
+    } catch (error) {
+      this.getLogger().error(`Failed to parse events file: ${error}`);
+      this.getLogger().error(`Raw file contents: ${data}`);
+      throw error;
+    }
   }
 
   private async loadChunkInfo(job: IDhappJob): Promise<ChunkInfo> {
@@ -97,55 +101,90 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
 
     for (const event of events) {
       if (event.type === 'frontmost-app-changed') {
-        // Update current app
-        currentApp = {
-          appName: event.data?.appName,
-          appIdentifier: event.data?.appIdentifier,
-          timestamp: event.timestamp,
-        };
+        const eventData = event.data[0];
 
-        // Add point 500ms before the event
+        // Add point 500ms before the event using the previous app
         points.push({
           timestamp: event.timestamp - 500,
-          type: 'app_change',
+          type: 'before_app_change',
           metadata: {
-            appName: currentApp.appName,
-            appIdentifier: currentApp.appIdentifier,
+            appName: eventData.previousApp.appName,
+            appIdentifier: eventData.previousApp.appIdentifier,
           },
         });
 
-        // Add point 500ms after the event
+        // Add point 500ms after the event using the new frontmost app
         points.push({
           timestamp: event.timestamp + 500,
-          type: 'app_change',
+          type: 'after_app_change',
           metadata: {
-            appName: currentApp.appName,
-            appIdentifier: currentApp.appIdentifier,
+            appName: eventData.frontmostApp.appName,
+            appIdentifier: eventData.frontmostApp.appIdentifier,
           },
         });
+
+        // Update current app for future reference
+        currentApp = {
+          appName: eventData.frontmostApp.appName,
+          appIdentifier: eventData.frontmostApp.appIdentifier,
+          timestamp: event.timestamp,
+        };
       }
     }
 
     return points;
   }
 
-  private extractPointsFromActivity(itp: IdleTimeProfile[], initialApp: FrontmostApp): PointOfInterest[] {
+  private extractPointsFromActivity(
+    itp: IdleTimeProfile[],
+    events: Event[],
+    initialApp: FrontmostApp,
+  ): PointOfInterest[] {
     const points: PointOfInterest[] = [];
     const ACTIVE_THRESHOLD = 500; // ms
     const MIN_ACTIVITY_GAP = 1500; // ms
 
     let lastActivityPoint: number | null = null;
 
+    // Create a map of timestamps to app changes for quick lookup
+    const appChanges = new Map<number, FrontmostApp>();
+
+    // Initialize with the initial app at its timestamp
+    appChanges.set(initialApp.timestamp, initialApp);
+
+    // Add any subsequent app changes
+    for (const event of events) {
+      if (event.type === 'frontmost-app-changed') {
+        const eventData = event.data[0];
+        const newApp = {
+          appName: eventData.frontmostApp.appName,
+          appIdentifier: eventData.frontmostApp.appIdentifier,
+          timestamp: event.timestamp,
+        };
+        appChanges.set(event.timestamp, newApp);
+      }
+    }
+
     for (const profile of itp) {
       if (profile.idleTime < ACTIVE_THRESHOLD) {
         // If this is the first activity point or enough time has passed since the last one
         if (lastActivityPoint === null || profile.timestamp - lastActivityPoint >= MIN_ACTIVITY_GAP) {
+          // Find the most recent app change before this timestamp
+          let appAtTimestamp = initialApp; // Default to initial app
+          for (const [timestamp, app] of appChanges.entries()) {
+            if (timestamp <= profile.timestamp) {
+              appAtTimestamp = app;
+            } else {
+              break;
+            }
+          }
+
           points.push({
             timestamp: profile.timestamp,
             type: 'activity',
             metadata: {
-              appName: initialApp.appName,
-              appIdentifier: initialApp.appIdentifier,
+              appName: appAtTimestamp.appName,
+              appIdentifier: appAtTimestamp.appIdentifier,
               idleTime: profile.idleTime,
             },
           });
@@ -169,7 +208,7 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
 
         // Extract points from both sources using the initial app from chunkInfo
         const appChangePoints = this.extractPointsFromAppChanges(events, chunkInfo.frontmostApp);
-        const activityPoints = this.extractPointsFromActivity(itp, chunkInfo.frontmostApp);
+        const activityPoints = this.extractPointsFromActivity(itp, events, chunkInfo.frontmostApp);
 
         // Combine and sort all points by timestamp
         const allPoints = [...appChangePoints, ...activityPoints].sort((a, b) => a.timestamp - b.timestamp);
