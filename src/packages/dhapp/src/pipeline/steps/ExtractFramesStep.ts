@@ -8,7 +8,7 @@ import { spawn } from 'child_process';
 
 interface PointOfInterest {
   timestamp: number;
-  type: 'app_change' | 'activity';
+  type: 'before_app_change' | 'after_app_change' | 'activity';
   metadata?: {
     appName?: string;
     idleTime?: number;
@@ -17,7 +17,7 @@ interface PointOfInterest {
 
 interface Frame {
   timestamp: number;
-  type: 'app_change' | 'activity';
+  type: 'before_app_change' | 'after_app_change' | 'activity';
   framePath: string;
   metadata?: {
     appName?: string;
@@ -119,7 +119,7 @@ export class ExtractFramesStep extends BasePipelineStep {
 
         const frames: Frame[] = [];
         for (const point of pointsOfInterest) {
-          // Generate output path for the frame
+          // Generate output path for the frame using the actual timestamp
           const framePath = path.join(framesDir, `${sessionName}_${point.timestamp}_${point.type}.jpg`);
 
           try {

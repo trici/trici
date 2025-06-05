@@ -23,8 +23,8 @@ async function main() {
   try {
     // Create a sample job for processing
     const sampleJob = {
-      job_session_directory: './sampledata/1748164880469',
-      job_name: '1748164880469_0000',
+      job_session_directory: './sampledata/1748962803077',
+      job_name: '1748962803077_0000',
       job_type: DhappJobType.FOCUS_SESSION_CHUNK,
     };
 
@@ -36,8 +36,23 @@ async function main() {
     getConsoleLogger().error('Error processing job:', error);
   }
 
+  try {
+    // Create a sample job for processing
+    const sampleJob = {
+      job_session_directory: './sampledata/1748962803077',
+      job_name: '1748962803077_0001',
+      job_type: DhappJobType.FOCUS_SESSION_CHUNK,
+    };
+
+    // Queue the job
+    getConsoleLogger().info('Queueing job for processing...');
+    const queuedJob = await dhappService.queueJob(sampleJob);
+    getConsoleLogger().info('Job queued successfully:', queuedJob);
+  } catch (error) {
+    getConsoleLogger().error('Error processing job:', error);
+  }
   // Keep the process running for a while to allow processing
-  await new Promise(resolve => setTimeout(resolve, 30000)); // Wait for 30 seconds
+  await new Promise(resolve => setTimeout(resolve, 60000)); // Wait for 30 seconds
 
   // Stop the service
   dhappService.stop();
