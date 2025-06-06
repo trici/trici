@@ -88,7 +88,11 @@ export class ExtractFramesStep extends BasePipelineStep {
         // Read points of interest from file
         const sessionName = job.job_name.split('_')[0];
         const chunkNumber = job.job_name.split('_')[1];
-        const pointsPath = path.join(job.job_session_directory, `${sessionName}-poi-chunk-${chunkNumber}.json`);
+        const pointsPath = path.join(
+          job.job_session_directory,
+          'processed',
+          `${sessionName}-poi-chunk-${chunkNumber}.json`,
+        );
 
         let pointsOfInterest: PointOfInterest[];
         try {
@@ -113,8 +117,12 @@ export class ExtractFramesStep extends BasePipelineStep {
           throw new Error(`TS segment not found at ${tsPath}`);
         }
 
-        // Create frames directory if it doesn't exist
-        const framesDir = path.join(job.job_session_directory, 'frames');
+        // Create processed directory if it doesn't exist
+        const processedDir = path.join(job.job_session_directory, 'processed');
+        await fs.mkdir(processedDir, { recursive: true });
+
+        // Create frames directory inside processed directory
+        const framesDir = path.join(processedDir, 'frames');
         await fs.mkdir(framesDir, { recursive: true });
 
         const frames: Frame[] = [];
@@ -139,8 +147,8 @@ export class ExtractFramesStep extends BasePipelineStep {
           }
         }
 
-        // Write frames metadata to a file
-        const framesPath = path.join(job.job_session_directory, `${sessionName}-frames-chunk-${chunkNumber}.json`);
+        // Write frames metadata to a file in the processed directory
+        const framesPath = path.join(processedDir, `${sessionName}-frames-chunk-${chunkNumber}.json`);
         try {
           await fs.writeFile(framesPath, JSON.stringify(frames, null, 2));
         } catch (error) {

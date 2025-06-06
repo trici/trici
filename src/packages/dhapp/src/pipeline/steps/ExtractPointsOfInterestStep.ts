@@ -215,10 +215,14 @@ export class ExtractPointsOfInterestStep extends BasePipelineStep {
 
         this.getLogger().info(`Extracted ${allPoints.length} points of interest`);
 
-        // Store points of interest in a file
+        // Create processed directory if it doesn't exist
+        const processedDir = path.join(job.job_session_directory, 'processed');
+        await fs.mkdir(processedDir, { recursive: true });
+
+        // Store points of interest in a file within the processed directory
         const sessionName = job.job_name.split('_')[0];
         const chunkNumber = job.job_name.split('_')[1];
-        const pointsPath = path.join(job.job_session_directory, `${sessionName}-poi-chunk-${chunkNumber}.json`);
+        const pointsPath = path.join(processedDir, `${sessionName}-poi-chunk-${chunkNumber}.json`);
         try {
           await fs.writeFile(pointsPath, JSON.stringify(allPoints, null, 2));
         } catch (error) {
