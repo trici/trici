@@ -37,34 +37,42 @@ export class ExtractFramesStep extends BasePipelineStep {
     return 'extract_frames';
   }
 
-  private async extractFrameFromTs(tsPath: string, timestamp: number, outputPath: string): Promise<void> {
+  private async extractFrameFromTs(tsPath: string, offsetTimestamp: number, outputPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      // Calculate the time offset within the ts segment
-      const fileTimestamp = parseInt(path.basename(tsPath).split('_')[0]);
-      const offsetMs = timestamp - fileTimestamp;
-      const offsetSeconds = offsetMs / 1000;
-
       const args = [
         '-hide_banner',
+        '-loglevel',
+        'error',
+        '-nostdin',
+        '-xerror',
+        '-abort_on',
+        'empty_output',
         '-y',
         '-i',
         tsPath,
         '-ss',
-        offsetSeconds.toString(),
-        '-vframes',
+        offsetTimestamp.toString(),
+        '-vf',
+        'scale=in_range=limited:out_range=full,format=yuv420p',
+        '-frames:v',
         '1',
         '-q:v',
         '2', // High quality
+        '-update',
+        '1',
         outputPath,
       ];
 
-      this.getLogger().info(`Extracting frame from ${tsPath} at ${offsetSeconds} seconds`);
+      this.getLogger().info(`Extracting frame from ${tsPath} at ${offsetTimestamp} seconds`);
       this.getLogger().info(`ffmpeg args: ${args.join(' ')}`);
 
       const ffmpeg = spawn(this.ffmpegPath, args);
 
       ffmpeg.stderr.on('data', data => {
         this.getLogger().debug(`ffmpeg stderr: ${data}`);
+        if (data.includes('Empty output')) {
+          reject(new Error('Empty output'));
+        }
       });
 
       ffmpeg.on('close', code => {
@@ -109,6 +117,11 @@ export class ExtractFramesStep extends BasePipelineStep {
 
         this.getLogger().info(`Extracting frames for ${pointsOfInterest.length} points of interest`);
 
+        // Get chunk info
+        const chunkInfoPath = path.join(job.job_session_directory, `${sessionName}-chunkinfo-${chunkNumber}.json`);
+        const chunkInfoContent = await fs.readFile(chunkInfoPath, 'utf-8');
+        const chunkInfo = JSON.parse(chunkInfoContent);
+
         // Get the ts segment path
         const tsPath = path.join(job.job_session_directory, `${sessionName}_${chunkNumber}.ts`);
         try {
@@ -128,10 +141,27 @@ export class ExtractFramesStep extends BasePipelineStep {
         const frames: Frame[] = [];
         for (const point of pointsOfInterest) {
           // Generate output path for the frame using the actual timestamp
-          const framePath = path.join(framesDir, `${sessionName}_${point.timestamp}_${point.type}.jpg`);
+          const framePath = path.join(framesDir, `${sessionName}_${chunkNumber}_${point.timestamp}_${point.type}.jpg`);
+
+          let offsetTimestamp = (point.timestamp - chunkInfo.timeRange.start) / 1000;
+
+          const m3u8Path = path.join(job.job_session_directory, `${sessionName}.m3u8`);
+          const m3u8Content = await fs.readFile(m3u8Path, 'utf-8');
+          const durationMatches = [...m3u8Content.matchAll(/EXTINF:(\d+\.?\d*),/g)];
+          const segmentNumber = parseInt(chunkNumber);
+          const segmentDuration = durationMatches[segmentNumber] ? parseFloat(durationMatches[segmentNumber][1]) : 15; // Default to 15 seconds if not found
+
+          this.getLogger().debug(`segmentDuration: ${segmentDuration}`);
+
+          if (offsetTimestamp > segmentDuration) {
+            this.getLogger().warn(
+              `offsetTimestamp: ${offsetTimestamp} is greater than segmentDuration: ${segmentDuration}`,
+            );
+            continue;
+          }
 
           try {
-            await this.extractFrameFromTs(tsPath, point.timestamp, framePath);
+            await this.extractFrameFromTs(tsPath, offsetTimestamp, framePath);
             frames.push({
               timestamp: point.timestamp,
               type: point.type,
@@ -153,14 +183,15 @@ export class ExtractFramesStep extends BasePipelineStep {
           await fs.writeFile(framesPath, JSON.stringify(frames, null, 2));
         } catch (error) {
           this.getLogger().error(`Error writing frames metadata to file: ${error}`);
-          throw new Error(`Failed to write frames metadata to file: ${error}`);
+          return {
+            success: false,
+            error: `Failed to write frames metadata to file: ${error}`,
+          };
         }
 
         return {
           success: true,
-          data: {
-            frames,
-          },
+          result: frames,
         };
       },
       job,
