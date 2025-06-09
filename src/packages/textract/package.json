@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@trici/config": "workspace:^",
-    "tesseract.js": "^4.0.6"
+    "@trici/logger": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.4.9",
