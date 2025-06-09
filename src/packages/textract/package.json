@@ -5,14 +5,8 @@
   "author": "Shashi Singh <singh.shashishekhar@gmail.com>",
   "homepage": "https://github.com/trici/trici#readme",
   "license": "ISC",
-  "main": "lib/textract.js",
-  "directories": {
-    "lib": "lib",
-    "test": "__tests__"
-  },
-  "files": [
-    "lib"
-  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "publishConfig": {
     "access": "public"
   },
@@ -21,7 +15,7 @@
     "url": "git+https://github.com/trici/trici.git"
   },
   "scripts": {
-    "start": "node start.js",
+    "start": "NODE_ENV=development node --enable-source-maps start.js",
     "build-prod": "run-script-os",
     "build-dev": "run-script-os",
     "esbuild-prod": "cross-env NODE_ENV=production node esbuild.js",
