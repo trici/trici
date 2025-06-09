@@ -5,7 +5,7 @@
 
 import path from 'path';
 import config from '@trici/config';
-import { Logger } from '@trici/logger';
+import { IConsoleLogger, Logger } from '@trici/logger';
 const spawn = require('child_process').spawn;
 
 export enum OCRLib {
@@ -31,16 +31,16 @@ export interface ITextractor {
 }
 
 export class Textractor implements ITextractor {
-  logger: Logger;
+  private getLogger: () => Logger | IConsoleLogger;
 
-  constructor(logger: Logger) {
-    this.logger = logger;
+  constructor(getLogger: () => Logger | IConsoleLogger) {
+    this.getLogger = getLogger;
   }
 
   async extract(image: string, ocrLib: OCRLib, rootDirectory: string): Promise<RecognizedText[]> {
     return new Promise(async (resolve, reject) => {
       if (ocrLib === OCRLib.WINDOWS) {
-        this.logger.error('Windows is not supported yet');
+        this.getLogger().error('Windows is not supported yet');
         reject(new Error('Windows is not supported yet'));
       } else if (ocrLib === OCRLib.VISIONKIT) {
         let binaryLocation = '';
