@@ -3,5 +3,7 @@ __tests__/logs
 *.log
 *.map
 dist
+bin
+node_modules
 logs
 sampledata
