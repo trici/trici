@@ -26,7 +26,7 @@
   "bugs": {
     "url": "https://github.com/trici/trici/issues"
   },
-  "dependencies": {
+  "peerDependencies": {
     "sharp": "^0.32.1"
   },
   "devDependencies": {
