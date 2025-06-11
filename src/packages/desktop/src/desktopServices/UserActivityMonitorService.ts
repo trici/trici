@@ -153,7 +153,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
 
         const prefix = this.idleTimeChunkSessionStart;
         const paddedChunkNumber = chunkNumber.toString().padStart(4, '0');
-        const chunkFileName = `${prefix}-events-chunk-${paddedChunkNumber}.csv`;
+        const chunkFileName = `${prefix}-events-chunk-${paddedChunkNumber}.json`;
         const filePath = global.userDataDirectoryCheckResult.recordingsDir.path + '/' + prefix + '/' + chunkFileName;
 
         // Calculate the time range for this chunk
@@ -173,9 +173,7 @@ export class UserActivityMonitorService implements ITriciDesktopService, IUserAc
         const events = await this.appEventRepository.getAllAppEvents(chunkStartTime, chunkEndTime);
 
         // Write events to CSV file
-        const fileContent = events
-          .map((event: IAppEvent) => `${event.id},${event.type},${event.timestamp},${JSON.stringify(event.data)}`)
-          .join('\n');
+        const fileContent = JSON.stringify(events, null, 2);
 
         await fs.promises.writeFile(filePath, fileContent);
         this.getLogger().info(`UserActivityMonitorService: Wrote ${events.length} events to ${chunkFileName}`);
