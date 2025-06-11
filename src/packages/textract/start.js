@@ -16,3 +16,15 @@ textractor
     console.error('Error extracting text');
     console.error(err);
   });
+
+const image2 = path.join(__dirname, 'sampledata', 'frames', '1748962803077_0000_1748962816710_activity.jpg');
+
+textractor
+  .extract(image2, OCRLib.VISIONKIT, __dirname)
+  .then(result => {
+    console.log(result);
+  })
+  .catch(err => {
+    console.error('Error extracting text');
+    console.error(err);
+  });
