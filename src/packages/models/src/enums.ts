@@ -107,6 +107,11 @@ export enum UsedAppCategory {
   COULD_BE_ANYTHING = 5,
 }
 
+export enum DhappJobType {
+  FOCUS_SESSION_CHUNK = 'focus_session_chunk',
+  FOCUS_SESSION_END = 'focus_session_end',
+}
+
 export function getEnumKeyFromValue<T extends { [index: string]: string }>(enumObj: T, value: string): keyof T | null {
   for (const key in enumObj) {
     if (enumObj[key] === value) {

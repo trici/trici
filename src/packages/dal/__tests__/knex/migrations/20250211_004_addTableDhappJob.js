@@ -12,6 +12,7 @@ exports.up = function (knex) {
     table.increments('id').primary().notNullable();
     table.string('job_session_directory').notNullable();
     table.string('job_name').notNullable().unique();
+    table.string('job_type').notNullable();
     table.enum('status', ['pending', 'processing', 'completed', 'failed']).notNullable();
     table.json('steps_completed').notNullable();
     table.string('error_message').nullable();

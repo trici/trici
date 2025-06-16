@@ -2,6 +2,17 @@ import Foundation
 import Vision
 import AppKit
 
+
+/// Lower-case, trim punctuation the simple way.
+/// For English UI screens this is good enough.
+extension String {
+    var ocrToken: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .trimmingCharacters(in: CharacterSet(charactersIn: ".,:;!?()[]{}"))
+    }
+}
+
 func recognizeTextInImage(at url: URL, completionHandler: @escaping ([VNRecognizedTextObservation]) -> Void) {
     let requestHandler = VNImageRequestHandler(url: url, options: [:])
     let request = VNRecognizeTextRequest { request, error in
@@ -31,53 +42,42 @@ let imagePath = CommandLine.arguments[1]
 let imageURL = URL(fileURLWithPath: imagePath)
 
 recognizeTextInImage(at: imageURL) { observations in
-    var outputArray = [[String: Any]]()
-// Get the dimensions of the image
+    var tokenRects: [String: [CGRect]] = [:]
+    var plainTokens: [String] = []
+
+    // Get the dimensions of the image
     let image = NSImage(contentsOf: imageURL)
     let imageWidth = image?.size.width ?? 0
     let imageHeight = image?.size.height ?? 0
 
     for observation in observations {
-        if let candidate = observation.topCandidates(1).first {
-            var observationDict = [String: Any]()
-            observationDict["RecognizedText"] = candidate.string
-            observationDict["Confidence"] = candidate.confidence
+      guard let candidate = observation.topCandidates(1).first else {
+        continue
+      }
 
-            // Convert the normalized coordinates to pixels
-            let boundingBox = observation.boundingBox
-            let pixelX = boundingBox.origin.x * imageWidth
-            let pixelY = (1 - boundingBox.origin.y - boundingBox.size.height) * imageHeight // flip the y coordinate
-            let pixelWidth = boundingBox.size.width * imageWidth
-            let pixelHeight = boundingBox.size.height * imageHeight
+      // 1. Pixel Rect
+      let boundingBox = observation.boundingBox
+      let rect = CGRect(x: boundingBox.origin.x * imageWidth, y: boundingBox.origin.y * imageHeight, width: boundingBox.size.width * imageWidth, height: boundingBox.size.height * imageHeight)
 
-            observationDict["BoundingBox"] = [
-                "x": pixelX,
-                "y": pixelY,
-                "width": pixelWidth,
-                "height": pixelHeight
-            ]
+      // 2. Token
+      let token = candidate.string.ocrToken
 
-            outputArray.append(observationDict)
-        }
+      // 3. Add to output
+      tokenRects[token, default: []].append(rect)
+      plainTokens.append(token)
     }
 
-    let outputData = try! JSONSerialization.data(withJSONObject: outputArray, options: .prettyPrinted)
-    let outputString = String(data: outputData, encoding: .utf8) ?? ""
+    // ---- 3.a geometry side-car (.geo.json) ----
+let geoURL = imageURL.deletingPathExtension().appendingPathExtension("geo.json")
+let geoData = try! JSONEncoder().encode(tokenRects)     // Codable auto-encodes the dictionary
+try! geoData.write(to: geoURL)
+print("Saved geometry to \(geoURL.lastPathComponent)")
 
-    print(outputString)
-
-    // Save JSON string to file
-        let outputFileName = imageURL.deletingPathExtension().lastPathComponent + ".json"
-        let outputFilePath = imageURL.deletingLastPathComponent().appendingPathComponent(outputFileName).path
-
-        do {
-            try outputString.write(toFile: outputFilePath, atomically: true, encoding: .utf8)
-            print("Saved JSON to \(outputFilePath)")
-        } catch {
-            // print("Error saving JSON to file: \(error)")
-        }
+// ---- 3.b flat text (.txt) ----
+let txtURL = imageURL.deletingPathExtension().appendingPathExtension("txt")
+try! plainTokens.joined(separator: " ").write(to: txtURL, atomically: true, encoding: .utf8)
+print("Saved plain text to \(txtURL.lastPathComponent)")
 
     exit(0)
 }
 
-RunLoop.main.run()
