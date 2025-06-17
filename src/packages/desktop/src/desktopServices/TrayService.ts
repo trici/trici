@@ -86,6 +86,7 @@ class TrayService implements ITriciDesktopService, ITrayService {
           label: 'Record a Voice Note',
           accelerator: 'Option+Shift+V',
           click: () => {
+            console.log('Dispatching RECORD_VOICE_NOTE action');
             dispatch({ type: 'RECORD_VOICE_NOTE' });
           },
         },
