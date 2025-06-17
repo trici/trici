@@ -8,6 +8,8 @@ export interface IOnboardingState {
   hasAskedForAccessibilityPermissions: boolean;
   hasBeenGivenAccessibilityPermissions: boolean;
   hasChosenWorkApplications: boolean;
+  hasAskedForMicrophonePermissions: boolean;
+  hasBeenGivenMicrophonePermissions: boolean;
 }
 
 const OnboardingStateRecord = Immutable.Record({
@@ -18,6 +20,8 @@ const OnboardingStateRecord = Immutable.Record({
   hasAskedForAccessibilityPermissions: false,
   hasBeenGivenAccessibilityPermissions: false,
   hasChosenWorkApplications: false,
+  hasAskedForMicrophonePermissions: false,
+  hasBeenGivenMicrophonePermissions: false,
 });
 
 /**
@@ -36,6 +40,8 @@ export class OnboardingState extends OnboardingStateRecord implements IOnboardin
         hasAskedForAccessibilityPermissions: false,
         hasBeenGivenAccessibilityPermissions: false,
         hasChosenWorkApplications: false,
+        hasAskedForMicrophonePermissions: false,
+        hasBeenGivenMicrophonePermissions: false,
       });
     } else {
       super({
@@ -46,6 +52,8 @@ export class OnboardingState extends OnboardingStateRecord implements IOnboardin
         hasAskedForAccessibilityPermissions: onboardingState.hasAskedForAccessibilityPermissions,
         hasBeenGivenAccessibilityPermissions: onboardingState.hasBeenGivenAccessibilityPermissions,
         hasChosenWorkApplications: onboardingState.hasChosenWorkApplications,
+        hasAskedForMicrophonePermissions: onboardingState.hasAskedForMicrophonePermissions,
+        hasBeenGivenMicrophonePermissions: onboardingState.hasBeenGivenMicrophonePermissions,
       });
     }
   }
@@ -61,5 +69,11 @@ export class OnboardingState extends OnboardingStateRecord implements IOnboardin
   }
   setHasBeenGivenAccessibilityPermissions(): OnboardingState {
     return this.set('hasBeenGivenAccessibilityPermissions', true);
+  }
+  setHasAskedForMicrophonePermissions(): OnboardingState {
+    return this.set('hasAskedForMicrophonePermissions', true);
+  }
+  setHasBeenGivenMicrophonePermissions(): OnboardingState {
+    return this.set('hasBeenGivenMicrophonePermissions', true);
   }
 }

@@ -129,6 +129,67 @@ const AskForScreenRecordingPermissionsOnMacComponent: React.FC<{ stepindex: numb
   );
 };
 
+const AskForMicrophonePermissionsOnMacComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
+  const { setStepReady, getStepReady } = useWizard();
+  const { onboardingState } = useOnboarding();
+
+  const hasAskedForMicrophonePermissions = onboardingState.hasAskedForMicrophonePermissions;
+  useEffect(() => {
+    if (hasAskedForMicrophonePermissions) {
+      window.bridgeApi.sendMessage({ handler: 'askForMicrophonePermissions', args: {} });
+    }
+  }, [hasAskedForMicrophonePermissions]);
+
+  const [microphonePermissionsReceived, setMicrophonePermissionsReceived] = React.useState(getStepReady(stepindex));
+
+  useEffect(() => {
+    const microphonePermissionsStepReady =
+      onboardingState.hasAskedForMicrophonePermissions && onboardingState.hasBeenGivenMicrophonePermissions;
+    setStepReady(stepindex, microphonePermissionsStepReady);
+  }, [microphonePermissionsReceived, onboardingState]);
+
+  // Placeholder video or image for microphone permissions
+  const videoClipUrl = `file://${window.bridgeApi.appPath}/resources/clips/TriciMicrophonePermissions.mp4`;
+  if (onboardingState.hasBeenGivenMicrophonePermissions) {
+    return (
+      <div className="h-full w-full">
+        <p className="text-center text-2xl font-bold">Trici requires Microphone permissions</p>
+        <p className="text-center ">This allows Trici to record voice notes and provide related features.</p>
+        <div className="flex h-fit w-full flex-col items-center justify-evenly gap-6 py-4">
+          <div className="m-0 w-fit">
+            <SimpleVideoClipPlayer clipUrl={videoClipUrl} />
+          </div>
+          <div className="m-0 w-full text-center">
+            <p className="text-xl font-bold">Microphone Permissions Granted</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="h-full w-full">
+      <p className="text-center text-2xl font-bold">Trici requires Microphone permissions</p>
+      <p className="text-center ">This allows Trici to record voice notes and provide related features.</p>
+      <div className="flex h-fit w-full flex-col items-center justify-evenly gap-6 py-4">
+        <div className="m-0 w-fit">
+          <SimpleVideoClipPlayer clipUrl={videoClipUrl} />
+        </div>
+        <div className="m-0 w-full text-center">
+          <Button
+            variant="primary"
+            size="medium"
+            onClick={() => {
+              window.bridgeApi.sendMessage({ handler: 'askForMicrophonePermissions', args: {} });
+            }}
+          >
+            Grant Microphone Permissions
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TriciFirstWelcomeComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
   const { setStepReady, getStepReady } = useWizard();
 
@@ -196,10 +257,18 @@ const AskForScreenRecordingPermissionsOnMacStep = () => {
   );
 };
 
-const AskFirAccessibilityPermissionsOnMacStep = () => {
+const AskForMicrophonePermissionsOnMacStep = () => {
   return (
     <WizardStep stepindex={3}>
-      <AskForAccessibilityPermissionsOnMacComponent stepindex={2} />
+      <AskForMicrophonePermissionsOnMacComponent stepindex={2} />
+    </WizardStep>
+  );
+};
+
+const AskFirAccessibilityPermissionsOnMacStep = () => {
+  return (
+    <WizardStep stepindex={4}>
+      <AskForAccessibilityPermissionsOnMacComponent stepindex={3} />
     </WizardStep>
   );
 };
@@ -329,8 +398,8 @@ const AskWhichAreWorkAppsComponent: React.FC<{ stepindex: number }> = ({ stepind
 
 const AskWhichAreWorkAppsStep = () => {
   return (
-    <WizardStep stepindex={4}>
-      <AskWhichAreWorkAppsComponent stepindex={3} />
+    <WizardStep stepindex={5}>
+      <AskWhichAreWorkAppsComponent stepindex={4} />
     </WizardStep>
   );
 };
@@ -338,7 +407,7 @@ const AskWhichAreWorkAppsStep = () => {
 const SuccessfullyFinishedInitialSetupStep = () => {
   const illustrationUrl = `file://${window.bridgeApi.appPath}/resources/images/undraw_happy_news.svg`;
   return (
-    <WizardStep stepindex={5}>
+    <WizardStep stepindex={6}>
       <div className="h-full w-full">
         <div className="flex h-full w-full flex-col items-center justify-evenly ">
           <div className="h-[350px] w-[350px] text-center text-white">
@@ -355,9 +424,10 @@ const OnboardingWizardSteps = [
   <TriciFirstWelcomeStep key="step0" />,
   <InformUserAboutRequiredPermissionsStep key="step1" />,
   <AskForScreenRecordingPermissionsOnMacStep key="step2" />,
-  <AskFirAccessibilityPermissionsOnMacStep key="step3" />,
-  <AskWhichAreWorkAppsStep key="step4" />,
-  <SuccessfullyFinishedInitialSetupStep key="step5" />,
+  <AskForMicrophonePermissionsOnMacStep key="step3" />,
+  <AskFirAccessibilityPermissionsOnMacStep key="step4" />,
+  <AskWhichAreWorkAppsStep key="step5" />,
+  <SuccessfullyFinishedInitialSetupStep key="step6" />,
 ];
 
 export default OnboardingWizardSteps;

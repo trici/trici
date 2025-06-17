@@ -81,4 +81,10 @@ export type TriciAction =
     }
   | {
       type: 'APP_WAKE_UP_REQUESTED';
+    }
+  | {
+      type: 'RECORD_VOICE_NOTE';
+    }
+  | {
+      type: 'ASK_FOR_MICROPHONE_PERMISSIONS';
     };
