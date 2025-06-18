@@ -50,6 +50,57 @@ async function runTest() {
   }, 25000);
 }
 
+async function runAudioRecordingTest() {
+  const triciRecorder = new TriciRecorder(
+    ffmpegPath,
+    getConsoleLogger,
+    path.join(__dirname, '..', 'bin', 'dev', 'Recorder'),
+  );
+
+  const audioRecordingFileName = `audio_${Date.now()}`;
+
+  try {
+    console.log('Starting audio recording test...');
+    await triciRecorder.startAudioRecording(audioRecordingFileName, recordingStorageLocation);
+    console.log('Audio recording started successfully');
+
+    // Check if recording is active
+    if (triciRecorder.isAudioRecording()) {
+      console.log('Audio recording is active');
+    } else {
+      console.log('Audio recording is not active');
+    }
+
+    // Stop recording after 10 seconds
+    setTimeout(async () => {
+      console.log('Stopping audio recording after 10 seconds');
+      try {
+        await triciRecorder.stopAudioRecording();
+        console.log('Audio recording stopped successfully');
+
+        // Check if recording file was created
+        const expectedFilePath = path.join(recordingStorageLocation, `${audioRecordingFileName}.m4a`);
+        if (fs.existsSync(expectedFilePath)) {
+          console.log('Audio recording file created successfully:', expectedFilePath);
+        } else {
+          console.log('Audio recording file not found:', expectedFilePath);
+        }
+
+        process.exit(0);
+      } catch (error) {
+        console.log('Error stopping audio recording: ', error);
+        process.exit(1);
+      }
+    }, 10000);
+  } catch (error) {
+    console.log('Error starting audio recording: ', error);
+    process.exit(1);
+  }
+}
+
+// Uncomment the line below to run audio recording test instead of screen recording test
+runAudioRecordingTest();
+
 deleteDirectoryWithContents(recordingStorageLocation)
   .then(async () => {
     fs.mkdirSync(recordingStorageLocation, { recursive: true });
