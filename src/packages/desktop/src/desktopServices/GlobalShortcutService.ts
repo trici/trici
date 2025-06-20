@@ -15,6 +15,7 @@ export enum shortcutType {
   STOP_FOCUS_SESSION_SHORTCUT = 'STOP_FOCUS_SESSION_SHORTCUT',
   RELOAD_OPEN_WINDOWS_SHORTCUT = 'RELOAD_OPEN_WINDOWS_SHORTCUT',
   PING_FUNCTION_SHORTCUT = 'PING_FUNCTION_SHORTCUT',
+  RECORD_VOICE_NOTE_SHORTCUT = 'RECORD_VOICE_NOTE_SHORTCUT',
 }
 
 export type shortcutRegisteredResult = { isRegistered: boolean; shortcut: string; type: string };
@@ -45,6 +46,11 @@ export class GlobalShortcutService implements IGlobalShortcutService {
     isRegistered: false,
     shortcut: '',
     type: shortcutType.PING_FUNCTION_SHORTCUT,
+  };
+  private globalRecordVoiceNoteShortcutRegistered: shortcutRegisteredResult = {
+    isRegistered: false,
+    shortcut: '',
+    type: shortcutType.RECORD_VOICE_NOTE_SHORTCUT,
   };
 
   private determineShortcut(
@@ -132,15 +138,35 @@ export class GlobalShortcutService implements IGlobalShortcutService {
         '', // This is only used for debugging in dev at the moment
         this.globalPingFunctionShortcutRegistered,
         () => {
+          // Dispatch voice recording indicator window for testing
           dispatch({
-            type: 'SHOW_ALERT_WINDOW',
+            type: 'SHOW_VOICE_RECORDING_INDICATOR',
             args: {
-              alertType: 'UPDATE_AVAILABLE',
-              quitAppOnClose: false,
+              isRecording: true,
+              recordingFileName: 'test_recording',
             },
           });
-          // dispatch({ type: 'PING_FUNCTION' });
-          // console.log('pingFunction called');
+
+          // Original ping function (commented out for testing)
+          // dispatch({
+          //   type: 'SHOW_ALERT_WINDOW',
+          //   args: {
+          //     alertType: 'UPDATE_AVAILABLE',
+          //     quitAppOnClose: false,
+          //   },
+          // });
+        },
+      );
+
+      // Register Record Voice Note shortcut
+      this.globalRecordVoiceNoteShortcutRegistered = this.registerShortcutWithConfiguration(
+        global.userPreferences.globalRecordVoiceNoteShortcut,
+        'globalRecordVoiceNoteShortcut',
+        'Option+Shift+V',
+        'Option+Shift+V',
+        this.globalRecordVoiceNoteShortcutRegistered,
+        () => {
+          dispatch({ type: 'RECORD_VOICE_NOTE' });
         },
       );
 
@@ -155,6 +181,7 @@ export class GlobalShortcutService implements IGlobalShortcutService {
       this.globalStopFocusSessionShortcutRegistered,
       this.reloadOpenWindowsShortcutRegistered,
       this.globalPingFunctionShortcutRegistered,
+      this.globalRecordVoiceNoteShortcutRegistered,
     ];
   }
 

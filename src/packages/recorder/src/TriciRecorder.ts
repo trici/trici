@@ -16,6 +16,9 @@ export interface ITriciRecorder {
   stopLiveRecording(): void;
   isRecording(): boolean;
   takeScreenshot(screenShotFileName: string, screenShotStorageLocation: string): Promise<void>;
+  startAudioRecording(recordingFileName: string, recordingStorageLocation: string): Promise<void>;
+  stopAudioRecording(): Promise<void>;
+  isAudioRecording(): boolean;
 }
 
 /**
@@ -30,6 +33,10 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   #isRecording: boolean = false;
   #stopRecordingRequested: boolean = false;
   #currentRecordingFileName: string | null = null;
+  #audioRecordingProcess: any;
+  #isAudioRecording: boolean = false;
+  #stopAudioRecordingRequested: boolean = false;
+  #currentAudioRecordingFileName: string | null = null;
 
   constructor(ffmpgBinPath: string, getLogger: () => Logger | IConsoleLogger, recorderBinPath: string) {
     super();
@@ -292,4 +299,140 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   //     });
   //   });
   // }
+
+  async startAudioRecording(recordingFileName: string, recordingStorageLocation: string): Promise<void> {
+    if (this.#isAudioRecording) {
+      throw new Error('Audio recording is already in progress');
+    }
+
+    this.#stopAudioRecordingRequested = false;
+    this.#currentAudioRecordingFileName = recordingFileName;
+    const recordingFileNameWithPath = `${recordingStorageLocation}/${recordingFileName}`;
+
+    try {
+      this.getLogger().info(`Starting audio recording: ${recordingFileName}`);
+
+      // FFmpeg command to record audio from system microphone
+      // Different input formats for different platforms
+      const platform = process.platform;
+      let ffmpegArgs: string[];
+
+      if (platform === 'darwin') {
+        // macOS - use avfoundation
+        ffmpegArgs = [
+          '-f',
+          'avfoundation',
+          '-i',
+          ':0', // :0 selects the default audio input device
+          '-acodec',
+          'aac',
+          '-b:a',
+          '128k',
+          '-ar',
+          '44100',
+          '-y', // Overwrite output file if it exists
+          `${recordingFileNameWithPath}.m4a`,
+        ];
+      } else if (platform === 'win32') {
+        // Windows - use dshow (DirectShow)
+        ffmpegArgs = [
+          '-f',
+          'dshow',
+          '-i',
+          'audio="Microphone"', // Use default microphone
+          '-acodec',
+          'aac',
+          '-b:a',
+          '128k',
+          '-ar',
+          '44100',
+          '-y', // Overwrite output file if it exists
+          `${recordingFileNameWithPath}.m4a`,
+        ];
+      } else {
+        // Linux - use alsa or pulseaudio
+        ffmpegArgs = [
+          '-f',
+          'alsa',
+          '-i',
+          'default',
+          '-acodec',
+          'aac',
+          '-b:a',
+          '128k',
+          '-ar',
+          '44100',
+          '-y', // Overwrite output file if it exists
+          `${recordingFileNameWithPath}.m4a`,
+        ];
+      }
+
+      this.#audioRecordingProcess = spawn(this.#ffmpegBinPath, ffmpegArgs);
+
+      this.#audioRecordingProcess.on('error', (error: any) => {
+        this.getLogger().error(`Audio recording process error: ${error}`);
+        this.#isAudioRecording = false;
+        this.emit('audioRecordingError', error);
+      });
+
+      this.#audioRecordingProcess.stderr.on('data', (data: any) => {
+        const output = data.toString('utf8');
+        // FFmpeg writes progress info to stderr, so we log it as info
+        this.getLogger().info(`Audio recording ffmpeg: ${output.trim()}`);
+      });
+
+      this.#audioRecordingProcess.on('exit', (code: number | null, signal: string | null) => {
+        if (!this.#stopAudioRecordingRequested) {
+          this.getLogger().error(`Audio recording process exited unexpectedly with code: ${code}, signal: ${signal}`);
+          this.emit('audioRecordingProcessCrashed', { code, signal });
+        } else {
+          this.getLogger().info(`Audio recording process exited with code: ${code}, signal: ${signal}`);
+        }
+        this.#isAudioRecording = false;
+        this.#audioRecordingProcess = null;
+      });
+
+      this.#isAudioRecording = true;
+      this.getLogger().info(`Audio recording started successfully. Process PID: ${this.#audioRecordingProcess.pid}`);
+    } catch (error) {
+      this.getLogger().error(`Failed to start audio recording: ${error}`);
+      this.#isAudioRecording = false;
+      throw error;
+    }
+  }
+
+  async stopAudioRecording(): Promise<void> {
+    if (!this.#isAudioRecording || !this.#audioRecordingProcess) {
+      this.getLogger().warn('No audio recording in progress to stop');
+      return;
+    }
+
+    this.#stopAudioRecordingRequested = true;
+    this.getLogger().info('Stopping audio recording...');
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.getLogger().warn('Audio recording stop timeout, force killing process');
+        this.#audioRecordingProcess.kill('SIGKILL');
+        this.#isAudioRecording = false;
+        this.#audioRecordingProcess = null;
+        resolve();
+      }, 5000); // 5 second timeout
+
+      this.#audioRecordingProcess.once('exit', (code: number | null, signal: string | null) => {
+        clearTimeout(timeout);
+        this.getLogger().info(`Audio recording stopped. Exit code: ${code}, signal: ${signal}`);
+        this.#isAudioRecording = false;
+        this.#audioRecordingProcess = null;
+        resolve();
+      });
+
+      // Send SIGTERM to gracefully stop the recording
+      this.#audioRecordingProcess.kill('SIGTERM');
+    });
+  }
+
+  isAudioRecording(): boolean {
+    return this.#isAudioRecording;
+  }
 }

@@ -6,6 +6,7 @@ export interface IUserPreferences {
   globalShowHideShortcut: string | undefined;
   globalStartFocusSessionShortcut: string | undefined;
   globalStopFocusSessionShortcut: string | undefined;
+  globalRecordVoiceNoteShortcut: string | undefined;
 }
 
 const UserPreferencesSchema: IUserPreferences = {
@@ -13,6 +14,7 @@ const UserPreferencesSchema: IUserPreferences = {
   globalShowHideShortcut: undefined,
   globalStartFocusSessionShortcut: undefined,
   globalStopFocusSessionShortcut: undefined,
+  globalRecordVoiceNoteShortcut: undefined,
 };
 
 const UserPreferencesRecord = Immutable.Record(UserPreferencesSchema);
@@ -25,6 +27,7 @@ export class UserPreferences extends UserPreferencesRecord {
         globalShowHideShortcut: undefined,
         globalStartFocusSessionShortcut: undefined,
         globalStopFocusSessionShortcut: undefined,
+        globalRecordVoiceNoteShortcut: undefined,
       });
     } else {
       super({
@@ -32,6 +35,7 @@ export class UserPreferences extends UserPreferencesRecord {
         globalShowHideShortcut: userPreferences.globalShowHideShortcut,
         globalStartFocusSessionShortcut: userPreferences.globalStartFocusSessionShortcut,
         globalStopFocusSessionShortcut: userPreferences.globalStopFocusSessionShortcut,
+        globalRecordVoiceNoteShortcut: userPreferences.globalRecordVoiceNoteShortcut,
       });
     }
   }

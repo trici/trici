@@ -39,6 +39,7 @@ import { UpdateService } from './UpdateService';
 import path from 'path';
 import sqlite3 from 'sqlite3';
 import knexfile from '../../knexfile';
+import { VoiceRecordingPlugin } from '../plugins/VoiceRecordingPlugin';
 
 let logger: Logger;
 let appJsonStorageService: IAppJsonStorageService;
@@ -81,12 +82,17 @@ function regiserCorePlugins(
   recorder: TriciRecorder,
   appEventRepository: IAppEventRepository,
   getLogger: () => Logger | IConsoleLogger,
+  actionDispatcher: any,
+  windowManager: WindowManager,
 ) {
   const screenRecordingPlugin = new ScreenRecordingPlugin(recorder);
   pluginManager.register(screenRecordingPlugin, 10);
 
   const sessionEndDataProcessingPlugin = new SessionEndDataProcessingPlugin(appEventRepository, getLogger);
   pluginManager.register(sessionEndDataProcessingPlugin, 100);
+
+  const voiceRecordingPlugin = new VoiceRecordingPlugin(actionDispatcher, windowManager, recorder);
+  pluginManager.register(voiceRecordingPlugin, 20);
 }
 
 export interface IInitializationService {
@@ -212,6 +218,12 @@ export const InitializationService: IInitializationService = {
 
       mainProcessIpcMessageHandlerService.initialize();
 
+      const pluginManager = PluginManager.getInstance(getLoggerFn, appEventEmitter);
+      pluginManager.initialize();
+
+      // Register core plugins
+      regiserCorePlugins(pluginManager, triciRecorder, eventRepo, getLoggerFn, actionDispatcher, windowManager);
+
       if (!triciApp.hasCompletedOnboarding) {
         return;
       }
@@ -230,10 +242,6 @@ export const InitializationService: IInitializationService = {
       focusSessionService.initService();
       cliMessageHandlerService = new CliMessageHandlerService(processManager, focusSessionService);
       cliMessageHandlerService.registerCliMessageHandlers();
-
-      const pluginManager = PluginManager.getInstance(getLoggerFn, appEventEmitter);
-      pluginManager.initialize();
-      regiserCorePlugins(pluginManager, triciRecorder, eventRepo, getLoggerFn);
 
       // Start the UserActivityMonitor service
       const userActivityMonitorService = new UserActivityMonitorService(

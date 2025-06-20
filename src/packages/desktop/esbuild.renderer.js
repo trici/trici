@@ -92,6 +92,22 @@ async function buildJs() {
   });
 
   console.log('EventViewer Window build finished!!');
+
+  await esbuild.build({
+    entryPoints: [
+      path.join(ROOT_DIR, 'src', 'app', 'windows', 'voiceRecordingIndicator', 'voiceRecordingIndicatorBundleEntry.tsx'),
+    ],
+    bundle: true,
+    outfile: !isProdBuild
+      ? path.join(ROOT_DIR, 'dist', 'dev', 'voiceRecordingIndicator.app.js')
+      : path.join(ROOT_DIR, 'dist', 'voiceRecordingIndicator.app.js'),
+    sourcemap: !isProdBuild,
+    minify: isProdBuild,
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+    target: ['chrome94'],
+  });
+
+  console.log('Voice Recording Indicator Window build finished!!');
 }
 
 async function build(args) {

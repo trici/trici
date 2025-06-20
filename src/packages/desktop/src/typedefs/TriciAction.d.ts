@@ -81,4 +81,21 @@ export type TriciAction =
     }
   | {
       type: 'APP_WAKE_UP_REQUESTED';
+    }
+  | {
+      type: 'RECORD_VOICE_NOTE';
+    }
+  | {
+      type: 'ASK_FOR_MICROPHONE_PERMISSIONS';
+    }
+  | {
+      type: 'SHOW_VOICE_RECORDING_INDICATOR';
+      args: { isRecording: boolean; recordingFileName?: string };
+    }
+  | {
+      type: 'STOP_VOICE_RECORDING';
+    }
+  | {
+      type: 'HIDE_VOICE_RECORDING_INDICATOR';
+      args: { isRecording: boolean };
     };

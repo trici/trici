@@ -11,6 +11,8 @@ export interface IPermissionsService {
   hasAccessibilityPermissions(): boolean;
   checkScreenRecordingPermissions(): Promise<void>;
   checkAccessisibilityPermissions(): Promise<void>;
+  hasMicrophonePermissions(): boolean;
+  checkMicrophonePermissions(): Promise<void>;
 }
 
 export class PermissionsService implements ITriciDesktopService, IPermissionsService {
@@ -44,6 +46,10 @@ export class PermissionsService implements ITriciDesktopService, IPermissionsSer
           console.log('Checking for accessibility permissions');
           this.checkAccessisibilityPermissions();
           break;
+        case 'ASK_FOR_MICROPHONE_PERMISSIONS':
+          console.log('Checking for microphone permissions');
+          this.checkMicrophonePermissions();
+          break;
         default:
           break;
       }
@@ -68,6 +74,10 @@ export class PermissionsService implements ITriciDesktopService, IPermissionsSer
 
   hasAccessibilityPermissions(): boolean {
     return permissions.getAuthStatus('accessibility') === 'authorized';
+  }
+
+  hasMicrophonePermissions(): boolean {
+    return permissions.getAuthStatus('microphone') === 'authorized';
   }
 
   async checkScreenRecordingPermissions(): Promise<void> {
@@ -112,6 +122,33 @@ export class PermissionsService implements ITriciDesktopService, IPermissionsSer
     console.log('PermissionsService.checkAccessisibilityPermissions', accessibilityPermissions);
     if (accessibilityPermissions) {
       onboardingState = onboardingState.setHasBeenGivenAccessibilityPermissions();
+      await this.appJsonStorageService.setOnboardingState(onboardingState);
+      global.onboardingState = onboardingState;
+      this.messageSender.send('onboarding', {
+        success: true,
+        handler: 'onboardingStateUpdated',
+        data: { onboardingState: global.onboardingState.toJS() },
+        initValue: false,
+      });
+      return;
+    }
+  }
+
+  async checkMicrophonePermissions(): Promise<void> {
+    let onboardingState = await this.appJsonStorageService.getOnboardingState();
+    if (!onboardingState.hasAskedForMicrophonePermissions) {
+      onboardingState = onboardingState.setHasAskedForMicrophonePermissions();
+      await this.appJsonStorageService.setOnboardingState(onboardingState);
+      global.onboardingState = onboardingState;
+    }
+    // this will trigger the dialog for asking for permission the first time.
+    console.log('calling permissions.askForMicrophoneAccess');
+    const status = await permissions.askForMicrophoneAccess();
+    console.log('after permissions.askForMicrophoneAccess', status);
+    const micPermission = this.hasMicrophonePermissions();
+    console.log('PermissionsService.checkMicrophonePermissions', micPermission);
+    if (micPermission) {
+      onboardingState = onboardingState.setHasBeenGivenMicrophonePermissions();
       await this.appJsonStorageService.setOnboardingState(onboardingState);
       global.onboardingState = onboardingState;
       this.messageSender.send('onboarding', {

@@ -6,7 +6,7 @@ import { TriciAction } from '../typedefs/TriciAction';
 import { SettingsKey } from '../app/windows/settings/typedefs/SettingsWindowTypes';
 import path from 'path';
 
-export type WindowName = 'settings' | 'main' | 'alert' | 'onboarding';
+export type WindowName = 'settings' | 'main' | 'alert' | 'onboarding' | 'voiceRecordingIndicator';
 
 export interface IWindowManager {
   registerActionHandlers(): void;
@@ -21,6 +21,7 @@ export class WindowManager implements IWindowManager {
   triciWindow: BrowserWindow | null;
   onboardingWindow: BrowserWindow | null;
   eventViewerWindow: BrowserWindow | null;
+  voiceRecordingIndicatorWindow: BrowserWindow | null;
   actionHandlersRegistered: boolean = false;
   actionDispatcher: IActionDispatcher<TriciAction>;
   preloadScriptPath: string;
@@ -32,6 +33,7 @@ export class WindowManager implements IWindowManager {
     this.alertWindow = null;
     this.eventViewerWindow = null;
     this.onboardingWindow = null;
+    this.voiceRecordingIndicatorWindow = null;
     this.actionDispatcher = actionDispatcher;
     this.preloadScriptPath = path.join(app.getAppPath(), 'dist', 'preload.js');
   }
@@ -77,6 +79,15 @@ export class WindowManager implements IWindowManager {
             console.log('Open Event Viewer Window');
             this._openEventViewerWindow();
             break;
+          case 'SHOW_VOICE_RECORDING_INDICATOR':
+            console.log('WindowManager: SHOW_VOICE_RECORDING_INDICATOR action received');
+            console.log('Show/Hide Voice Recording Indicator');
+            this._showHideVoiceRecordingIndicatorWindow(action.args.isRecording, action.args.recordingFileName);
+            break;
+          case 'HIDE_VOICE_RECORDING_INDICATOR':
+            console.log('WindowManager: HIDE_VOICE_RECORDING_INDICATOR action received');
+            this._hideVoiceRecordingIndicatorWindow();
+            break;
           default:
             break;
         }
@@ -121,11 +132,90 @@ export class WindowManager implements IWindowManager {
     });
   }
 
-  private _closeOnboardingWindow() {
+  private _closeOnboardingWindow(): void {
     if (this.onboardingWindow) {
       this.onboardingWindow.close();
       this.onboardingWindow = null;
     }
+  }
+
+  private _showHideVoiceRecordingIndicatorWindow(isRecording: boolean, recordingFileName?: string): void {
+    console.log('_showHideVoiceRecordingIndicatorWindow called with:', { isRecording, recordingFileName });
+
+    if (isRecording) {
+      // Show the window when recording starts
+      if (!this.voiceRecordingIndicatorWindow) {
+        console.log('Creating voice recording indicator window...');
+        this._createVoiceRecordingIndicatorWindow();
+      }
+
+      console.log('Showing voice recording indicator window...');
+      this.voiceRecordingIndicatorWindow?.show();
+    } else {
+      // Hide the window when recording stops
+      this._hideVoiceRecordingIndicatorWindow();
+    }
+  }
+
+  private _hideVoiceRecordingIndicatorWindow(): void {
+    console.log('Hiding voice recording indicator window...');
+    if (this.voiceRecordingIndicatorWindow) {
+      this.voiceRecordingIndicatorWindow.hide();
+    }
+  }
+
+  private _createVoiceRecordingIndicatorWindow(): void {
+    if (this.voiceRecordingIndicatorWindow) {
+      return;
+    }
+
+    const preloadScriptPath = this.preloadScriptPath;
+
+    // Position in top-right corner of the screen
+    const displays = screen.getAllDisplays();
+    const displayToPlaceWindow = displays.reduce((prev, current) => {
+      return prev.size.width * prev.size.height > current.size.width * current.size.height ? prev : current;
+    });
+    const x = displayToPlaceWindow.bounds.x + displayToPlaceWindow.size.width - 120; // 100px width + 20px margin
+    const y = displayToPlaceWindow.bounds.y + 20; // 20px margin from top
+
+    this.voiceRecordingIndicatorWindow = new BrowserWindow({
+      width: 100,
+      height: 100,
+      x,
+      y,
+      frame: false,
+      transparent: true, // Changed to false for solid background
+      alwaysOnTop: true,
+      resizable: false,
+      skipTaskbar: true,
+      webPreferences: {
+        nodeIntegration: false,
+        preload: preloadScriptPath,
+        contextIsolation: true,
+      },
+    });
+
+    // Enable right-click context menu with Inspect Element
+    contextMenu({ window: this.voiceRecordingIndicatorWindow, showInspectElement: true });
+
+    // Open DevTools automatically for debugging
+    this.voiceRecordingIndicatorWindow.webContents.openDevTools({ mode: 'detach' });
+
+    this.voiceRecordingIndicatorWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), {
+      query: { type: 'voiceRecordingIndicator' },
+    });
+
+    // Prevent the window from being closed by the user
+    this.voiceRecordingIndicatorWindow.on('close', event => {
+      event.preventDefault();
+      this.voiceRecordingIndicatorWindow?.hide();
+    });
+
+    // Hide window when it loses focus (optional)
+    this.voiceRecordingIndicatorWindow.on('blur', () => {
+      // Keep it visible even when not focused
+    });
   }
 
   /**
@@ -217,6 +307,9 @@ export class WindowManager implements IWindowManager {
     }
     if (this.eventViewerWindow) {
       this.eventViewerWindow.reload();
+    }
+    if (this.voiceRecordingIndicatorWindow) {
+      this.voiceRecordingIndicatorWindow.reload();
     }
   }
 
@@ -382,6 +475,8 @@ export class WindowManager implements IWindowManager {
         return this.alertWindow;
       case 'onboarding':
         return this.onboardingWindow;
+      case 'voiceRecordingIndicator':
+        return this.voiceRecordingIndicatorWindow;
       default:
         return null;
     }

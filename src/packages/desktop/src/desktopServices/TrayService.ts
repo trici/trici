@@ -83,6 +83,14 @@ class TrayService implements ITriciDesktopService, ITrayService {
           },
         },
         {
+          label: 'Record a Voice Note',
+          accelerator: 'Option+Shift+V',
+          click: () => {
+            console.log('Dispatching RECORD_VOICE_NOTE action');
+            dispatch({ type: 'RECORD_VOICE_NOTE' });
+          },
+        },
+        {
           label: 'Start Focus Session',
           accelerator: shouldHaveAccelerator
             ? this.receivedRegisteredShortcuts?.find(
@@ -159,6 +167,13 @@ class TrayService implements ITriciDesktopService, ITrayService {
             : undefined,
           click: () => {
             dispatch({ type: 'SHOW_HIDE_TRICI' });
+          },
+        },
+        {
+          label: 'Record a Voice Note',
+          accelerator: 'Option+Shift+V',
+          click: () => {
+            dispatch({ type: 'RECORD_VOICE_NOTE' });
           },
         },
         {

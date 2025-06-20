@@ -44,6 +44,15 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
     }
   };
 
+  const _onChangeGlobalRecordVoiceNoteShortcut = (shortcut: string) => {
+    const result = _getUpdatedUserPreferencesObject('globalRecordVoiceNoteShortcut', shortcut);
+    if (result) {
+      onSave(result.updatedUserPreferences, result.idOfDocToDelete);
+    } else {
+      throw new Error('GlobalShortcuts._onChangeGlobalRecordVoiceNoteShortcut: result is null');
+    }
+  };
+
   // const _onChangeGlobalPingFunctionShortcut = (shortcut: string) => {
   //   const result = _getUpdatedUserPreferencesObject('globalPingFunctionShortcut', shortcut);
   //   if (result) {
@@ -71,6 +80,7 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
       ? Constants.DEFAULT_GLOBAL_STOP_FOCUS_SESSION_SHORTCUT_DEV
       : Constants.DEFAULT_GLOBAL_STOP_FOCUS_SESSION_SHORTCUT_PROD;
   const defaultGlobalPingFunctionShortcut = 'CommandOrControl+Shift+F';
+  const defaultGlobalRecordVoiceNoteShortcut = 'Option+Shift+V';
 
   return (
     <div className="flex h-full flex-col justify-start gap-5 py-4">
@@ -96,6 +106,14 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
           currentShortcut={userPreferences.globalStopFocusSessionShortcut}
           defaultShortcut={defaultGlobalStopFocusSessionShortcut}
           onShortcutChange={_onChangeGlobalStopFocusSessionShortcut}
+        />
+      </div>
+      <div>
+        <ConfigureGlobalShortcut
+          label="Record a Voice Note"
+          currentShortcut={userPreferences.globalRecordVoiceNoteShortcut}
+          defaultShortcut={defaultGlobalRecordVoiceNoteShortcut}
+          onShortcutChange={_onChangeGlobalRecordVoiceNoteShortcut}
         />
       </div>
       {/* <div>

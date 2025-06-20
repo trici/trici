@@ -166,6 +166,12 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
         response = successResponseForVoidFunctions;
         break;
       }
+      case 'askForMicrophonePermissions': {
+        console.log("dispatching 'ASK_FOR_MICROPHONE_PERMISSIONS' action");
+        dispatch({ type: 'ASK_FOR_MICROPHONE_PERMISSIONS' });
+        response = successResponseForVoidFunctions;
+        break;
+      }
       // case 'openSystemPreferencesAndCloseAlert': {
       //   dispatch({ type: 'OPEN_SYSTEM_PREFERENCES' });
       //   dispatch({ type: 'CLOSE_ALERT_WINDOW' });
@@ -220,6 +226,11 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
           response = { success: false, handler: 'installedAppsReceived', data: error, initValue: false };
         }
 
+        break;
+      }
+      case 'stopVoiceRecording': {
+        dispatch({ type: 'RECORD_VOICE_NOTE' });
+        response = successResponseForVoidFunctions;
         break;
       }
     }
