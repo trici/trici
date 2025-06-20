@@ -87,4 +87,15 @@ export type TriciAction =
     }
   | {
       type: 'ASK_FOR_MICROPHONE_PERMISSIONS';
+    }
+  | {
+      type: 'SHOW_VOICE_RECORDING_INDICATOR';
+      args: { isRecording: boolean; recordingFileName?: string };
+    }
+  | {
+      type: 'STOP_VOICE_RECORDING';
+    }
+  | {
+      type: 'HIDE_VOICE_RECORDING_INDICATOR';
+      args: { isRecording: boolean };
     };

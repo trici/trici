@@ -138,15 +138,23 @@ export class GlobalShortcutService implements IGlobalShortcutService {
         '', // This is only used for debugging in dev at the moment
         this.globalPingFunctionShortcutRegistered,
         () => {
+          // Dispatch voice recording indicator window for testing
           dispatch({
-            type: 'SHOW_ALERT_WINDOW',
+            type: 'SHOW_VOICE_RECORDING_INDICATOR',
             args: {
-              alertType: 'UPDATE_AVAILABLE',
-              quitAppOnClose: false,
+              isRecording: true,
+              recordingFileName: 'test_recording',
             },
           });
-          // dispatch({ type: 'PING_FUNCTION' });
-          // console.log('pingFunction called');
+
+          // Original ping function (commented out for testing)
+          // dispatch({
+          //   type: 'SHOW_ALERT_WINDOW',
+          //   args: {
+          //     alertType: 'UPDATE_AVAILABLE',
+          //     quitAppOnClose: false,
+          //   },
+          // });
         },
       );
 

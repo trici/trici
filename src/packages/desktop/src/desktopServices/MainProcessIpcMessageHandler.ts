@@ -228,6 +228,11 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
 
         break;
       }
+      case 'stopVoiceRecording': {
+        dispatch({ type: 'RECORD_VOICE_NOTE' });
+        response = successResponseForVoidFunctions;
+        break;
+      }
     }
 
     return response;

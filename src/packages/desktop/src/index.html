@@ -47,6 +47,16 @@
     //   // root.style.width = '100%';
     // }
     let scriptUrl = getScriptUrlByEnv(type);
+
+    // Set window-specific configurations
+    if (type === 'voiceRecordingIndicator') {
+      document.title = 'Voice Recording Indicator';
+      // Remove any margins/padding for the voice recording indicator
+      document.body.style.margin = '0';
+      document.body.style.padding = '0';
+      document.body.style.overflow = 'hidden';
+    }
+
     (function() {
       console.log("Inside IIFE");
       console.log("scriptUrl", scriptUrl);
