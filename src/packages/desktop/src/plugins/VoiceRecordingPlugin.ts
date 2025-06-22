@@ -54,8 +54,8 @@ export class VoiceRecordingPlugin implements ITriciPlugin, IVoiceRecordingPlugin
       return;
     }
 
-    const recordingFileName = `voice_note_${Date.now()}`;
-    const recordingStorageLocation = path.join(global.userDataDirectoryCheckResult.dataDir.path, 'recordings');
+    const recordingFileName = `{Date.now()}`;
+    const recordingStorageLocation = path.join(global.userDataDirectoryCheckResult.dataDir.path, 'voice_notes');
 
     // Ensure recordings directory exists
     if (!fs.existsSync(recordingStorageLocation)) {
