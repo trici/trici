@@ -3,6 +3,8 @@ import { spawn, exec } from 'child_process';
 import EventEmitter from 'events';
 import { promisify } from 'util';
 import { execShellCommandAsync } from '@trici/utils';
+import * as fs from 'fs';
+import * as path from 'path';
 const execAsync = promisify(exec);
 
 export interface ITriciRecorder {
@@ -37,6 +39,7 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
   #isAudioRecording: boolean = false;
   #stopAudioRecordingRequested: boolean = false;
   #currentAudioRecordingFileName: string | null = null;
+  #ffmpegLogStream: fs.WriteStream | null = null;
 
   constructor(ffmpgBinPath: string, getLogger: () => Logger | IConsoleLogger, recorderBinPath: string) {
     super();
@@ -309,6 +312,11 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     this.#currentAudioRecordingFileName = recordingFileName;
     const recordingFileNameWithPath = `${recordingStorageLocation}/${recordingFileName}`;
 
+    // Create ffmpeg log file
+    const ffmpegLogFileName = `${recordingFileName}_audio_out.log`;
+    const ffmpegLogPath = path.join(recordingStorageLocation, ffmpegLogFileName);
+    this.#ffmpegLogStream = fs.createWriteStream(ffmpegLogPath, { flags: 'w' });
+
     try {
       this.getLogger().info(`Starting audio recording: ${recordingFileName}`);
 
@@ -377,11 +385,19 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
 
       this.#audioRecordingProcess.stderr.on('data', (data: any) => {
         const output = data.toString('utf8');
-        // FFmpeg writes progress info to stderr, so we log it as info
-        this.getLogger().info(`Audio recording ffmpeg: ${output.trim()}`);
+        // Write ffmpeg output to log file instead of console
+        if (this.#ffmpegLogStream) {
+          this.#ffmpegLogStream.write(`${new Date().toISOString()} [FFMPEG]: ${output}`);
+        }
       });
 
       this.#audioRecordingProcess.on('exit', (code: number | null, signal: string | null) => {
+        // Close the ffmpeg log stream
+        if (this.#ffmpegLogStream) {
+          this.#ffmpegLogStream.end();
+          this.#ffmpegLogStream = null;
+        }
+
         if (!this.#stopAudioRecordingRequested) {
           this.getLogger().error(`Audio recording process exited unexpectedly with code: ${code}, signal: ${signal}`);
           this.emit('audioRecordingProcessCrashed', { code, signal });
@@ -397,6 +413,11 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
     } catch (error) {
       this.getLogger().error(`Failed to start audio recording: ${error}`);
       this.#isAudioRecording = false;
+      // Close the ffmpeg log stream if there was an error
+      if (this.#ffmpegLogStream) {
+        this.#ffmpegLogStream.end();
+        this.#ffmpegLogStream = null;
+      }
       throw error;
     }
   }
@@ -421,6 +442,11 @@ export class TriciRecorder extends EventEmitter implements ITriciRecorder {
 
       this.#audioRecordingProcess.once('exit', (code: number | null, signal: string | null) => {
         clearTimeout(timeout);
+        // Close the ffmpeg log stream when stopping
+        if (this.#ffmpegLogStream) {
+          this.#ffmpegLogStream.end();
+          this.#ffmpegLogStream = null;
+        }
         this.getLogger().info(`Audio recording stopped. Exit code: ${code}, signal: ${signal}`);
         this.#isAudioRecording = false;
         this.#audioRecordingProcess = null;
