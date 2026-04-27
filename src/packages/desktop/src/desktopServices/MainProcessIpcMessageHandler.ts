@@ -41,25 +41,15 @@ export class MainProcessIpcMessageHandlerService implements IMainProcessIpcMessa
       switch (params.handler) {
         case 'getUserPreferences':
           try {
-            // get the lastSavedEntityIds for the userPreferences and pass it.
-            const lastSavedEntityIds = await this.appJsonStorageService.getLastSavedEntityIds();
-            const userPreferences = await this.dataAccessService.getUserPreferences(
-              lastSavedEntityIds.userPreferencesId,
-            );
+            const userPreferences = await this.dataAccessService.getUserPreferences();
             result = { success: true, handler: 'getUserPreferences-Success', data: userPreferences.toJS() };
           } catch (error) {
             result = { success: false, handler: 'getUserPreferences-Error', data: error };
           }
           break;
         case 'saveUserPreferences':
-          const { userPreferences, idOfDocToDelete } = params.args;
-          const savedUserPreferences = await this.dataAccessService.saveUserPreferences(
-            userPreferences,
-            idOfDocToDelete,
-          );
-          let lastSavedEntityIds = await this.appJsonStorageService.getLastSavedEntityIds();
-          lastSavedEntityIds = lastSavedEntityIds.set('userPreferencesId', savedUserPreferences._id);
-          await this.appJsonStorageService.setLastSavedEntityIds(lastSavedEntityIds);
+          const { userPreferences } = params.args;
+          const savedUserPreferences = await this.dataAccessService.saveUserPreferences(userPreferences);
           result = { success: true, handler: 'saveUserPreferences-Success', data: savedUserPreferences.toJS() };
           break;
         case 'getUsedApplications':

@@ -22,7 +22,6 @@ interface SettingsContainerState {
 
 type SaveUserPreferencesArgs = {
   userPreferences: UserPreferences;
-  idOfDocToDelete: string;
 };
 
 export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: SettingsKey }) {
@@ -96,9 +95,9 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
     queryFn: () => renderRepository.getUserPreferences(),
   });
 
-  const saveUserPreferencesMutationFunction = ({ userPreferences, idOfDocToDelete }: SaveUserPreferencesArgs) => {
+  const saveUserPreferencesMutationFunction = ({ userPreferences }: SaveUserPreferencesArgs) => {
     console.log('saveUserPreferencesMutationFunction', userPreferences.toJS());
-    return renderRepository.saveUserPreferences(userPreferences, idOfDocToDelete);
+    return renderRepository.saveUserPreferences(userPreferences);
   };
 
   const mutation = useMutation({
@@ -108,8 +107,8 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
     },
   });
 
-  const _updateUserPreferences = (userPreferences: UserPreferences, idOfDocToDelete: string) => {
-    mutation.mutate({ userPreferences, idOfDocToDelete });
+  const _updateUserPreferences = (userPreferences: UserPreferences) => {
+    mutation.mutate({ userPreferences });
   };
 
   const _changeActiveSettingItem = (selectedKey: SettingsKey) => {

@@ -14,7 +14,7 @@ async function build(args) {
     minify: isProdBuild,
     target: 'node16',
     tsconfig: 'tsconfig.json',
-    external: ['pouchdb', 'sqlite3', 'knex'],
+    external: ['sqlite3', 'knex'],
   });
 }
 

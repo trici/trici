@@ -14,7 +14,7 @@ const PROJECT_DIR = path.join(ROOT_DIR, '..', '..');
 
 const isProdBuild = process.env.NODE_ENV === 'production';
 
-const externalModules = ['pouchdb', 'winston', 'mac-screen-capture-permissions'];
+const externalModules = ['winston', 'mac-screen-capture-permissions'];
 
 async function copyUnbundledFiles() {
   console.log('Copying unbundled files...');

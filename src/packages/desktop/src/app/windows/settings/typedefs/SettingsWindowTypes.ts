@@ -27,7 +27,7 @@ export interface ISettingsNavProps {
 
 export interface ISettingsItemComponentProps {
   userPreferences: UserPreferences | undefined;
-  onSave: (updatedUserPreferences: UserPreferences, idOfDocToDelete: string) => void;
+  onSave: (updatedUserPreferences: UserPreferences) => void;
 }
 
 export interface IConfigureGlobalShortcutProps {

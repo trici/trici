@@ -19,7 +19,6 @@ async function buildJs() {
     minify: isProdBuild,
     tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
     external: [
-      'pouchdb',
       'sqlite3',
       'winston',
       'macos-notification-state',

@@ -3,13 +3,11 @@ import * as Immutable from 'immutable';
 
 export interface ILastSavedEntityIdsType {
   todayUserActivityId: string;
-  userPreferencesId: string;
   usedApplicationsId: string;
 }
 
 const LastSavedEntityIdsSchema: ILastSavedEntityIdsType = {
   todayUserActivityId: Constants.UNINITIALIZED_ID,
-  userPreferencesId: Constants.UNINITIALIZED_ID,
   usedApplicationsId: Constants.UNINITIALIZED_ID,
 };
 
@@ -25,13 +23,11 @@ export class LastSavedEntityIds extends LastSavedEntityIdsRecord {
     if (typeof lastSavedEntityIds === 'undefined' || lastSavedEntityIds === null) {
       super({
         todayUserActivityId: Constants.UNINITIALIZED_ID,
-        userPreferencesId: Constants.UNINITIALIZED_ID,
         usedApplicationsId: Constants.UNINITIALIZED_ID,
       });
     } else {
       super({
         todayUserActivityId: lastSavedEntityIds.todayUserActivityId,
-        userPreferencesId: lastSavedEntityIds.userPreferencesId,
         usedApplicationsId: lastSavedEntityIds.usedApplicationsId,
       });
     }
