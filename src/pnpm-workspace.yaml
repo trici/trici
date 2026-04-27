@@ -1,2 +1,23 @@
 packages:
- - 'packages/*'
+  - packages/*
+
+allowBuilds:
+  electron: true
+  ffmpeg-static: true
+  leveldown: true
+  node-mac-permissions: true
+  nx: true
+  sqlite3: true
+
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - electron
+  - esbuild
+  - ffmpeg-static
+  - leveldown
+  - mkfifo
+  - node-mac-permissions
+  - nx
+  - protobufjs
+  - sharp
+  - sqlite3

@@ -446,8 +446,11 @@ export class WindowManager implements IWindowManager {
         preload: preloadScriptPath,
         contextIsolation: true,
       },
+      alwaysOnTop: true,
     });
     this.settingsWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), { query: { type: 'settings' } });
+    // Ensure the settings window stays on top of other apps (e.g., terminal/tmux)
+    this.settingsWindow.setAlwaysOnTop(true, 'normal');
     contextMenu({
       window: this.settingsWindow,
       showInspectElement: true,

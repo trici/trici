@@ -1,0 +1,41 @@
+{
+  "name": "trici",
+  "version": "0.5.0",
+  "description": "AI assistant for developers",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "NODE_ENV=production electron-forge start",
+    "package": "BUILD_ENV=test node prepackage.js && BUILD_ENV=test NODE_ENV=production node packageTestBuild.js",
+    "make": "node prepackage.js && NODE_ENV=production electron-forge make",
+    "cleanTestBuild": "node cleanTestBuild.js",
+    "installTestBuild": "node installTestBuild.js",
+    "test": "npm run cleanTestBuild && npm run installTestBuild",
+    "test:e2e": "playwright test",
+    "test:bdd": "bddgen && playwright test"
+  },
+  "keywords": [],
+  "author": "Shashi Singh",
+  "license": "https://gettrici.com/terms",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.5.0",
+    "@electron-forge/maker-dmg": "^7.5.0",
+    "@electron-forge/maker-zip": "^7.5.0",
+    "@electron/packager": "^18.3.6",
+    "@playwright/test": "^1.42.1",
+    "playwright-bdd": "^8.0.0",
+    "electron": "^34.6.1",
+    "electron-packager-languages": "^0.5.0",
+    "fs-extra": "^11.2.0",
+    "ncp": "^2.0.0"
+  },
+  "config": {
+    "forge": "./forge.config.js"
+  },
+  "dependencies": {
+    "electron-unhandled": "^4.0.1",
+    "electron-updater": "^6.3.9",
+    "knex": "^3.2.9",
+    "node-mac-permissions": "^2.4.0",
+    "sqlite3": "^6.0.1"
+  }
+}

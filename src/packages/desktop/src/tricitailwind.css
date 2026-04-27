@@ -1,7 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss";
+@source "./app/**/*.tsx";
+@source "../node_modules/@singhshashi/**/*.js";
+@plugin "tailwind-scrollbar";
 
 .draggable {
   -webkit-app-region: drag;

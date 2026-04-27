@@ -46,7 +46,7 @@ export const Applications: React.FC = () => {
             </div>
           </div>
         )}
-        items={definitelyWorkApplications}
+        items={definitelyWorkApplications ?? []}
         showAddRemoveButtons
         dataGridLabel="Applications"
         dataGridDescription="Select the applications that you use when focusing"
