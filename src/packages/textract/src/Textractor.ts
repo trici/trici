@@ -13,6 +13,10 @@ export enum OCRLib {
   VISIONKIT = 'VISIONKIT',
 }
 
+export enum SpeechLib {
+  APPLE_SPEECH = 'APPLE_SPEECH',
+}
+
 export interface BoundingBox {
   x: number;
   y: number;
@@ -26,8 +30,14 @@ export interface RecognizedText {
   boundingBox: BoundingBox;
 }
 
+export interface RecognizedSpeech {
+  text: string;
+  confidence: number;
+}
+
 export interface ITextractor {
   extract(image: string, OCRLib: OCRLib, rootDirectory: string): Promise<RecognizedText[]>;
+  extractFromAudio(audioFile: string, speechLib: SpeechLib, rootDirectory: string): Promise<RecognizedSpeech[]>;
 }
 
 export class Textractor implements ITextractor {
@@ -84,6 +94,57 @@ export class Textractor implements ITextractor {
         });
       } else {
         reject(new Error('Invalid OCR library'));
+      }
+    });
+  }
+
+  async extractFromAudio(audioFile: string, speechLib: SpeechLib, rootDirectory: string): Promise<RecognizedSpeech[]> {
+    return new Promise(async (resolve, reject) => {
+      if (speechLib === SpeechLib.APPLE_SPEECH) {
+        let binaryLocation = '';
+        if (config.builtFor === 'dev') {
+          binaryLocation = path.join(rootDirectory, 'bin', 'dev', 'Textractor');
+        } else {
+          binaryLocation = path.join(rootDirectory, 'bin', 'Textractor');
+        }
+        const child = spawn(binaryLocation, ['--audio', audioFile]);
+        let recognizedSpeech: RecognizedSpeech[] = [];
+        child.stdout.on('data', (data: any) => {
+          try {
+            const result = JSON.parse(data.toString('utf8'));
+            if (result.error) {
+              this.getLogger().error('Speech recognition error:', result.error);
+              reject(new Error(result.error));
+            } else if (result.text !== undefined && result.confidence !== undefined) {
+              recognizedSpeech.push({
+                text: result.text,
+                confidence: result.confidence
+              });
+              resolve(recognizedSpeech);
+            } else {
+              // Handle case where text is empty but no error
+              resolve(recognizedSpeech);
+            }
+          } catch (error) {
+            this.getLogger().error('Failed to parse speech recognition result:', error);
+            reject(new Error('Failed to parse speech recognition result'));
+          }
+        });
+        child.stderr.on('data', (data: any) => {
+          this.getLogger().error(`Speech recognition stderr: ${data}`);
+        });
+        child.on('error', (error: any) => {
+          this.getLogger().error(`Speech recognition error: ${error.message}`);
+          reject(new Error(`Error extracting text from audio: ${error.message}`));
+        });
+        child.on('close', (code: any) => {
+          this.getLogger().info(`Speech recognition process exited with code ${code}`);
+          if (code !== 0 && recognizedSpeech.length === 0) {
+            reject(new Error(`Speech recognition process failed with code ${code}`));
+          }
+        });
+      } else {
+        reject(new Error('Invalid speech recognition library'));
       }
     });
   }

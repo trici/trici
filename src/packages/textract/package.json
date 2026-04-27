@@ -24,8 +24,8 @@
     "build:darwin": "pnpm run buildBinary:darwin && pnpm run esbuild",
     "build-dev:darwin": "pnpm run buildBinary-dev:darwin && pnpm run esbuild-dev && pnpm run build-types",
     "build-prod:darwin": "pnpm run buildBinary-prod:darwin && pnpm run esbuild-prod",
-    "buildBinary-prod:darwin": "if [ -f 'bin/Textractor' ]; then rm bin/Textractor; fi && swift build -c release --package-path src/swift/Textractor && cp src/swift/Textractor/.build/release/Textractor bin/Textractor && shasum -a 256 bin/Textractor > dist/Textractor.sha256",
-    "buildBinary-dev:darwin": "if [ -f 'bin/Textractor' ]; then rm bin/Textractor; fi && swift build -c debug --package-path src/swift/Textractor && cp src/swift/Textractor/.build/debug/Textractor bin/dev/Textractor && shasum -a 256 bin/dev/Textractor > dist/Textractor.sha256"
+    "buildBinary-prod:darwin": "if [ -f 'bin/Textractor' ]; then rm -rf bin/Textractor; fi && xcodebuild -project src/swift/Textractor/Textractor.xcodeproj -scheme Textractor -configuration Release -derivedDataPath src/swift/Textractor/build && cp src/swift/Textractor/build/Build/Products/Release/Textractor bin/Textractor && shasum -a 256 bin/Textractor > dist/Textractor.sha256",
+    "buildBinary-dev:darwin": "if [ -f 'bin/dev/Textractor' ]; then rm -rf bin/dev/Textractor; fi && xcodebuild -project src/swift/Textractor/Textractor.xcodeproj -scheme Textractor -configuration Debug -derivedDataPath src/swift/Textractor/build && cp src/swift/Textractor/build/Build/Products/Debug/Textractor bin/dev/Textractor && shasum -a 256 bin/dev/Textractor > dist/Textractor.sha256"
   },
   "bugs": {
     "url": "https://github.com/trici/trici/issues"
