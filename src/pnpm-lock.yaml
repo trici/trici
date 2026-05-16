@@ -203,8 +203,8 @@ importers:
         specifier: ^11.14.0
         version: 11.14.0(@types/react@19.2.14)(react@19.2.5)
       '@singhshashi/proactive':
-        specifier: ^0.11.6
-        version: 0.11.6(@heroicons/react@2.2.0(react@19.2.5))(clsx@2.1.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+        specifier: ^0.13.0
+        version: 0.13.0(clsx@2.1.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@tanstack/react-query':
         specifier: ^5.99.0
         version: 5.99.0(react@19.2.5)
@@ -303,7 +303,7 @@ importers:
         specifier: ^4.0.3
         version: 4.0.3
       '@playwright/test':
-        specifier: ^1.59.1
+        specifier: 1.59.1
         version: 1.59.1
       '@tailwindcss/cli':
         specifier: ^4.2.2
@@ -339,7 +339,7 @@ importers:
         specifier: 41.2.0
         version: 41.2.0
       playwright:
-        specifier: ^1.59.1
+        specifier: 1.59.1
         version: 1.59.1
       prettier-plugin-tailwindcss:
         specifier: ^0.7.2
@@ -1036,11 +1036,6 @@ packages:
   '@griffel/style-types@1.3.0':
     resolution: {integrity: sha512-bHwD3sUE84Xwv4dH011gOKe1jul77M1S6ZFN9Tnq8pvZ48UMdY//vtES6fv7GRS5wXYT4iqxQPBluAiYAfkpmw==}
 
-  '@heroicons/react@2.2.0':
-    resolution: {integrity: sha512-LMcepvRaS9LYHJGsF0zzmgKCUim/X3N/DQKc4jepAXJ7l8QxJ1PmxJzqplF2Z3FE4PqBAIGyJAQ/w4B5dsqbtQ==}
-    peerDependencies:
-      react: '>= 16 || ^19.0.0-rc'
-
   '@humanwhocodes/config-array@0.13.0':
     resolution: {integrity: sha512-DZLEEqFWQFiyK6h5YIeynKx7JlvCYWL0cImfSRXZ9l4Sg2efkFGTuFf6vzXjK1cq6IYkU+Eg/JizXw+TD2vRNw==}
     engines: {node: '>=10.10.0'}
@@ -1633,10 +1628,9 @@ packages:
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
     engines: {node: '>=10'}
 
-  '@singhshashi/proactive@0.11.6':
-    resolution: {integrity: sha512-BhTooF8lSwBKshRF5Pk+05ldBONtu6pb+Dvo2cl7LSPq0H4eiQ5VqaHVYlTtZ5MJIBJV9wdXsnMuV45WAdF74g==, tarball: https://npm.pkg.github.com/download/@singhshashi/proactive/0.11.6/0d35e5cac98ac14e60dc56d045e338c2fb2bd333}
+  '@singhshashi/proactive@0.13.0':
+    resolution: {integrity: sha512-C8nOeOkb8LTLznSlvC4sckwFiO4h+8xaYncZHTzSbzkpZ6hmZ2mIJc5bKCi7CSqviPx+XXDZ3MSJ1lYI1Xv/CQ==, tarball: https://npm.pkg.github.com/download/@singhshashi/proactive/0.13.0/0b3e0624f5dc726bebf7d3b2d22642278cb4baa2}
     peerDependencies:
-      '@heroicons/react': ^2.0.18
       clsx: ^2.0.0
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -4752,6 +4746,11 @@ packages:
     resolution: {integrity: sha512-NxVFwLAnrd9i7KUBxC4DrUhmgjzOs+1Qm50D3oF1/oL+r1NpZ4gA7xvG0/zJ8evR7zIKn4vLf7qTNduWFtCrRw==}
     engines: {node: 20 || >=22}
 
+  lucide-react@0.511.0:
+    resolution: {integrity: sha512-VK5a2ydJ7xm8GvBeKLS9mu1pVK6ucef9780JVUjw6bAjJL/QXnd4Y0p7SPeOUMC27YhzNCZvm5d/QX0Tp3rc0w==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
@@ -5731,11 +5730,6 @@ packages:
   rc@1.2.8:
     resolution: {integrity: sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw==}
     hasBin: true
-
-  react-bootstrap-icons@1.11.4:
-    resolution: {integrity: sha512-lnkOpNEZ/Zr7mNxvjA9efuarCPSgtOuGA55XiRj7ASJnBjb1wEAdtJOd2Aiv9t07r7FLI1IgyZPg9P6jqWD/IA==}
-    peerDependencies:
-      react: '>=16.8.6'
 
   react-dom@19.2.5:
     resolution: {integrity: sha512-J5bAZz+DXMMwW/wV3xzKke59Af6CHY7G4uYLN1OvBcKEsWOs4pQExj86BBKamxl/Ik5bx9whOrvBlSDfWzgSag==}
@@ -7359,10 +7353,6 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
-  '@heroicons/react@2.2.0(react@19.2.5)':
-    dependencies:
-      react: 19.2.5
-
   '@humanwhocodes/config-array@0.13.0':
     dependencies:
       '@humanwhocodes/object-schema': 2.0.3
@@ -8175,14 +8165,13 @@ snapshots:
 
   '@sindresorhus/is@4.6.0': {}
 
-  '@singhshashi/proactive@0.11.6(@heroicons/react@2.2.0(react@19.2.5))(clsx@2.1.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
+  '@singhshashi/proactive@0.13.0(clsx@2.1.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
     dependencies:
       '@fluentui/react-icons': 2.0.266(react@19.2.5)
-      '@heroicons/react': 2.2.0(react@19.2.5)
       '@storybook/types': 7.6.20
       clsx: 2.1.1
+      lucide-react: 0.511.0(react@19.2.5)
       react: 19.2.5
-      react-bootstrap-icons: 1.11.4(react@19.2.5)
       react-dom: 19.2.5(react@19.2.5)
 
   '@sinonjs/commons@3.0.1':
@@ -12000,6 +11989,10 @@ snapshots:
   lru-cache@11.3.5:
     optional: true
 
+  lucide-react@0.511.0(react@19.2.5):
+    dependencies:
+      react: 19.2.5
+
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
@@ -13035,11 +13028,6 @@ snapshots:
       ini: 1.3.8
       minimist: 1.2.8
       strip-json-comments: 2.0.1
-
-  react-bootstrap-icons@1.11.4(react@19.2.5):
-    dependencies:
-      prop-types: 15.8.1
-      react: 19.2.5
 
   react-dom@19.2.5(react@19.2.5):
     dependencies:

@@ -40,6 +40,7 @@
     "create-version-file": "node createVersionFile.js",
     "test": "cross-env NODE_ENV=test npx playwright test",
     "updbin": "node updbin.js",
+    "sync-tests-to-build": "node syncTestsToBuild.js",
     "build-for-packaging": "run-script-os",
     "build-for-packaging:darwin": "nx affected --target=build-prod && cross-env NODE_ENV=production node updbin.js && pnpm run build-prod && pnpm run create-version-file && cross-env NODE_ENV=production node createBuildForPackaging.js",
     "postinstall": "electron-rebuild",
@@ -50,7 +51,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "1.59.1",
     "@tailwindcss/cli": "^4.2.2",
     "@tanstack/eslint-plugin-query": "^5.99.0",
     "@types/d3": "^7.4.3",
@@ -62,14 +63,14 @@
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "electron": "41.2.0",
-    "playwright": "^1.59.1",
+    "playwright": "1.59.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "run-script-os": "^1.1.6",
     "tailwindcss": "^4.2.2"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
-    "@singhshashi/proactive": "^0.11.6",
+    "@singhshashi/proactive": "^0.13.0",
     "@tanstack/react-query": "^5.99.0",
     "@trici/activmon": "workspace:^",
     "@trici/app-observer": "workspace:^",

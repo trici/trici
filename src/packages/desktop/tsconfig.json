@@ -8,11 +8,25 @@
     "outDir": "dist",
     "jsx": "react-jsx",
     "baseUrl": ".",
+    "typeRoots": [
+      "../../node_modules/.pnpm/@types+node@24.12.2/node_modules/@types",
+      "node_modules/@types",
+      "../../node_modules/@types"
+    ],
+    "types": [
+      "node",
+      "jest",
+      "react",
+      "react-dom",
+      "electron-json-storage",
+      "video.js",
+      "d3"
+    ],
     "paths": {
       "proactive": ["./node_modules/proactive"],
     },
     	},
 	"include": [
-		"src/**/*.ts","src/**/*.tsx"
+		"src/typedefs/global.d.ts","src/**/*.ts","src/**/*.tsx"
  ],
 }
