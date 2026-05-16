@@ -19,6 +19,12 @@ cd src/packages/desktop && pnpm run build-dev
 
 # Type checking (desktop)
 cd src/packages/desktop && pnpm run check-types
+
+# Copy desktop app files to builds folder for packaging
+cd src/packages/desktop && pnpm run build-for-packaging 
+
+# Sync integration tests with builds folder
+cd src/packages/desktop && pnpm run sync-tests-to-build
 ```
 
 ### Testing
@@ -71,6 +77,12 @@ This is a monorepo using Lerna and pnpm workspaces. The main application is an E
 - `postprocess` - Post-processing of recorded data
 - `datawriter` - Data serialization and writing
 
+**Build for packaging**
+- There is a separate `builds/` folder (at the repo root) where artifacts like the bundled JS files are copied for creating a packaged build that can be tested and published.
+- This is where the automated integration tests using Playwright BDD are run.
+- Some artifacts come from `src/packages/desktop/godown/` — a storehouse of assets and scripts used for creating a build — and are copied from there into `builds/`.
+- Changes to tests should be made to the files in `src/packages/desktop/godown/`, as these are then copied to `builds/`.
+
 ### Key Technologies
 - **Frontend:** React with TypeScript, Electron renderer processes
 - **Backend:** Electron main process, Node.js services
@@ -100,4 +112,4 @@ The app includes Swift-based native components for macOS:
 
 ## Agent Compatibility Notes
 - Prefer this file as the canonical source of repository guidance.
-- If a tool expects a tool-specific instructions file such as `CLAUDE.md`, it should resolve to this document when possible.
+- Agent specific files like CLAUDE.md or copilot-instructions.md are symlinked to this file.  
