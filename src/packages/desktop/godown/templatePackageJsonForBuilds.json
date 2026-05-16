@@ -9,7 +9,7 @@
     "make": "node prepackage.js && NODE_ENV=production electron-forge make",
     "cleanTestBuild": "node cleanTestBuild.js",
     "installTestBuild": "node installTestBuild.js",
-    "test": "npm run cleanTestBuild && npm run installTestBuild",
+    "test": "npm run cleanTestBuild && npm run installTestBuild && npm run test:bdd",
     "test:e2e": "playwright test",
     "test:bdd": "bddgen && playwright test"
   },
@@ -21,7 +21,7 @@
     "@electron-forge/maker-dmg": "^7.5.0",
     "@electron-forge/maker-zip": "^7.5.0",
     "@electron/packager": "^18.3.6",
-    "@playwright/test": "^1.42.1",
+    "@playwright/test": "1.59.1",
     "playwright-bdd": "^8.0.0",
     "electron": "^34.6.1",
     "electron-packager-languages": "^0.5.0",

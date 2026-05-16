@@ -123,6 +123,16 @@ export const InitializationService: IInitializationService = {
       const userActivityStateMachine = UserActivityStateMachineSingleton.getInstance(getLoggerFn);
       trayService = new TrayService(actionDispatcher, appEventEmitter, userActivityStateMachine);
       trayService.initService();
+      if (process.env.BUILD_ENV === 'test') {
+        global.__triciTestHooks = {
+          isTrayVisible: () => trayService.hasTrayInstance(),
+          getTrayMenuLabels: () => trayService.getTrayMenuLabels(),
+          clickTrayMenuItem: (label: string) => trayService.clickTrayMenuItem(label),
+          isFocusSessionInProgress: () => focusSessionService?.isFocusSessionInProgress() ?? false,
+          backdateCurrentSession: (msBack: number) =>
+            focusSessionService?.setCurrentSessionStartTime(Date.now() - msBack),
+        };
+      }
 
       processManager = ProcessManagerSingleton.getInstance(getLoggerFn);
       const windowManager = new WindowManager(getLoggerFn, actionDispatcher);

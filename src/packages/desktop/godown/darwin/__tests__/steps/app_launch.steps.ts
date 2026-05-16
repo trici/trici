@@ -1,4 +1,4 @@
-const { Given, Then, expect } = require('./fixtures');
+import { Given, Then, expect } from './fixtures';
 
 Given('the TriciTest app is launched', async ({ electronApp }) => {
   // App is launched via the electronApp fixture

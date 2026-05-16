@@ -242,4 +242,10 @@ export class FocusSessionService implements ITriciDesktopService, IFocusSessionS
   public getCurrentFocusSession(): FocusSession | null {
     return this.#currentFocusSession;
   }
+
+  public setCurrentSessionStartTime(time: number): void {
+    if (this.#currentFocusSession) {
+      this.#currentFocusSession = this.#currentFocusSession.set('startTime', time);
+    }
+  }
 }
