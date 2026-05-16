@@ -6,7 +6,7 @@
  *
  */
 
-import { App, app, Menu, Tray } from 'electron';
+import { app, BrowserWindow, Menu, MenuItem, Tray } from 'electron';
 import { SessionTrigger, TrayState, TriciAppEvent, UserActivityState } from '@trici/models';
 import type { Logger } from '@trici/logger';
 import { dispatch, IActionDispatcher } from './ActionDispatcher';
@@ -46,6 +46,7 @@ export interface ITrayService {
 class TrayService implements ITriciDesktopService, ITrayService {
   tray?: Tray;
   trayState: TrayState;
+  currentContextMenu?: Menu;
   actionDispatcher: IActionDispatcher<TriciAction>;
   eventBus: AppEventEmitter;
   isServiceInitialized: boolean = false;
@@ -191,10 +192,27 @@ class TrayService implements ITriciDesktopService, ITrayService {
     }
     return template;
   }
+
+  private _findMenuItemByLabel(menu: Menu, label: string): MenuItem | undefined {
+    for (const item of menu.items) {
+      if (item.label === label) {
+        return item;
+      }
+      if (item.submenu) {
+        const submenuItem = this._findMenuItemByLabel(item.submenu, label);
+        if (submenuItem) {
+          return submenuItem;
+        }
+      }
+    }
+    return undefined;
+  }
+
   private _getTrayContextMenu(): Menu {
     let template = this._getMenuTemplate(this.trayState);
     console.log('TrayService: Tray context menu template: ', template);
-    return Menu.buildFromTemplate(template);
+    this.currentContextMenu = Menu.buildFromTemplate(template);
+    return this.currentContextMenu;
   }
 
   private registerActionHandlers(): void {
@@ -263,6 +281,31 @@ class TrayService implements ITriciDesktopService, ITrayService {
     // this._tray.setToolTip(config.trayIconToolTip);
     const contextMenu = this._getTrayContextMenu();
     this.tray.setContextMenu(contextMenu);
+  }
+
+  public hasTrayInstance(): boolean {
+    return !!this.tray && !this.tray.isDestroyed();
+  }
+
+  public getTrayMenuLabels(): string[] {
+    if (!this.currentContextMenu) {
+      return [];
+    }
+    return this.currentContextMenu.items.map(item => item.label).filter(Boolean);
+  }
+
+  public clickTrayMenuItem(label: string): void {
+    if (!this.currentContextMenu) {
+      throw new Error('Tray context menu is not available');
+    }
+    const item = this._findMenuItemByLabel(this.currentContextMenu, label);
+    if (!item) {
+      throw new Error(`Tray menu item "${label}" was not found`);
+    }
+    if (typeof item.click !== 'function') {
+      throw new Error(`Tray menu item "${label}" is not clickable`);
+    }
+    item.click(item, BrowserWindow.getFocusedWindow(), { x: 0, y: 0 } as any);
   }
 
   public changeTrayState(newState: TrayState): void {

@@ -2,25 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { ISettingsItemComponentProps } from '../typedefs/SettingsWindowTypes';
 import { Constants, IUserPreferences } from '@trici/models';
 import { ConfigureGlobalShortcut } from './ConfigureGlobalShortcut';
-import { generateUpdatedTriciId } from '../../../common/Utils';
 
 export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemComponentProps) {
   const _getUpdatedUserPreferencesObject = (updatedProperty: keyof IUserPreferences, updatedValue: string) => {
-    let updatedUserPreferences;
     if (userPreferences) {
-      const idOfDocToDelete = userPreferences._id;
-      const updatedId = generateUpdatedTriciId(idOfDocToDelete);
-      updatedUserPreferences = userPreferences.withMutations(up => {
-        up.set('_id', updatedId).set(updatedProperty, updatedValue);
-      });
-      return { updatedUserPreferences, idOfDocToDelete };
+      const updatedUserPreferences = userPreferences.set(updatedProperty, updatedValue);
+      return { updatedUserPreferences };
     }
   };
 
   const _onChangeGlobalShowHideShortcut = (shortcut: string) => {
     const result = _getUpdatedUserPreferencesObject('globalShowHideShortcut', shortcut);
     if (result) {
-      onSave(result.updatedUserPreferences, result.idOfDocToDelete);
+      onSave(result.updatedUserPreferences);
     } else {
       throw new Error('GlobalShortcuts._onChangeGlobalShowHideShortcut: result is null');
     }
@@ -29,7 +23,7 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
   const _onChangeGlobalStartFocusSessionShortcut = (shortcut: string) => {
     const result = _getUpdatedUserPreferencesObject('globalStartFocusSessionShortcut', shortcut);
     if (result) {
-      onSave(result.updatedUserPreferences, result.idOfDocToDelete);
+      onSave(result.updatedUserPreferences);
     } else {
       throw new Error('GlobalShortcuts._onChangeGlobalStartFocusSessionShortcut: result is null');
     }
@@ -38,7 +32,7 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
   const _onChangeGlobalStopFocusSessionShortcut = (shortcut: string) => {
     const result = _getUpdatedUserPreferencesObject('globalStopFocusSessionShortcut', shortcut);
     if (result) {
-      onSave(result.updatedUserPreferences, result.idOfDocToDelete);
+      onSave(result.updatedUserPreferences);
     } else {
       throw new Error('GlobalShortcuts._onChangeGlobalStopFocusSessionShortcut: result is null');
     }
@@ -47,7 +41,7 @@ export function GlobalShortcuts({ userPreferences, onSave }: ISettingsItemCompon
   const _onChangeGlobalRecordVoiceNoteShortcut = (shortcut: string) => {
     const result = _getUpdatedUserPreferencesObject('globalRecordVoiceNoteShortcut', shortcut);
     if (result) {
-      onSave(result.updatedUserPreferences, result.idOfDocToDelete);
+      onSave(result.updatedUserPreferences);
     } else {
       throw new Error('GlobalShortcuts._onChangeGlobalRecordVoiceNoteShortcut: result is null');
     }

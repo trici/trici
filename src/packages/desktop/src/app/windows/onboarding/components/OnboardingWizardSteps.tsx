@@ -5,7 +5,19 @@ import { useOnboarding } from './OnboardingContext';
 import { UsedAppCategory, UsedApplication, IUsedApplication } from '@trici/models';
 import { TriciAnimatedLogo } from '../../shared/components/TriciAnimatedLogo';
 
-const AskForAccessibilityPermissionsOnMacComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
+interface InjectedWizardStepProps {
+  stepindex?: number;
+}
+
+function requireStepIndex(stepindex: number | undefined, componentName: string): number {
+  if (typeof stepindex !== 'number') {
+    throw new Error(`${componentName} must be rendered inside a WizardStep`);
+  }
+  return stepindex;
+}
+
+const AskForAccessibilityPermissionsOnMacComponent: React.FC<InjectedWizardStepProps> = ({ stepindex }) => {
+  const wizardStepIndex = requireStepIndex(stepindex, 'AskForAccessibilityPermissionsOnMacComponent');
   const { setStepReady, getStepReady } = useWizard();
   const { onboardingState } = useOnboarding();
 
@@ -17,13 +29,13 @@ const AskForAccessibilityPermissionsOnMacComponent: React.FC<{ stepindex: number
   }, [hasAskedForAccessibilityPermissions]);
 
   const [accessibilityPermissionsReceived, setAccessibilityPermissionsReceived] = React.useState(
-    getStepReady(stepindex),
+    getStepReady(wizardStepIndex),
   );
 
   useEffect(() => {
     const accessibilityPermissionsStepReady =
       onboardingState.hasAskedForAccessibilityPermissions && onboardingState.hasBeenGivenAccessibilityPermissions;
-    setStepReady(stepindex, accessibilityPermissionsStepReady);
+    setStepReady(wizardStepIndex, accessibilityPermissionsStepReady);
   }, [accessibilityPermissionsReceived, onboardingState]);
 
   const videoClipUrl = `file://${window.bridgeApi.appPath}/resources/clips/TriciAccessibilityPermissions_final.mp4`;
@@ -66,7 +78,8 @@ const AskForAccessibilityPermissionsOnMacComponent: React.FC<{ stepindex: number
   );
 };
 
-const AskForScreenRecordingPermissionsOnMacComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
+const AskForScreenRecordingPermissionsOnMacComponent: React.FC<InjectedWizardStepProps> = ({ stepindex }) => {
+  const wizardStepIndex = requireStepIndex(stepindex, 'AskForScreenRecordingPermissionsOnMacComponent');
   const { setStepReady, getStepReady } = useWizard();
   const { onboardingState } = useOnboarding();
 
@@ -78,13 +91,13 @@ const AskForScreenRecordingPermissionsOnMacComponent: React.FC<{ stepindex: numb
   }, [hasAskedForScreenRecordingPermissions]);
 
   const [screenRecordingPermissionsReceived, setScreenRecordingPermissionsReceived] = React.useState(
-    getStepReady(stepindex),
+    getStepReady(wizardStepIndex),
   );
 
   useEffect(() => {
     const screenRecordingPermissionsStepReady =
       onboardingState.hasAskedForScreenRecordingPermissions && onboardingState.hasBeenGivenScreenRecordingPermissions;
-    setStepReady(stepindex, screenRecordingPermissionsStepReady);
+    setStepReady(wizardStepIndex, screenRecordingPermissionsStepReady);
   }, [screenRecordingPermissionsReceived, onboardingState]);
 
   const videoClipUrl = `file://${window.bridgeApi.appPath}/resources/clips/TriciScreenRecordingPermissions_final.mp4`;
@@ -129,7 +142,8 @@ const AskForScreenRecordingPermissionsOnMacComponent: React.FC<{ stepindex: numb
   );
 };
 
-const AskForMicrophonePermissionsOnMacComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
+const AskForMicrophonePermissionsOnMacComponent: React.FC<InjectedWizardStepProps> = ({ stepindex }) => {
+  const wizardStepIndex = requireStepIndex(stepindex, 'AskForMicrophonePermissionsOnMacComponent');
   const { setStepReady, getStepReady } = useWizard();
   const { onboardingState } = useOnboarding();
 
@@ -140,12 +154,12 @@ const AskForMicrophonePermissionsOnMacComponent: React.FC<{ stepindex: number }>
     }
   }, [hasAskedForMicrophonePermissions]);
 
-  const [microphonePermissionsReceived, setMicrophonePermissionsReceived] = React.useState(getStepReady(stepindex));
+  const [microphonePermissionsReceived, setMicrophonePermissionsReceived] = React.useState(getStepReady(wizardStepIndex));
 
   useEffect(() => {
     const microphonePermissionsStepReady =
       onboardingState.hasAskedForMicrophonePermissions && onboardingState.hasBeenGivenMicrophonePermissions;
-    setStepReady(stepindex, microphonePermissionsStepReady);
+    setStepReady(wizardStepIndex, microphonePermissionsStepReady);
   }, [microphonePermissionsReceived, onboardingState]);
 
   // Placeholder video or image for microphone permissions
@@ -190,7 +204,8 @@ const AskForMicrophonePermissionsOnMacComponent: React.FC<{ stepindex: number }>
   );
 };
 
-const TriciFirstWelcomeComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
+const TriciFirstWelcomeComponent: React.FC<InjectedWizardStepProps> = ({ stepindex }) => {
+  const wizardStepIndex = requireStepIndex(stepindex, 'TriciFirstWelcomeComponent');
   const { setStepReady, getStepReady } = useWizard();
 
   const [stepAnimationComplete, setStepAnimationComplete] = React.useState(false);
@@ -203,23 +218,18 @@ const TriciFirstWelcomeComponent: React.FC<{ stepindex: number }> = ({ stepindex
   }, [logoAnimationComplete]);
 
   useEffect(() => {
-    setStepReady(stepindex, stepAnimationComplete);
+    setStepReady(wizardStepIndex, stepAnimationComplete);
   }, [stepAnimationComplete]);
 
   return (
-    <div className="h-full w-full ">
-      <div className="flex h-full w-full flex-col items-center justify-evenly ">
-        <div className="h-[350px] w-[350px] text-center text-white">
+    <div className="h-full w-full">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-8">
+        <div className="text-center text-white">
           <TriciAnimatedLogo onAnimationComplete={() => setLogoAnimationComplete(true)} />
         </div>
-        <div className="h-[50px] text-center">
-          {logoAnimationComplete && (
-            <>
-              <div className="text-xl font-bold">Trici is an AI powered productivity tool for developers.</div>
-              <br />
-              <div className="text-xl font-bold">Let's get you set up!</div>
-            </>
-          )}
+        <div className={`text-center transition-opacity duration-500 ${logoAnimationComplete ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="text-xl font-bold">Trici is an AI powered productivity tool for developers.</div>
+          <div className="mt-2 text-xl font-bold">Let's get you set up!</div>
         </div>
       </div>
     </div>
@@ -228,7 +238,7 @@ const TriciFirstWelcomeComponent: React.FC<{ stepindex: number }> = ({ stepindex
 const TriciFirstWelcomeStep = () => {
   return (
     <WizardStep stepindex={0}>
-      <TriciFirstWelcomeComponent stepindex={0} />
+      <TriciFirstWelcomeComponent />
     </WizardStep>
   );
 };
@@ -252,7 +262,7 @@ const InformUserAboutRequiredPermissionsStep = () => {
 const AskForScreenRecordingPermissionsOnMacStep = () => {
   return (
     <WizardStep stepindex={2}>
-      <AskForScreenRecordingPermissionsOnMacComponent stepindex={1} />
+      <AskForScreenRecordingPermissionsOnMacComponent />
     </WizardStep>
   );
 };
@@ -260,7 +270,7 @@ const AskForScreenRecordingPermissionsOnMacStep = () => {
 const AskForMicrophonePermissionsOnMacStep = () => {
   return (
     <WizardStep stepindex={3}>
-      <AskForMicrophonePermissionsOnMacComponent stepindex={2} />
+      <AskForMicrophonePermissionsOnMacComponent />
     </WizardStep>
   );
 };
@@ -268,21 +278,22 @@ const AskForMicrophonePermissionsOnMacStep = () => {
 const AskFirAccessibilityPermissionsOnMacStep = () => {
   return (
     <WizardStep stepindex={4}>
-      <AskForAccessibilityPermissionsOnMacComponent stepindex={3} />
+      <AskForAccessibilityPermissionsOnMacComponent />
     </WizardStep>
   );
 };
 
-const AskWhichAreWorkAppsComponent: React.FC<{ stepindex: number }> = ({ stepindex }) => {
+const AskWhichAreWorkAppsComponent: React.FC<InjectedWizardStepProps> = ({ stepindex }) => {
+  const wizardStepIndex = requireStepIndex(stepindex, 'AskWhichAreWorkAppsComponent');
   const { setStepReady, getStepReady } = useWizard();
   const { onboardingState, installedApps } = useOnboarding();
 
-  const [workAppsChosen, setWorkAppsChosen] = React.useState(getStepReady(stepindex));
+  const [workAppsChosen, setWorkAppsChosen] = React.useState(getStepReady(wizardStepIndex));
   const [isFetching, setIsFetching] = React.useState(false);
 
   useEffect(() => {
     const workAppsStepReady = onboardingState.hasChosenWorkApplications;
-    setStepReady(stepindex, workAppsStepReady);
+    setStepReady(wizardStepIndex, workAppsStepReady);
   }, [workAppsChosen, onboardingState]);
 
   useEffect(() => {
@@ -399,7 +410,7 @@ const AskWhichAreWorkAppsComponent: React.FC<{ stepindex: number }> = ({ stepind
 const AskWhichAreWorkAppsStep = () => {
   return (
     <WizardStep stepindex={5}>
-      <AskWhichAreWorkAppsComponent stepindex={4} />
+      <AskWhichAreWorkAppsComponent />
     </WizardStep>
   );
 };

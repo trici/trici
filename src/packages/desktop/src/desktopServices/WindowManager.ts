@@ -263,7 +263,9 @@ export class WindowManager implements IWindowManager {
         contextIsolation: true,
       },
     });
-    this.onboardingWindow.setAlwaysOnTop(true, 'normal');
+    // Ensure the onboarding window appears above other applications (e.g., terminals like iTerm)
+    // Use a higher stacking level and also activate the app before focusing the window.
+    this.onboardingWindow.setAlwaysOnTop(true, 'floating');
     this.onboardingWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), {
       query: { type: 'onboarding' },
     });
@@ -289,6 +291,13 @@ export class WindowManager implements IWindowManager {
         app.exit(0);
       }
     });
+    // Activate the app and bring the onboarding window to front.
+    try {
+      app.focus();
+    } catch (e) {
+      // ignore if focus not available
+    }
+    this.onboardingWindow.show();
     this.onboardingWindow.focus();
   }
 
@@ -446,8 +455,11 @@ export class WindowManager implements IWindowManager {
         preload: preloadScriptPath,
         contextIsolation: true,
       },
+      alwaysOnTop: true,
     });
     this.settingsWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), { query: { type: 'settings' } });
+    // Ensure the settings window stays on top of other apps (e.g., terminal/tmux)
+    this.settingsWindow.setAlwaysOnTop(true, 'normal');
     contextMenu({
       window: this.settingsWindow,
       showInspectElement: true,

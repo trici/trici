@@ -14,13 +14,13 @@ const ffmpegPath = path.join(__dirname, '..', 'bin', 'ffmpeg');
 const waterMarkImagePath = path.join(__dirname, '..', 'temp', 'trici_watermark.png');
 const recordingStorageLocation = path.join(__dirname, '..', 'recordings');
 
-async function runTest() {
-  const triciRecorder = new TriciRecorder(
-    ffmpegPath,
-    getConsoleLogger,
-    path.join(__dirname, '..', 'bin', 'dev', 'Recorder'),
-  );
+const triciRecorder = new TriciRecorder(
+  ffmpegPath,
+  getConsoleLogger,
+  path.join(__dirname, '..', 'bin', 'dev', 'Recorder'),
+);
 
+async function startVideoRecording() {
   const recordingFileName = `${Date.now()}`;
 
   const includeWatermark = true;
@@ -41,7 +41,6 @@ async function runTest() {
       console.log('Stopping recording since recordingProcessExited event was received');
       triciRecorder.stopLiveRecording();
     }
-    process.exit(0);
   });
 
   setTimeout(() => {
@@ -50,14 +49,8 @@ async function runTest() {
   }, 25000);
 }
 
-async function runAudioRecordingTest() {
-  const triciRecorder = new TriciRecorder(
-    ffmpegPath,
-    getConsoleLogger,
-    path.join(__dirname, '..', 'bin', 'dev', 'Recorder'),
-  );
-
-  const audioRecordingFileName = `audio_${Date.now()}`;
+async function startAudioRecording() {
+  const audioRecordingFileName = `${Date.now()}`;
 
   try {
     console.log('Starting audio recording test...');
@@ -84,31 +77,50 @@ async function runAudioRecordingTest() {
           console.log('Audio recording file created successfully:', expectedFilePath);
         } else {
           console.log('Audio recording file not found:', expectedFilePath);
+          // create a blank file AUDIO_FAILED
+          fs.writeFileSync(path.join(recordingStorageLocation, 'AUDIO_FAILED'), '');
         }
-
-        process.exit(0);
       } catch (error) {
         console.log('Error stopping audio recording: ', error);
-        process.exit(1);
+        // create a blank file AUDIO_FAILED
+        fs.writeFileSync(path.join(recordingStorageLocation, 'AUDIO_FAILED'), '');
       }
     }, 10000);
   } catch (error) {
     console.log('Error starting audio recording: ', error);
+    // create a blank file AUDIO_FAILED
+    fs.writeFileSync(path.join(recordingStorageLocation, 'AUDIO_FAILED'), '');
+  }
+}
+
+async function startRecording() {
+  return new Promise((resolve, reject) => {
+    try {
+      startVideoRecording();
+      setTimeout(() => {
+        startAudioRecording();
+      }, 2000);
+    } catch (error) {
+      console.log('Error running test: ', error);
+      reject(error);
+    }
+  });
+}
+
+async function runTest() {
+  try {
+    await startRecording();
+    process.exit(0);
+  } catch (error) {
+    console.log('Error running test: ', error);
     process.exit(1);
   }
 }
 
-// Uncomment the line below to run audio recording test instead of screen recording test
-runAudioRecordingTest();
-
 deleteDirectoryWithContents(recordingStorageLocation)
   .then(async () => {
     fs.mkdirSync(recordingStorageLocation, { recursive: true });
-    try {
-      await runTest();
-    } catch (error) {
-      console.log('Error running test: ', error);
-    }
+    runTest();
   })
   .catch(err => {
     console.error('Error deleting directory: ', err);

@@ -1,4 +1,5 @@
 import { UserPreferences } from '@trici/models';
+import type { IconName } from '@singhshashi/proactive';
 
 export enum SettingsKey {
   SHORTCUTS = 'Shortcuts',
@@ -16,7 +17,7 @@ export enum SettingsKey {
 export interface ISettingsItem {
   key: SettingsKey;
   label: string;
-  icon: string;
+  icon: IconName;
   isActive: boolean;
 }
 
@@ -27,7 +28,7 @@ export interface ISettingsNavProps {
 
 export interface ISettingsItemComponentProps {
   userPreferences: UserPreferences | undefined;
-  onSave: (updatedUserPreferences: UserPreferences, idOfDocToDelete: string) => void;
+  onSave: (updatedUserPreferences: UserPreferences) => void;
 }
 
 export interface IConfigureGlobalShortcutProps {

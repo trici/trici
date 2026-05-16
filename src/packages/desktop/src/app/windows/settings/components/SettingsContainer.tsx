@@ -22,7 +22,6 @@ interface SettingsContainerState {
 
 type SaveUserPreferencesArgs = {
   userPreferences: UserPreferences;
-  idOfDocToDelete: string;
 };
 
 export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: SettingsKey }) {
@@ -31,7 +30,7 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
   };
 
   const _getSettingsItems = (): ISettingsItem[] => {
-    const settingsItems = [
+    const settingsItems: ISettingsItem[] = [
       {
         key: SettingsKey.SHORTCUTS,
         label: 'Shortcuts',
@@ -41,46 +40,46 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
       {
         key: SettingsKey.APPLICATIONS,
         label: 'Applications',
-        icon: 'Window',
+        icon: 'AppWindow',
         isActive: isSettingsItemActive(SettingsKey.APPLICATIONS),
       },
       {
         key: SettingsKey.FOCUS_SESSION,
         label: 'Focus Session',
-        icon: 'HourglassSplit',
+        icon: 'Timer',
         isActive: isSettingsItemActive(SettingsKey.FOCUS_SESSION),
       },
       {
         key: SettingsKey.WEBSITE_BLOCKING,
         label: 'Website Blocking',
-        icon: 'XOctagonFill',
+        icon: 'OctagonX',
         isActive: isSettingsItemActive(SettingsKey.WEBSITE_BLOCKING),
       },
       {
         key: SettingsKey.STORAGE,
         label: 'Storage',
-        icon: 'HddFill',
+        icon: 'HardDrive',
         isActive: isSettingsItemActive(SettingsKey.STORAGE),
       },
       {
         key: SettingsKey.SOUNDS,
         label: 'Sounds',
-        icon: 'MegaphoneFill',
+        icon: 'Volume2',
         isActive: isSettingsItemActive(SettingsKey.SOUNDS),
       },
       {
         key: SettingsKey.UPDATES,
         label: 'Updates',
-        icon: 'ArrowClockwise',
+        icon: 'RefreshCw',
         isActive: isSettingsItemActive(SettingsKey.UPDATES),
       },
       {
         key: SettingsKey.LOGGING,
         label: 'Logging',
-        icon: 'Clipboard',
+        icon: 'ClipboardList',
         isActive: isSettingsItemActive(SettingsKey.LOGGING),
       },
-      { key: SettingsKey.ABOUT, label: 'About', icon: 'InfoCircle', isActive: isSettingsItemActive(SettingsKey.ABOUT) },
+      { key: SettingsKey.ABOUT, label: 'About', icon: 'Info', isActive: isSettingsItemActive(SettingsKey.ABOUT) },
     ];
     return settingsItems;
   };
@@ -96,9 +95,9 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
     queryFn: () => renderRepository.getUserPreferences(),
   });
 
-  const saveUserPreferencesMutationFunction = ({ userPreferences, idOfDocToDelete }: SaveUserPreferencesArgs) => {
+  const saveUserPreferencesMutationFunction = ({ userPreferences }: SaveUserPreferencesArgs) => {
     console.log('saveUserPreferencesMutationFunction', userPreferences.toJS());
-    return renderRepository.saveUserPreferences(userPreferences, idOfDocToDelete);
+    return renderRepository.saveUserPreferences(userPreferences);
   };
 
   const mutation = useMutation({
@@ -108,8 +107,8 @@ export function SettingsContainer({ activeSettingsItem }: { activeSettingsItem: 
     },
   });
 
-  const _updateUserPreferences = (userPreferences: UserPreferences, idOfDocToDelete: string) => {
-    mutation.mutate({ userPreferences, idOfDocToDelete });
+  const _updateUserPreferences = (userPreferences: UserPreferences) => {
+    mutation.mutate({ userPreferences });
   };
 
   const _changeActiveSettingItem = (selectedKey: SettingsKey) => {

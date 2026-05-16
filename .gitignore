@@ -2,3 +2,5 @@
 .DS_Store
 .aider*
 venv
+builds/
+builds_*/

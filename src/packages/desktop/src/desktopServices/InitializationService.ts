@@ -13,9 +13,7 @@ import { FocusSessionService } from './FocusSessionService';
 import {
   FocusSessionRepository,
   IFocusSessionRepository,
-  ITriciDocRepository,
   IUsedApplicationRepository,
-  TriciDocRepository,
   UsedApplicationRepository,
 } from '@trici/dal';
 import { AppEventRepository, IAppEventRepository } from '@trici/dal';
@@ -28,7 +26,7 @@ import { AppEventEmitter } from './AppEventEmitter';
 import { ScreenRecordingPlugin } from '../plugins/ScreenRecordingPlugin';
 import { SessionEndDataProcessingPlugin } from '../plugins/SessionEndDataProcessingPlugin';
 import actionDispatcher, { dispatch } from './ActionDispatcher';
-import { IUsedApplication, UserPreferences } from '@trici/models';
+import { IUsedApplication } from '@trici/models';
 import { GlobalShortcutService } from './GlobalShortcutService';
 import { MainProcessDataAccessService } from './MainProcessDataAccessService';
 import { MainProcessIpcMessageHandlerService } from './MainProcessIpcMessageHandler';
@@ -50,7 +48,6 @@ let permissionsService: PermissionsService;
 
 let dbManager: ISqliteDbManager;
 let sqliteDb: sqlite3.Database;
-let repo: ITriciDocRepository;
 let eventRepo: IAppEventRepository;
 let focusSessionRepository: IFocusSessionRepository;
 let usedApplicationRepository: IUsedApplicationRepository;
@@ -119,10 +116,6 @@ export const InitializationService: IInitializationService = {
       // Create a bound logger getter function
       const getLoggerFn = () => LoggingService.getLogger();
 
-      // Get the UserPreferences and set it in the global object
-      const lastSavedEntityIds = await appJsonStorageService.getLastSavedEntityIds();
-      const userPreferencesId = lastSavedEntityIds.userPreferencesId;
-
       const onboardingState = await appJsonStorageService.getOnboardingState();
       global.onboardingState = onboardingState;
 
@@ -130,6 +123,16 @@ export const InitializationService: IInitializationService = {
       const userActivityStateMachine = UserActivityStateMachineSingleton.getInstance(getLoggerFn);
       trayService = new TrayService(actionDispatcher, appEventEmitter, userActivityStateMachine);
       trayService.initService();
+      if (process.env.BUILD_ENV === 'test') {
+        global.__triciTestHooks = {
+          isTrayVisible: () => trayService.hasTrayInstance(),
+          getTrayMenuLabels: () => trayService.getTrayMenuLabels(),
+          clickTrayMenuItem: (label: string) => trayService.clickTrayMenuItem(label),
+          isFocusSessionInProgress: () => focusSessionService?.isFocusSessionInProgress() ?? false,
+          backdateCurrentSession: (msBack: number) =>
+            focusSessionService?.setCurrentSessionStartTime(Date.now() - msBack),
+        };
+      }
 
       processManager = ProcessManagerSingleton.getInstance(getLoggerFn);
       const windowManager = new WindowManager(getLoggerFn, actionDispatcher);
@@ -151,9 +154,6 @@ export const InitializationService: IInitializationService = {
       appService = new AppService(processManager, trayService, appJsonStorageService, permissionsService);
       await appService.checkUserDataDirectory();
 
-      repo = new TriciDocRepository(getLoggerFn);
-      repo.init(global.userDataDirectoryCheckResult.dataDir.path);
-
       //Set up the sqlite database
       console.log('knexfile:', knexfile);
       dbManager = new SqliteDbManager(getLoggerFn);
@@ -168,8 +168,7 @@ export const InitializationService: IInitializationService = {
       // Initialize the AppEventEmitter
       appEventEmitter.initializeRepo(eventRepo);
 
-      const userPreferencesResult = await repo.get(userPreferencesId);
-      const userPreferences = new UserPreferences(userPreferencesResult);
+      const userPreferences = await appJsonStorageService.getUserPreferences();
       global.userPreferences = userPreferences;
 
       // Now start the app
@@ -203,7 +202,7 @@ export const InitializationService: IInitializationService = {
 
       // Initialize the infra to listen to queries from the renderer process
       const mainProcessDataAccessService = MainProcessDataAccessService.getInstance(
-        repo,
+        appJsonStorageService,
         usedApplicationsService,
         eventRepo,
         appObserverService,

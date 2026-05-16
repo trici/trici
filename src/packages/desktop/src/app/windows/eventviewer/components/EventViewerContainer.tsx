@@ -365,8 +365,8 @@ export function EventViewerContainer() {
               onMouseMove={e => {
                 if (!e) return;
                 const activeLabel = typeof e.activeLabel === 'number' ? e.activeLabel : undefined;
-                const mouseX = typeof e.chartX === 'number' ? e.chartX : 0;
-                const mouseY = typeof e.chartY === 'number' ? e.chartY : 0;
+                const mouseX = typeof e.activeCoordinate?.x === 'number' ? e.activeCoordinate.x : 0;
+                const mouseY = typeof e.activeCoordinate?.y === 'number' ? e.activeCoordinate.y : 0;
                 if (activeLabel !== undefined && appRegions.length > 0) {
                   // Find region under mouse
                   const region = appRegions.find(r => activeLabel >= r.startTime && activeLabel <= r.endTime);

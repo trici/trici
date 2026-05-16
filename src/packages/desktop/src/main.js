@@ -1,53 +1,61 @@
 const { performance } = require('perf_hooks');
 const { app, ipcMain } = require('electron');
 const config = require('./trici.config.js');
-const electronUnhandled = require('electron-unhandled');
 
-electronUnhandled({
-  showDialog: false,
-  logger: error => {
-    console.error('ElectronUnhandled', error);
-  },
-});
+async function bootstrap() {
+  const { default: electronUnhandled } = await import('electron-unhandled');
 
-global.config = config;
+  electronUnhandled({
+    showDialog: false,
+    logger: error => {
+      console.error('ElectronUnhandled', error);
+    },
+  });
 
-if (config.builtFor === 'prod') {
-  process.env.APP_ENV = 'prod';
-} else {
-  process.env.APP_ENV = 'dev';
+  global.config = config;
+
+  if (config.builtFor === 'prod') {
+    process.env.APP_ENV = 'prod';
+  } else {
+    process.env.APP_ENV = 'dev';
+  }
+
+  const isRunningInAsar = __dirname.includes('app.asar');
+  console.log('process.resourcesPath:', process.resourcesPath);
+
+  console.log('isRunningInAsar:', isRunningInAsar);
+
+  global.isRunningInAsar = isRunningInAsar;
+
+  const referencePath = config.mainProcessBuiltModuleReferencePath;
+
+  performance.mark('Before require referencePath');
+  const { initializationService } = require(referencePath);
+  performance.mark('After require referencePath');
+
+  const logger = initializationService.initLogger();
+
+  const gotTheLock = app.requestSingleInstanceLock();
+
+  if (!gotTheLock) {
+    logger.info('Another instance of the app is already running. Quitting.');
+    app.quit();
+  }
+
+  ipcMain.on('getAppPath', (event, arg) => {
+    event.returnValue = app.getAppPath();
+  });
+
+  ipcMain.on('getConfig', (event, arg) => {
+    event.returnValue = config;
+  });
+
+  app.once('ready', () => {
+    initializationService.startApp();
+  });
 }
 
-const isRunningInAsar = __dirname.includes('app.asar');
-console.log('process.resourcesPath:', process.resourcesPath);
-
-console.log('isRunningInAsar:', isRunningInAsar);
-
-global.isRunningInAsar = isRunningInAsar;
-
-const referencePath = config.mainProcessBuiltModuleReferencePath;
-
-performance.mark('Before require referencePath');
-const { initializationService } = require(referencePath);
-performance.mark('After require referencePath');
-
-const logger = initializationService.initLogger();
-
-const gotTheLock = app.requestSingleInstanceLock();
-
-if (!gotTheLock) {
-  logger.info('Another instance of the app is already running. Quitting.');
+bootstrap().catch(error => {
+  console.error('Failed to bootstrap desktop app', error);
   app.quit();
-}
-
-ipcMain.on('getAppPath', (event, arg) => {
-  event.returnValue = app.getAppPath();
-});
-
-ipcMain.on('getConfig', (event, arg) => {
-  event.returnValue = config;
-});
-
-app.once('ready', () => {
-  initializationService.startApp();
 });

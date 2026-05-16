@@ -1,4 +1,6 @@
-import { IBridgeAPIInterface } from './typedefs/preload';
+import type { IpcRendererEvent } from 'electron';
+import { IBridgeAPIInterface, IMessageFromMain } from './typedefs/preload';
+import type { MainProcessQueryResult } from './typedefs/MainProcessQueryResult';
 import { NodeEnv, Platform } from '@trici/models';
 
 const { contextBridge, ipcRenderer } = require('electron');
@@ -30,7 +32,7 @@ let registeredMessageHandlers: Array<messageHandler> = [];
 
 let initValues: any[] = [];
 
-ipcRenderer.on('queryRepoResult', (event, result) => {
+ipcRenderer.on('queryRepoResult', (_event: IpcRendererEvent, result: MainProcessQueryResult) => {
   console.log('Inside queryRepoResult:', result);
   const foundHandler = registeredQueryResultHandlers.find(obj => obj.handlerType === result.handler);
   if (foundHandler) {
@@ -51,7 +53,7 @@ ipcRenderer.on('queryRepoResult', (event, result) => {
   }
 });
 
-ipcRenderer.on('messageFromMain', (event, response) => {
+ipcRenderer.on('messageFromMain', (_event: IpcRendererEvent, response: IMessageFromMain) => {
   if (response.initValue) {
     initValues.push(response);
     console.log('Added initValue:', response);

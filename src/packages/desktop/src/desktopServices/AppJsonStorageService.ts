@@ -6,6 +6,8 @@ import {
   OnboardingState,
   IOnboardingState,
   ITriciApp,
+  UserPreferences,
+  IUserPreferences,
 } from '@trici/models';
 import { Constants } from '@trici/models';
 
@@ -18,6 +20,8 @@ export interface IAppJsonStorageService {
   updateLastSavedEntityIds(fieldToUpdate: keyof ILastSavedEntityIdsType, value: string): Promise<void>;
   getOnboardingState(): Promise<OnboardingState>;
   setOnboardingState(onboardingState: OnboardingState): Promise<void>;
+  getUserPreferences(): Promise<UserPreferences>;
+  setUserPreferences(userPreferences: UserPreferences): Promise<void>;
 }
 
 class AppJsonStorageService implements IAppJsonStorageService {
@@ -137,6 +141,35 @@ class AppJsonStorageService implements IAppJsonStorageService {
     const lastSavedEntityIds = await this.getLastSavedEntityIds();
     const updatedLastSavedEntityIds = lastSavedEntityIds.set(fieldToUpdate, value);
     await this.setLastSavedEntityIds(updatedLastSavedEntityIds);
+  }
+
+  public async getUserPreferences(): Promise<UserPreferences> {
+    return new Promise((resolve, reject) => {
+      storage.get('userPreferences', (error, data) => {
+        if (error) {
+          reject(error);
+        } else {
+          let userPreferences;
+          if (Object.keys(data).length === 0) {
+            userPreferences = new UserPreferences();
+          } else {
+            userPreferences = new UserPreferences(data as IUserPreferences);
+          }
+          resolve(userPreferences);
+        }
+      });
+    });
+  }
+
+  public async setUserPreferences(userPreferences: UserPreferences): Promise<void> {
+    return new Promise((resolve, reject) => {
+      storage.set('userPreferences', userPreferences.toJS(), error => {
+        if (error) {
+          reject(error);
+        }
+        resolve();
+      });
+    });
   }
 }
 

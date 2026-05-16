@@ -14,7 +14,7 @@ export function TriciContainer() {
   const [currentView, setCurrentView] = useState<ViewType>('focus-sessions');
 
   return (
-    <div className="flex h-full w-full flex-col bg-gray-800 bg-opacity-90 text-white">
+    <div className="flex h-full w-full flex-col bg-gray-800/90 text-white">
       <div className="flex border-b border-gray-700">
         {viewOptions.map(option => (
           <button

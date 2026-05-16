@@ -13,7 +13,7 @@ import { DataWriter } from '@trici/datawriter';
 
 export interface IRendererRepository {
   getUserPreferences(): Promise<UserPreferences>;
-  saveUserPreferences(userPreferences: UserPreferences, idOfDocToDelete: string): Promise<UserPreferences>;
+  saveUserPreferences(userPreferences: UserPreferences): Promise<UserPreferences>;
   getCachedUserPreferences(): UserPreferences | null;
   getUsedApplications(): Promise<UsedApplication[]>;
   getEvents(from: number, to: number, type: TriciAppEvent): Promise<AppEvent[]>;
@@ -61,12 +61,11 @@ export class RendererRepository implements IRendererRepository {
     });
   }
 
-  public saveUserPreferences(userPreferences: UserPreferences, idOfDocToDelete: string): Promise<UserPreferences> {
+  public saveUserPreferences(userPreferences: UserPreferences): Promise<UserPreferences> {
     console.log('RendererRepo.saveUserPreferences:%O', userPreferences);
     return new Promise((fulfill, reject) => {
       const args = {
         userPreferences: userPreferences.toJS(),
-        idOfDocToDelete,
       };
       window.bridgeApi.query({ handler: 'saveUserPreferences', args });
       window.bridgeApi.registerQueryResultHandler((result: { data: IUserPreferences | undefined }) => {

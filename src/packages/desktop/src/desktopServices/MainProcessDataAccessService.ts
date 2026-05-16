@@ -5,11 +5,9 @@
  * This is done to reduce conversion between Record objects and plain objects since the communication between main and renderer process also happens with plain objects.
  */
 import { AppObserverService } from '@trici/app-observer';
-import { ITriciDocRepository, IAppEventRepository, IFocusSessionRepository } from '@trici/dal';
+import { IAppEventRepository, IFocusSessionRepository } from '@trici/dal';
 import { IConsoleLogger, Logger } from '@trici/logger';
 import {
-  Constants,
-  KeyParts,
   UserPreferences,
   IUserPreferences,
   UsedApplication,
@@ -17,19 +15,20 @@ import {
   IFocusSession,
   FocusSession,
 } from '@trici/models';
-import { generateUninitializedTriciId, isWebBrowser } from '@trici/utils';
+import { isWebBrowser } from '@trici/utils';
 import { app } from 'electron/main';
 import fs from 'fs/promises';
 import { IUsedApplicationsService } from './UsedApplicationsService';
 import path from 'path';
 import { DataWriter } from '@trici/datawriter';
+import { IAppJsonStorageService } from './AppJsonStorageService';
 /**
  * IMainProcessDataAccessService
  * @description Interface for MainProcessDataAccessService
  */
 export interface IMainProcessDataAccessService {
-  getUserPreferences(id: string): Promise<UserPreferences>;
-  saveUserPreferences(userPreferences: IUserPreferences, idOfDocToDelete: string): Promise<UserPreferences>;
+  getUserPreferences(): Promise<UserPreferences>;
+  saveUserPreferences(userPreferences: IUserPreferences): Promise<UserPreferences>;
   getInstalledApplications(): Promise<
     { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | []
   >;
@@ -42,7 +41,7 @@ export interface IMainProcessDataAccessService {
 }
 
 export class MainProcessDataAccessService implements IMainProcessDataAccessService {
-  private _docRepository: ITriciDocRepository;
+  private _appJsonStorageService: IAppJsonStorageService;
   private _usedApplicationsService: IUsedApplicationsService;
   private _appEventRepository: IAppEventRepository;
   private _appObserver: AppObserverService;
@@ -50,14 +49,14 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
   private static _instance: MainProcessDataAccessService;
   private _focusSessionRepository: IFocusSessionRepository;
   private constructor(
-    repository: ITriciDocRepository,
+    appJsonStorageService: IAppJsonStorageService,
     usedApplicationsService: IUsedApplicationsService,
     appEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
     focusSessionRepository: IFocusSessionRepository,
     getLogger: () => Logger | IConsoleLogger,
   ) {
-    this._docRepository = repository;
+    this._appJsonStorageService = appJsonStorageService;
     this._usedApplicationsService = usedApplicationsService;
     this._appEventRepository = appEventRepository;
     this._appObserver = appObserver;
@@ -66,7 +65,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
   }
 
   public static getInstance(
-    repository: ITriciDocRepository,
+    appJsonStorageService: IAppJsonStorageService,
     usedApplicationsService: IUsedApplicationsService,
     appEventRepository: IAppEventRepository,
     appObserver: AppObserverService,
@@ -75,7 +74,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
   ): IMainProcessDataAccessService {
     if (!MainProcessDataAccessService._instance) {
       MainProcessDataAccessService._instance = new MainProcessDataAccessService(
-        repository,
+        appJsonStorageService,
         usedApplicationsService,
         appEventRepository,
         appObserver,
@@ -86,21 +85,9 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
     return MainProcessDataAccessService._instance;
   }
 
-  /**
-   *
-   * @param id The id of the user preferences document
-   * @returns A promise that resolves to a UserPreferences object
-   * @throws Error
-   */
-  public async getUserPreferences(id: string): Promise<UserPreferences> {
+  public async getUserPreferences(): Promise<UserPreferences> {
     try {
-      const result = await this._docRepository.get(id);
-      console.log('getUserPreferences', result);
-      let userPreferences = new UserPreferences(result);
-      if (userPreferences._id === Constants.UNINITIALIZED_ID) {
-        const correctUnitializedId = generateUninitializedTriciId(installationId, KeyParts.USER_PREFERENCES);
-        userPreferences = userPreferences.set('_id', correctUnitializedId);
-      }
+      const userPreferences = await this._appJsonStorageService.getUserPreferences();
       return userPreferences;
     } catch (error) {
       this._getLogger().error('Error in getUserPreferences', error);
@@ -109,20 +96,16 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
   }
 
   /**
-   * Saves the user preferences to the database
+   * Saves the user preferences to storage
    * @param userPreferences The user preferences javascript object to save
-   * @param idOfDocToDelete The old id of the user preferences document to delete
    * @returns A promise that resolves to a UserPreferences object
    */
-  public async saveUserPreferences(
-    userPreferences: IUserPreferences,
-    idOfDocToDelete: string,
-  ): Promise<UserPreferences> {
+  public async saveUserPreferences(userPreferences: IUserPreferences): Promise<UserPreferences> {
     try {
-      const result = await this._docRepository.save(userPreferences, idOfDocToDelete);
-      const savedUserPreferences = new UserPreferences(result);
-      global.userPreferences = savedUserPreferences;
-      return savedUserPreferences;
+      const updatedUserPreferences = new UserPreferences(userPreferences);
+      await this._appJsonStorageService.setUserPreferences(updatedUserPreferences);
+      global.userPreferences = updatedUserPreferences;
+      return updatedUserPreferences;
     } catch (error) {
       this._getLogger().error('Error in saveUserPreferences', error);
       throw error;

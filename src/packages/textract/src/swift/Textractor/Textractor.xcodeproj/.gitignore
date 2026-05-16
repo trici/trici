@@ -1,0 +1,10 @@
+# Xcode
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcworkspace/xcuserdata
+*.xcuserdatad
+DerivedData/
+build/
