@@ -348,8 +348,10 @@ export class WindowManager implements IWindowManager {
         },
         frame: false,
         transparent: true,
+        alwaysOnTop: true,
         // titleBarStyle: 'hiddenInset',
       });
+      this.triciWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
       this.triciWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'), { query: { type: 'trici' } });
       this.triciWindow.maximize();
