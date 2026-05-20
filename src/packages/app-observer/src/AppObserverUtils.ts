@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
-import plist from 'plist';
+import { parse as parsePlist } from 'plist';
 
 export interface InstalledApp {
   name: string;
@@ -65,7 +65,7 @@ async function scanAppDirectory(dir: string): Promise<InstalledApp[]> {
 async function parseApp(appPath: string): Promise<InstalledApp> {
   const plistPath = path.join(appPath, 'Contents', 'Info.plist');
   const plistContent = await fs.readFile(plistPath, 'utf-8');
-  const info = plist.parse(plistContent) as Record<string, unknown>;
+  const info = parsePlist(plistContent) as Record<string, unknown>;
 
   const name =
     (info['CFBundleDisplayName'] as string | undefined) ??
