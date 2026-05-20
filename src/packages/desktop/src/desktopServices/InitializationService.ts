@@ -142,7 +142,6 @@ export const InitializationService: IInitializationService = {
       const appObserverLogsDirectory = app.getPath('logs');
       // Instantiate the AppObserver service. It is started inside UserActivityMonitorService
       const appObserverService = new AppObserverService(getLoggerFn, app.getAppPath(), appObserverLogsDirectory);
-
       permissionsService = new PermissionsService(
         appJsonStorageService,
         actionDispatcher,
@@ -183,12 +182,6 @@ export const InitializationService: IInitializationService = {
         actionDispatcher,
       );
       usedApplicationsService.initService();
-
-      if (!triciApp.hasCompletedOnboarding) {
-        // start the app observer service
-        console.log('isRunningInAsar: ', isRunningInAsar);
-        appObserverService.start(isRunningInAsar);
-      }
 
       const ffmpegPath = isRunningInAsar
         ? path.join(app.getAppPath(), '..', 'app.asar.unpacked', 'bin', 'ffmpeg')
