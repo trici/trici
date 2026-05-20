@@ -303,18 +303,18 @@ const AskWhichAreWorkAppsComponent: React.FC<InjectedWizardStepProps> = ({ stepi
   }, [installedApps]);
 
   const getUsedApplications = (
-    installedApps: { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | [],
-    selectedItems: { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[],
+    installedApps: { name: string; iconPath: string; appIdentifier: string; isBrowser: boolean }[] | [],
+    selectedItems: { name: string; iconPath: string; appIdentifier: string; isBrowser: boolean }[],
   ): Array<IUsedApplication> | [] => {
     let usedApplications: Array<IUsedApplication> = [];
     if (installedApps.length === 0) {
       return usedApplications;
     }
     installedApps.forEach(
-      (installedApp: { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }) => {
+      (installedApp: { name: string; iconPath: string; appIdentifier: string; isBrowser: boolean }) => {
         const usedApplicationRecord: IUsedApplication = {
           applicationName: installedApp.name,
-          appIdentifier: installedApp.bundleIdentifier,
+          appIdentifier: installedApp.appIdentifier,
           iconPath: installedApp.iconPath,
           durationUsed: 0,
           appCategory: installedApp.isBrowser ? UsedAppCategory.COULD_BE_ANYTHING : UsedAppCategory.NOT_SET,
@@ -323,10 +323,10 @@ const AskWhichAreWorkAppsComponent: React.FC<InjectedWizardStepProps> = ({ stepi
       },
     );
     selectedItems.forEach(
-      (selectedItem: { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }) => {
+      (selectedItem: { name: string; iconPath: string; appIdentifier: string; isBrowser: boolean }) => {
         const usedApplicationRecord = usedApplications.find(
           (usedApplicationRecord: IUsedApplication) =>
-            usedApplicationRecord.appIdentifier === selectedItem.bundleIdentifier,
+            usedApplicationRecord.appIdentifier === selectedItem.appIdentifier,
         );
         if (usedApplicationRecord) {
           usedApplicationRecord.appCategory = UsedAppCategory.DEFINITELY_WORK;
@@ -337,7 +337,7 @@ const AskWhichAreWorkAppsComponent: React.FC<InjectedWizardStepProps> = ({ stepi
   };
 
   const handleSelectionChange = useCallback(
-    (selectedItems: Array<{ name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }>): void => {
+    (selectedItems: Array<{ name: string; iconPath: string; appIdentifier: string; isBrowser: boolean }>): void => {
       const usedApplications = getUsedApplications(installedApps, selectedItems);
       window.bridgeApi.sendMessage({
         handler: 'updateUsedApplications',

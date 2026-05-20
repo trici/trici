@@ -30,7 +30,7 @@ export interface IMainProcessDataAccessService {
   getUserPreferences(): Promise<UserPreferences>;
   saveUserPreferences(userPreferences: IUserPreferences): Promise<UserPreferences>;
   getInstalledApplications(): Promise<
-    { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | []
+    { name: string; iconPath: string; appIdentifier: string; isBrowser: boolean }[] | []
   >;
   getUsedApplications(): Promise<UsedApplication[]>;
   getTriciAppEvents(fromTime: number, toTime: number, type: TriciAppEvent | null, count: number): Promise<any>;
@@ -117,9 +117,9 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
    * @returns A promise that resolves to an array of InstalledApplication objects
    */
   public async getInstalledApplications(): Promise<
-    { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | []
+    { name: string; iconPath: string; appIdentifier: string; isBrowser: boolean }[] | []
   > {
-    let installedApplications: { name: string; iconPath: string; bundleIdentifier: string; isBrowser: boolean }[] | [] =
+    let installedApplications: { name: string; iconPath: string; appIdentifier: string; isBrowser: boolean }[] | [] =
       [];
     try {
       const cachedResponseFilePath = app.getPath('temp') + '/installedApplications.json';
@@ -152,7 +152,7 @@ export class MainProcessDataAccessService implements IMainProcessDataAccessServi
           return {
             name: app.name,
             iconPath: app.iconPath,
-            bundleIdentifier: app.bundleIdentifier,
+            appIdentifier: app.appIdentifier,
             isBrowser: isWebBrowser(app.name),
           };
         });

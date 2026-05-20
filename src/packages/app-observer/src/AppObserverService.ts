@@ -7,12 +7,13 @@ import { EventEmitter } from 'events';
 import { Buffer } from 'buffer';
 import { isWebBrowser } from '@trici/utils';
 import { AppChangeHistoryRecord, AppChangeHistory } from './AppChangeHistory';
+import { getInstalledApps as getInstalledAppsUtil, InstalledApp } from './AppObserverUtils';
 
 export interface IAppObserverService {
   start(isRunningInAsar: boolean): void;
   stop(): void;
   getCurrentApp(): { appName: string; appIdentifier: string; timestamp: number } | null;
-  getInstalledApps(): Promise<{ name: string; iconPath: string; bundleIdentifier: string }[]>;
+  getInstalledApps(): Promise<InstalledApp[]>;
   getActiveBrowserOpenedURL(): Promise<string | null>;
 }
 
@@ -137,14 +138,16 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
   }
 
   stop(): void {
-    this.getLogger().info('AppObserverService stopping:', this.child.pid);
-    // kill the child process
-    // TOOD: Write code to close the AppObserverService gracefully.
-    this.child.kill();
     if (this.idleTimeIntervalId) {
       clearInterval(this.idleTimeIntervalId);
       this.idleTimeIntervalId = null;
     }
+    if (!this.child) {
+      return;
+    }
+    this.getLogger().info('AppObserverService stopping:', this.child.pid);
+    this.child.kill();
+    this.child = null;
   }
 
   getCurrentApp(): { appName: string; appIdentifier: string; timestamp: number } | null {
@@ -158,16 +161,8 @@ export class AppObserverService extends EventEmitter implements IAppObserverServ
       : null;
   }
 
-  // TODO: the return type here should not use bundleIdentifier as it is specific for MacOS. It should be appIdentifier.
-  async getInstalledApps(): Promise<{ name: string; iconPath: string; bundleIdentifier: string }[]> {
-    if (!this.child || !this.child.stdin || !this.child.stdout) {
-      throw new Error('Child process not initialized.');
-    }
-
-    return new Promise<{ name: string; iconPath: string; bundleIdentifier: string }[]>((resolve, reject) => {
-      this.pendingRequests['installedApps'] = { resolve, reject };
-      this.child.stdin.write('getInstalledApps\n');
-    });
+  async getInstalledApps(): Promise<InstalledApp[]> {
+    return getInstalledAppsUtil();
   }
 
   async getActiveBrowserOpenedURL(): Promise<string | null> {

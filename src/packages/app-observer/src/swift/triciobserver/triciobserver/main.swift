@@ -69,6 +69,12 @@ frontmostObserver.startObserver()
 let inputSource = DispatchSource.makeReadSource(fileDescriptor: STDIN_FILENO, queue: DispatchQueue.main)
 inputSource.setEventHandler {
   let inputData = FileHandle.standardInput.availableData
+  // Empty data means EOF: parent process closed stdin (crashed or shut down).
+  // Cancel the source and exit to avoid a CPU-spinning busy loop.
+  if inputData.isEmpty {
+    inputSource.cancel()
+    exit(0)
+  }
   if let strData = String(data: inputData, encoding: .utf8) {
       let lines = strData.components(separatedBy: .newlines)
       for line in lines {
@@ -77,10 +83,6 @@ inputSource.setEventHandler {
 
 
         switch command {
-            case "getInstalledApps":
-                DispatchQueue.global().async {
-                    appObserverMethods.outputInstalledApps()
-                }
             case "getActiveBrowserOpenedUrl":
                 DispatchQueue.global().async {
                     appObserverMethods.getActiveBrowserOpenedURL()
