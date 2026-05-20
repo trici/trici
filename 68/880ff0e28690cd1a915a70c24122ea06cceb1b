@@ -1,0 +1,20 @@
+src/packages/app-observer/src/AppObserverUtils.ts
+  s_75da4098ed0dd7::t_e399c96cde2fc1 68
+  s_75da4098ed0dd7::t_ad7358c2e531aa 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "68880ff0e28690cd1a915a70c24122ea06cceb1b",
+  "prompts": {},
+  "sessions": {
+    "s_75da4098ed0dd7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6597eb5-7777-4306-b0d6-35b287030616",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Shashi Singh <singh.shashishekhar@gmail.com>"
+    }
+  }
+}
